@@ -6,13 +6,32 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 
 u32 offset = 0;
+u8 op0, opA, op1, opN, opB, opimm;
+u16 op, ximm;
 
-char *jumps[] = {
+
+const char *regs[] = { "sp", "r1", "r2", "r3", "r4", "bp", "sr", "pc" };
+
+const char *jumps[] = {
 	"jb", "jae", "jge", "jl", "jne", "je", "jpl", "jmi",
 	"jbe", "ja", "jle", "jg", "jvc", "jvs", "jmp"
 };
 
-char *regs[] = { "sp", "r1", "r2", "r3", "r4", "bp", "sr", "pc" };
+const char *alu_ops[] = {
+	"%s += %s",
+	"%s += %s, carry",
+	"%s -= %s",
+	"%s -= %s, carry",
+	"cmp %s, %s",
+	"???",
+	"%s =- %s",
+	"???",
+	"%s ^= %s",
+	"%s = %s",
+	"%s |= %s",
+	"%s &= %s",
+	"test %s, %s"
+};
 
 static u16 get16(void)
 {
@@ -28,7 +47,7 @@ static u16 get16(void)
 	return x16;
 }
 
-const char *b_op(u8 op1, u8 opimm, int a_is_b, u16 ximm)
+static const char *b_op(void)
 {
 	u8 opN = opimm >> 3;
 	u8 opB = opimm & 7;
@@ -52,19 +71,19 @@ const char *b_op(u8 op1, u8 opimm, int a_is_b, u16 ximm)
 			sprintf(s, "%s", regs[opB]);
 			break;
 		case 1:
-			if (a_is_b)
+			if (opA == opB)
 				sprintf(s, "%04x", ximm);
 			else
 				goto bad;
 			break;
 		case 2:
-			if (a_is_b)
+			if (opA == opB)
 				sprintf(s, "[%04x]", ximm);
 			else
 				goto bad;
 			break;
 //		case 3:
-//			if (a_is_b)
+//			if (opA == opB)
 //				sprintf(s, "%04x", ximm);
 //			else
 //				goto bad;
@@ -97,9 +116,6 @@ bad:
 
 static void one_insn(void)
 {
-	u8 op0, opA, op1, opN, opB, opimm;
-	u16 op, ximm = 0x0bad;
-
 	op = get16();
 
 	printf("%04x: ", offset);
@@ -156,55 +172,9 @@ static void one_insn(void)
 
 	// alu non-store insns
 	if (op0 < 13 && op0 != 5 && op0 != 7) {
-		switch(op0) {
-		case 0:
-			printf("%s += %s\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 1:
-			printf("%s += %s, carry\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 2:
-			printf("%s -= %s\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 3:
-			printf("%s -= %s, carry\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 4:
-			printf("cmp %s, %s\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 6:
-			printf("%s =- %s\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 8:
-			printf("%s ^= %s\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 9:
-			printf("%s = %s\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 10:
-			printf("%s |= %s\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 11:
-			printf("%s &= %s\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		case 12:
-			printf("test %s, %s\n", regs[opA],
-			       b_op(op1, opimm, opA == opB, ximm));
-			return;
-		default:
-			printf("!!! ALU OP %x, %s, %s", op0, regs[opA], b_op(op1, opimm, opA == opB, ximm));
-			return;
-		}
+		printf(alu_ops[op0], regs[opA], b_op());
+		printf("\n");
+		return;
 	}
 
 	// alu store insns
