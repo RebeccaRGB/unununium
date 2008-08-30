@@ -155,6 +155,9 @@ static void one_insn(void)
 		offset++;
 	} else
 		printf("%04x        ", op);
+
+	printf("%x %x %x %x %x   ", op0, opA, op1, opN, opB);
+
 	offset++;
 
 
@@ -169,31 +172,39 @@ static void one_insn(void)
 	}
 
 	// push/pop insns
-	if ((op0 == 9 || op0 == 13) && op1 == 2) {
-		if (op0 == 9) {
-			if (op == 0x9a90)
-				printf("retf\n");
-			else if (op == 0x9a98)
-				printf("reti\n");
-			else if (opA+1 < 8 && opA+opN < 8)
-				printf("pop %s, %s from [%s]\n",
-				       regs[opA+1], regs[opA+opN], regs[opB]);
-			else
-				printf("!!! POP\n");
-		} else {
+	if (op0 == 9 && op1 == 2) {
+		if (op == 0x9a90)
+			printf("retf\n");
+		else if (op == 0x9a98)
+			printf("reti\n");
+		else if (opA+1 < 8 && opA+opN < 8)
+			printf("pop %s, %s from [%s]\n",
+			       regs[opA+1], regs[opA+opN], regs[opB]);
+		else
+			printf("!!! POP\n");
+		return;
+	}
+
+	// alu insns
+	if (op0 < 13 && op0 != 5 && op0 != 7) {
+		printf(alu_ops[op0], regs[opA], b_op());
+		printf("\n");
+		return;
+	}
+
+	// store insns
+	if (op0 == 13) {
+		if (op1 == 2) {		// push insn
 			if (opA+1 >= opN && opA < opN+7)
 				printf("push %s, %s to [%s]\n",
 				       regs[opA+1-opN], regs[opA], regs[opB]);
 			else
 				printf("!!! PUSH\n");
+		} else {
+			printf("STORE: CHECKME!!!   ");
+			printf(alu_ops[op0], regs[opA], b_op());
+			printf("\n");
 		}
-		return;
-	}
-
-	// alu insns
-	if (op0 < 14 && op0 != 5 && op0 != 7) {
-		printf(alu_ops[op0], regs[opA], b_op());
-		printf("\n");
 		return;
 	}
 
