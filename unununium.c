@@ -30,7 +30,8 @@ const char *alu_ops[] = {
 	"%s = %s",
 	"%s |= %s",
 	"%s &= %s",
-	"test %s, %s"
+	"test %s, %s",
+	"%2$s = %1$s"
 };
 
 static u16 get16(void)
@@ -170,18 +171,13 @@ static void one_insn(void)
 		return;
 	}
 
-	// alu non-store insns
-	if (op0 < 13 && op0 != 5 && op0 != 7) {
+	// alu insns
+	if (op0 < 14 && op0 != 5 && op0 != 7) {
 		printf(alu_ops[op0], regs[opA], b_op());
 		printf("\n");
 		return;
 	}
 
-	// alu store insns
-	if (op0 == 13) {
-		printf("!!! STORE\n");
-		return;
-	}
 
 
 
