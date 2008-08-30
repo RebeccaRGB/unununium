@@ -5,19 +5,19 @@ typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
 
-u32 offset = 0;
-u8 op0, opA, op1, opN, opB, opimm;
-u16 op, ximm;
+static u32 offset = 0;
+static u8 op0, opA, op1, opN, opB, opimm;
+static u16 op, ximm;
 
 
-const char *regs[] = { "sp", "r1", "r2", "r3", "r4", "bp", "sr", "pc" };
+static const char *regs[] = { "sp", "r1", "r2", "r3", "r4", "bp", "sr", "pc" };
 
-const char *jumps[] = {
+static const char *jumps[] = {
 	"jb", "jae", "jge", "jl", "jne", "je", "jpl", "jmi",
 	"jbe", "ja", "jle", "jg", "jvc", "jvs", "jmp"
 };
 
-const char *alu_ops[] = {
+static const char *alu_ops[] = {
 	"%s += %s",
 	"%s += %s, carry",
 	"%s -= %s",
@@ -32,6 +32,23 @@ const char *alu_ops[] = {
 	"%s &= %s",
 	"test %s, %s",
 	"%2$s = %1$s"
+};
+
+static const char *alu_ops_3[] = {
+	"%s + %s",
+	"%s + %s, carry",
+	"%s - %s",
+	"%s - %s, carry",
+	"???",
+	"???",
+	"???",
+	"???",
+	"%s ^ %s",
+	"???",
+	"%s | %s",
+	"%s & %s",
+	"???",
+	"???"
 };
 
 static u16 get16(void)
@@ -60,6 +77,8 @@ static const char *b_op(void)
 		sprintf(s, "[BP+%02x]", opimm);
 		break;
 	case 1:
+		if (op0 == 13)
+			goto bad;
 		sprintf(s, "%02x", opimm);
 		break;
 	case 3:
@@ -72,23 +91,23 @@ static const char *b_op(void)
 			sprintf(s, "%s", regs[opB]);
 			break;
 		case 1:
-			if (opA == opB)
+			if (opA == opB && op0 != 13)
 				sprintf(s, "%04x", ximm);
 			else
 				goto bad;
 			break;
 		case 2:
-			if (opA == opB)
+			if (opA == opB && op0 != 13)
 				sprintf(s, "[%04x]", ximm);
 			else
 				goto bad;
 			break;
-//		case 3:
-//			if (opA == opB)
-//				sprintf(s, "%04x", ximm);
-//			else
-//				goto bad;
-//			break;
+		case 3:
+			if (op0 == 13)
+				sprintf(s, "[%04x]", ximm);
+			else
+				goto bad;
+			break;
 		case 4: case 5: case 6: case 7:
 			sprintf(s, "%s asr %x", regs[opB], (opN & 3) + 1);
 			break;
@@ -178,8 +197,16 @@ static void one_insn(void)
 		return;
 	}
 
+	// E insns
+	// ...
 
-
+	// F insns
+	if (op0 == 15) {
+		if (opA == 0 && op1 == 1) {
+			printf("call %04x\n", (opimm << 16) | ximm);
+			return;
+		}
+	}
 
 	printf("???\n");
 }
