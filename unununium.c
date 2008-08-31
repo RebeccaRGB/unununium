@@ -67,14 +67,12 @@ static u16 get16(void)
 
 static const char *b_op(void)
 {
-	u8 opN = opimm >> 3;
-	u8 opB = opimm & 7;
 	static char s[80], s2[80];
 	const char *forms[] = { "%s", "%s--", "%s++", "++%s" };
 
 	switch (op1) {
 	case 0:
-		sprintf(s, "[BP+%02x]", opimm);
+		printf("!! WHOOPS !!");
 		break;
 	case 1:
 		if (op0 == 13)
@@ -192,8 +190,10 @@ static void one_insn(void)
 	}
 
 
+	switch ((op1 << 4) | op0) {
+
 	// pop insns
-	if (op0 == 9 && op1 == 2) {
+	case 0x29:
 		if (op == 0x9a90)
 			printf("retf\n");
 		else if (op == 0x9a98)
@@ -202,66 +202,114 @@ static void one_insn(void)
 			printf("pop %s, %s from [%s]\n",
 			       regs[opA+1], regs[opA+opN], regs[opB]);
 		else
-			printf("!!! POP\n");
+			printf("BAD POP\n");
 		return;
-	}
 
 
 	// push insns
-	if (op0 == 13 && op1 == 2) {
+	case 0x2d:
 		if (opA+1 >= opN && opA < opN+7)
 			printf("push %s, %s to [%s]\n",
 			       regs[opA+1-opN], regs[opA], regs[opB]);
 		else
 			printf("!!! PUSH\n");
 		return;
-	}
 
 
-	// alu insns
-	if (op0 < 13 && op0 != 5 && op0 != 7) {
-		if (op1 == 4 && opN == 1) {
-printf("XXX1\n");
-		} else if (op1 == 4 && opN == 2) {
-printf("XXX2\n");
-		} else if (op1 == 4 && opN == 3) {
-printf("XXX3\n");
-		} else {
-			printf(alu_ops[op0], regs[opA], b_op());
-			printf("\n");
-		}
+	// alu, base+displacement
+	case 0x00:
+		printf("%s += [bp+%02x]\n", regs[opA], opimm);
 		return;
-	}
-
-
-	// store insns
-	if (op0 == 13) {
-		if (op1 == 2) {		// push insn
-			if (opA+1 >= opN && opA < opN+7)
-				printf("push %s, %s to [%s]\n",
-				       regs[opA+1-opN], regs[opA], regs[opB]);
-			else
-				printf("!!! PUSH\n");
-		} else {
-			printf("STORE: CHECKME!!!   ");
-			printf(alu_ops[op0], regs[opA], b_op());
-			printf("\n");
-		}
+	case 0x01:
+		printf("%s += [bp+%02x], carry\n", regs[opA], opimm);
 		return;
-	}
+	case 0x02:
+		printf("%s -= [bp+%02x]\n", regs[opA], opimm);
+		return;
+	case 0x03:
+		printf("%s -= [bp+%02x], carry\n", regs[opA], opimm);
+		return;
+	case 0x04:
+		printf("cmp %s, [bp+%02x]\n", regs[opA], opimm);
+		return;
+	case 0x06:
+		printf("%s = -[bp+%02x]\n", regs[opA], opimm);
+		return;
+	case 0x08:
+		printf("%s ^= [bp+%02x]\n", regs[opA], opimm);
+		return;
+	case 0x09:
+		printf("%s = [bp+%02x]\n", regs[opA], opimm);
+		return;
+	case 0x0a:
+		printf("%s |= [bp+%02x]\n", regs[opA], opimm);
+		return;
+	case 0x0b:
+		printf("%s &= [bp+%02x]\n", regs[opA], opimm);
+		return;
+	case 0x0c:
+		printf("test %s, [bp+%02x]\n", regs[opA], opimm);
+		return;
+	case 0x0d:
+		printf("[bp+%02x] = %s\n", opimm, regs[opA]);
+		return;
 
-	// E insns
-	// ...
 
-	// F insns
-	if (op0 == 15) {
-		if (opA == 0 && op1 == 1) {
-			printf("call %04x\n", (opimm << 16) | ximm);
+	default:
+		// alu insns
+		if (op0 < 13 && op0 != 5 && op0 != 7) {
+			if (op1 == 4 && (opN == 1 || opN == 2)) {
+	printf("XXX   ");
+				if (opA == opB)
+					printf(alu_ops[op0], regs[opA], b_op());
+				else {
+	printf("%s = %s %s %04x\n", regs[opA], regs[opB], alu_ops_3[op0], ximm);
+	//				printf("--->  %s = ", regs[opA]);
+	//				printf(alu_ops_3[op0], opB, ximm);
+				}
+				printf("\n");
+			} else if (op1 == 4 && opN == 3) {
+	printf("XXX3   %s = %s %s %04x\n", regs[opA], regs[opB], alu_ops_3[op0], ximm);
+	//			printf("--->  %s = ", regs[opA]);
+	//			printf(alu_ops_3[op0], opB, ximm);
+	//			printf("\n");
+			} else {
+				printf(alu_ops[op0], regs[opA], b_op());
+				printf("\n");
+			}
 			return;
 		}
-	}
 
-	printf("???\n");
+
+		// store insns
+		if (op0 == 13) {
+			if (op1 == 2) {		// push insn
+				if (opA+1 >= opN && opA < opN+7)
+					printf("push %s, %s to [%s]\n",
+					       regs[opA+1-opN], regs[opA], regs[opB]);
+				else
+					printf("!!! PUSH\n");
+			} else {
+				printf("STORE: CHECKME!!!   ");
+				printf(alu_ops[op0], regs[opA], b_op());
+				printf("\n");
+			}
+			return;
+		}
+
+		// E insns
+		// ...
+
+		// F insns
+		if (op0 == 15) {
+			if (opA == 0 && op1 == 1) {
+				printf("call %04x\n", (opimm << 16) | ximm);
+				return;
+			}
+		}
+
+		printf("???\n");
+	}
 }
 
 int main(void)
