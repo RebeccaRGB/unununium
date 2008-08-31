@@ -140,14 +140,34 @@ static void one_insn(void)
 
 	printf("%04x: ", offset);
 
+
+	// all-zero and all-one are invalid insns:
+	if (op == 0 || op == 0xffff) {
+		printf("--\n");
+		return;
+	}
+
+
+	// the top four bits are the alu op or the branch condition, or E or F
 	op0 = (op >> 12);
+
+	// the next three are usually the destination register
 	opA = (op >> 9) & 7;
+
+	// and the next three the addressing mode
 	op1 = (op >> 6) & 7;
+
+	// the next three can be anything
 	opN = (op >> 3) & 7;
+
+	// and the last three usually the second register (source register)
 	opB = op & 7;
+
+	// the last six sometimes are a single immediate number
 	opimm = op & 63;
 
 
+	// some insns need a second word:
 	if ((op1 == 4 && (opN == 1 || opN == 2 || opN == 3))
 	 || (op0 == 15 && (op1 == 1 || op1 == 2))) {
 		ximm = get16();
@@ -161,7 +181,7 @@ static void one_insn(void)
 	offset++;
 
 
-	// first, check for the branch insns
+	// first, check for the conditional branch insns
 	if (op0 < 15 && opA == 7 && op1 == 0) {
 		printf("%s %04x\n", jumps[op0], offset+opimm);
 		return;
@@ -171,7 +191,8 @@ static void one_insn(void)
 		return;
 	}
 
-	// push/pop insns
+
+	// pop insns
 	if (op0 == 9 && op1 == 2) {
 		if (op == 0x9a90)
 			printf("retf\n");
@@ -185,12 +206,33 @@ static void one_insn(void)
 		return;
 	}
 
-	// alu insns
-	if (op0 < 13 && op0 != 5 && op0 != 7) {
-		printf(alu_ops[op0], regs[opA], b_op());
-		printf("\n");
+
+	// push insns
+	if (op0 == 13 && op1 == 2) {
+		if (opA+1 >= opN && opA < opN+7)
+			printf("push %s, %s to [%s]\n",
+			       regs[opA+1-opN], regs[opA], regs[opB]);
+		else
+			printf("!!! PUSH\n");
 		return;
 	}
+
+
+	// alu insns
+	if (op0 < 13 && op0 != 5 && op0 != 7) {
+		if (op1 == 4 && opN == 1) {
+printf("XXX1\n");
+		} else if (op1 == 4 && opN == 2) {
+printf("XXX2\n");
+		} else if (op1 == 4 && opN == 3) {
+printf("XXX3\n");
+		} else {
+			printf(alu_ops[op0], regs[opA], b_op());
+			printf("\n");
+		}
+		return;
+	}
+
 
 	// store insns
 	if (op0 == 13) {
