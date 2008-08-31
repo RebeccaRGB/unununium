@@ -65,26 +65,27 @@ static u16 get16(void)
 	return x16;
 }
 
+static void print_indirect_op(u8 opN, u8 opB)
+{
+	const char *forms[] = { "[%s]", "[%s--]", "[%s++]", "[++%s]" };
+
+	if (opN & 4)
+		printf("ds:");
+	printf(forms[opN & 3], regs[opB]);
+}
+
 static const char *b_op(void)
 {
-	static char s[80], s2[80];
-	const char *forms[] = { "%s", "%s--", "%s++", "++%s" };
+	static char s[80];
 
 	switch (op1) {
 	case 0:
+	case 1:
+	case 3:
 		printf("!! WHOOPS !!");
 		break;
-	case 1:
-		if (op0 == 13)
-			goto bad;
-		sprintf(s, "%02x", opimm);
-		break;
-	case 3:
-		sprintf(s2, forms[opN & 3], regs[opB]);
-		sprintf(s, "%s[%s]", opN & 4 ? "D:" : "", s2);
-		break;
 	case 4:
-		switch(opN) {
+		switch (opN) {
 		case 0:
 			sprintf(s, "%s", regs[opB]);
 			break;
@@ -192,30 +193,6 @@ static void one_insn(void)
 
 	switch ((op1 << 4) | op0) {
 
-	// pop insns
-	case 0x29:
-		if (op == 0x9a90)
-			printf("retf\n");
-		else if (op == 0x9a98)
-			printf("reti\n");
-		else if (opA+1 < 8 && opA+opN < 8)
-			printf("pop %s, %s from [%s]\n",
-			       regs[opA+1], regs[opA+opN], regs[opB]);
-		else
-			printf("BAD POP\n");
-		return;
-
-
-	// push insns
-	case 0x2d:
-		if (opA+1 >= opN && opA < opN+7)
-			printf("push %s, %s to [%s]\n",
-			       regs[opA+1-opN], regs[opA], regs[opB]);
-		else
-			printf("!!! PUSH\n");
-		return;
-
-
 	// alu, base+displacement
 	case 0x00:
 		printf("%s += [bp+%02x]\n", regs[opA], opimm);
@@ -252,6 +229,128 @@ static void one_insn(void)
 		return;
 	case 0x0d:
 		printf("[bp+%02x] = %s\n", opimm, regs[opA]);
+		return;
+
+
+	// alu, 6-bit immediate
+	case 0x10:
+		printf("%s += %02x\n", regs[opA], opimm);
+		return;
+	case 0x11:
+		printf("%s += %02x, carry\n", regs[opA], opimm);
+		return;
+	case 0x12:
+		printf("%s -= %02x\n", regs[opA], opimm);
+		return;
+	case 0x13:
+		printf("%s -= %02x, carry\n", regs[opA], opimm);
+		return;
+	case 0x14:
+		printf("cmp %s, %02x\n", regs[opA], opimm);
+		return;
+	case 0x16:
+		printf("%s = -%02x\n", regs[opA], opimm);
+		return;
+	case 0x18:
+		printf("%s ^= %02x\n", regs[opA], opimm);
+		return;
+	case 0x19:
+		printf("%s = %02x\n", regs[opA], opimm);
+		return;
+	case 0x1a:
+		printf("%s |= %02x\n", regs[opA], opimm);
+		return;
+	case 0x1b:
+		printf("%s &= %02x\n", regs[opA], opimm);
+		return;
+	case 0x1c:
+		printf("test %s, %02x\n", regs[opA], opimm);
+		return;
+
+
+	// pop insns
+	case 0x29:
+		if (op == 0x9a90)
+			printf("retf\n");
+		else if (op == 0x9a98)
+			printf("reti\n");
+		else if (opA+1 < 8 && opA+opN < 8)
+			printf("pop %s, %s from [%s]\n",
+			       regs[opA+1], regs[opA+opN], regs[opB]);
+		else
+			printf("BAD POP\n");
+		return;
+
+
+	// push insns
+	case 0x2d:
+		if (opA+1 >= opN && opA < opN+7)
+			printf("push %s, %s to [%s]\n",
+			       regs[opA+1-opN], regs[opA], regs[opB]);
+		else
+			printf("!!! PUSH\n");
+		return;
+
+
+	// alu, indirect memory
+	case 0x30:
+		printf("%s += ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf("\n");
+		return;
+	case 0x31:
+		printf("%s += ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf(", carry\n");
+		return;
+	case 0x32:
+		printf("%s -= ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf("\n");
+		return;
+	case 0x33:
+		printf("%s -= ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf(", carry\n");
+		return;
+	case 0x34:
+		printf("cmp %s, ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf("\n");
+		return;
+	case 0x36:
+		printf("%s = -", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf("\n");
+		return;
+	case 0x38:
+		printf("%s ^= ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf("\n");
+		return;
+	case 0x39:
+		printf("%s = ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf("\n");
+		return;
+	case 0x3a:
+		printf("%s |= ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf("\n");
+		return;
+	case 0x3b:
+		printf("%s &= ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf("\n");
+		return;
+	case 0x3c:
+		printf("test %s, ", regs[opA]);
+		print_indirect_op(opN, opB);
+		printf("\n");
+		return;
+	case 0x3d:
+		print_indirect_op(opN, opB);
+		printf(" = %s\n", regs[opA]);
 		return;
 
 
