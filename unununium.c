@@ -17,40 +17,6 @@ static const char *jumps[] = {
 	"jbe", "ja", "jle", "jg", "jvc", "jvs", "jmp"
 };
 
-static const char *alu_ops[] = {
-	"%s += %s",
-	"%s += %s, carry",
-	"%s -= %s",
-	"%s -= %s, carry",
-	"cmp %s, %s",
-	"???",
-	"%s =- %s",
-	"???",
-	"%s ^= %s",
-	"%s = %s",
-	"%s |= %s",
-	"%s &= %s",
-	"test %s, %s",
-	"%2$s = %1$s"
-};
-
-static const char *alu_ops_3[] = {
-	"%s + %s",
-	"%s + %s, carry",
-	"%s - %s",
-	"%s - %s, carry",
-	"???",
-	"???",
-	"???",
-	"???",
-	"%s ^ %s",
-	"???",
-	"%s | %s",
-	"%s & %s",
-	"???",
-	"???"
-};
-
 static u16 get16(void)
 {
 	u16 x16;
@@ -77,7 +43,7 @@ static void print_alu_op_start(void)
 	printf(alu_op_start[op0], regs[opA]);
 }
 
-static void print_alu_op3_start(void)
+static void print_alu_op3(void)
 {
 	static const char *alu_op3_start[] = {
 		"%s + ", "%s + ", "%s - ", "%s - ",
@@ -88,7 +54,6 @@ static void print_alu_op3_start(void)
 
 	printf(alu_op3_start[op0], regs[opB]);
 }
-
 
 static void print_alu_op_end(void)
 {
@@ -104,65 +69,6 @@ static void print_indirect_op(void)
 	if (opN & 4)
 		printf("ds:");
 	printf(forms[opN & 3], regs[opB]);
-}
-
-static const char *b_op(void)
-{
-	static char s[80];
-
-	switch (op1) {
-	case 0:
-	case 1:
-	case 3:
-		printf("!! WHOOPS !!");
-		break;
-	case 4:
-		switch (opN) {
-		case 0:
-			sprintf(s, "%s", regs[opB]);
-			break;
-		case 1:
-			if (opA == opB && op0 != 13)
-				sprintf(s, "%04x", ximm);
-			else
-				goto bad;
-			break;
-		case 2:
-			if (opA == opB && op0 != 13)
-				sprintf(s, "[%04x]", ximm);
-			else
-				goto bad;
-			break;
-		case 3:
-			if (op0 == 13)
-				sprintf(s, "[%04x]", ximm);
-			else
-				goto bad;
-			break;
-		case 4: case 5: case 6: case 7:
-			sprintf(s, "%s asr %x", regs[opB], (opN & 3) + 1);
-			break;
-		default:
-			goto bad;
-		}
-		break;
-	case 5:
-		sprintf(s, "%s ls%c %x", regs[opB], (opN & 4) ? 'r' : 'l',
-		        (opN & 3) + 1);
-		break;
-	case 6:
-		sprintf(s, "%s ro%c %x", regs[opB], (opN & 4) ? 'r' : 'l',
-		        (opN & 3) + 1);
-		break;
-	case 7:
-		sprintf(s, "[%02x]", opimm);
-		break;
-	default:
-bad:
-		sprintf(s, "[[[%x %x %x]]]", op1, opN, opB);
-	}
-
-	return s;
 }
 
 static void one_insn(void)
@@ -325,7 +231,7 @@ static void one_insn(void)
 				goto bad;
 			if (op0 != 4 && op0 != 12)
 				printf("%s = ", regs[opA]);
-			print_alu_op3_start();
+			print_alu_op3();
 			printf("%04x", ximm);
 			print_alu_op_end();
 			return;
@@ -337,7 +243,7 @@ static void one_insn(void)
 				goto bad;
 			if (op0 != 4 && op0 != 12)
 				printf("%s = ", regs[opA]);
-			print_alu_op3_start();
+			print_alu_op3();
 			printf("[%04x]", ximm);
 			print_alu_op_end();
 			return;
@@ -350,7 +256,7 @@ static void one_insn(void)
 				goto bad;
 			printf("%s = ", regs[opA]);
 			printf("[%04x] = ", ximm);
-			print_alu_op3_start();
+			print_alu_op3();
 			printf("%s\n", regs[opA]);
 			print_alu_op_end();
 			return;
