@@ -325,6 +325,17 @@ static void one_insn(void)
 		goto dunno;
 
 
+	case 0x0f:
+		switch (opN) {
+		case 1:
+			if (opA == 7)
+				goto dunno;
+			printf("mr = %s*%s, us\n", regs[opA], regs[opB]);
+			return;
+		default:
+			goto dunno;
+		}
+
 	case 0x4f:
 		switch (opN) {
 		case 1:
@@ -336,10 +347,23 @@ static void one_insn(void)
 			goto dunno;
 		}
 
+	case 0x5f:
+		if (opA != 0)
+			goto dunno;
+		switch (opimm) {
+		case 0x08:
+			printf("irq off\n");
+			return;
+		case 0x09:
+			printf("irq on\n");
+			return;
+		default:
+			goto dunno;
+		}
+
 	case 0x0e: case 0x1e: case 0x2e: case 0x3e:
 	case 0x4e: case 0x5e: case 0x6e: case 0x7e:
-	case 0x0f: case 0x2f: case 0x3f: case 0x5f:
-	case 0x6f: case 0x7f:
+	case 0x2f: case 0x3f: case 0x6f: case 0x7f:
 	dunno:
 		printf("<DUNNO>\n");
 		return;
