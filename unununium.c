@@ -143,6 +143,10 @@ static void one_insn(void)
 	case 0x47: case 0x57: case 0x67: case 0x77:
 	case 0x87: case 0x97: case 0xa7: case 0xb7:
 	case 0xc7: case 0xd7:
+	case 0x1d: case 0x5d: case 0x6d:
+	case 0x20: case 0x21: case 0x22: case 0x23:
+	case 0x24: case 0x26: case 0x28: case 0x2a:
+	case 0x2b: case 0x2c:
 	bad:
 		printf("<BAD>\n");
 		return;
@@ -169,8 +173,6 @@ static void one_insn(void)
 		printf("%02x", opimm);
 		print_alu_op_end();
 		return;
-	case 0x1d:
-		goto bad;
 
 
 	// pop insns
@@ -195,12 +197,6 @@ static void one_insn(void)
 		else
 			goto bad;
 		return;
-
-
-	case 0x20: case 0x21: case 0x22: case 0x23:
-	case 0x24: case 0x26: case 0x28: case 0x2a:
-	case 0x2b: case 0x2c:
-		goto bad;
 
 
 	// alu, indirect memory
@@ -299,8 +295,6 @@ static void one_insn(void)
 			printf("%s lsr %x", regs[opB], (opN & 3) + 1);
 		print_alu_op_end();
 		return;
-	case 0x5d:
-		goto bad;
 
 
 	// alu, with shift
@@ -314,8 +308,6 @@ static void one_insn(void)
 			printf("%s ror %x", regs[opB], (opN & 3) + 1);
 		print_alu_op_end();
 		return;
-	case 0x6d:
-		goto bad;
 
 
 	// alu, direct memory
