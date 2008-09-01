@@ -144,7 +144,7 @@ static void one_insn(void)
 	case 0x87: case 0x97: case 0xa7: case 0xb7:
 	case 0xc7: case 0xd7:
 	bad:
-		printf("--\n");
+		printf("<BAD>\n");
 		return;
 
 
@@ -274,8 +274,15 @@ static void one_insn(void)
 		}
 
 	case 0x4d:
-		printf("<TODO>\n");
-		return;
+		switch (opN) {
+		case 3:
+			if (opA != opB)
+				goto bad;
+			printf("[%04x] = %s\n", ximm, regs[opB]);
+			return;
+		default:
+			goto bad;
+		}
 
 
 	// alu, with shift
