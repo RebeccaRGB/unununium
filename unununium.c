@@ -53,7 +53,7 @@ static void print_alu_op3(void)
 		"%s + ", "%s + ", "%s - ", "%s - ",
 		"cmp %s, ", "<BAD>", "-", "<BAD>",
 		"%s ^ ", "", "%s | ", "%s & ",
-		"test %s ,"
+		"test %s, "
 	};
 
 	printf(alu_op3_start[op0], regs[opB]);
