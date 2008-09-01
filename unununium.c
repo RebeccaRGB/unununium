@@ -172,6 +172,7 @@ static void one_insn(void)
 	case 0x1d:
 		goto bad;
 
+
 	// pop insns
 	case 0x29:
 		if (op == 0x9a90)
@@ -182,7 +183,7 @@ static void one_insn(void)
 			printf("pop %s, %s from [%s]\n",
 			       regs[opA+1], regs[opA+opN], regs[opB]);
 		else
-			printf("BAD POP\n");
+			goto bad;
 		return;
 
 
@@ -192,7 +193,7 @@ static void one_insn(void)
 			printf("push %s, %s to [%s]\n",
 			       regs[opA+1-opN], regs[opA], regs[opB]);
 		else
-			printf("!!! PUSH\n");
+			goto bad;
 		return;
 
 
@@ -275,6 +276,8 @@ static void one_insn(void)
 
 	case 0x4d:
 		switch (opN) {
+
+		// alu, direct memory
 		case 3:
 			if (opA != opB)
 				goto bad;
