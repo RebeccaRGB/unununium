@@ -255,10 +255,9 @@ static void one_insn(void)
 				goto bad;
 			if ((op0 == 6 || op0 == 9) && opA != opB)
 				goto bad;
-			printf("%s = ", regs[opA]);
 			printf("[%04x] = ", ximm);
 			print_alu_op3();
-			printf("%s\n", regs[opA]);
+			printf("%s", regs[opA]);
 			print_alu_op_end();
 			return;
 
