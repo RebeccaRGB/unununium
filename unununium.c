@@ -361,6 +361,12 @@ static void one_insn(void)
 		case 0x09:
 			printf("irq on\n");
 			return;
+		case 0x0c:
+			printf("fiq off\n");
+			return;
+		case 0x0e:
+			printf("fiq on\n");
+			return;
 		default:
 			goto dunno;
 		}
