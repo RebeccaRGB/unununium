@@ -1,15 +1,13 @@
-// Copyright 2007,2008  Segher Boessenkool  <segher@kernel.crashing.org>
+// Copyright 2008  Segher Boessenkool  <segher@kernel.crashing.org>
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef unsigned char u8;
-typedef unsigned short u16;
-typedef unsigned int u32;
+#include "types.h"
+#include "disas.h"
 
-static u32 offset = 0;
 static u8 op0, opA, op1, opN, opB, opimm;
 static u16 op, ximm;
 
@@ -20,20 +18,6 @@ static const char *jumps[] = {
 	"jb", "jae", "jge", "jl", "jne", "je", "jpl", "jmi",
 	"jbe", "ja", "jle", "jg", "jvc", "jvs", "jmp"
 };
-
-static u16 get16(void)
-{
-	u16 x16;
-	int x = getchar();
-	if (x < 0)
-		exit(0);
-	x16 = x;
-	x = getchar();
-	if (x < 0)
-		exit(0);
-	x16 |= (x << 8);
-	return x16;
-}
 
 static void print_alu_op_start(void)
 {
@@ -75,11 +59,13 @@ static void print_indirect_op(void)
 	printf(forms[opN & 3], regs[opB]);
 }
 
-static void one_insn(void)
+u32 disas(const u16 *mem, u32 offset)
 {
-	op = get16();
+	u32 len = 1;
 
 	printf("%04x: ", offset);
+
+	op = mem[offset++];
 
 
 	// the top four bits are the alu op or the branch condition, or E or F
@@ -104,32 +90,30 @@ static void one_insn(void)
 	// some insns need a second word:
 	if ((op0 < 14 && op1 == 4 && (opN == 1 || opN == 2 || opN == 3))
 	 || (op0 == 15 && (op1 == 1 || op1 == 2))) {
-		ximm = get16();
+		ximm = mem[offset++];
 		printf("%04x %04x   ", op, ximm);
-		offset++;
+		len = 2;
 	} else
 		printf("%04x        ", op);
 
 	printf("%x %x %x %x %x   ", op0, opA, op1, opN, opB);
 
-	offset++;
-
 
 	// all-zero and all-one are invalid insns:
 	if (op == 0 || op == 0xffff) {
 		printf("--\n");
-		return;
+		return 1;
 	}
 
 
 	// first, check for the conditional branch insns
 	if (op0 < 15 && opA == 7 && op1 == 0) {
 		printf("%s %04x\n", jumps[op0], offset+opimm);
-		return;
+		return 1;
 	}
 	if (op0 < 15 && opA == 7 && op1 == 1) {
 		printf("%s %04x\n", jumps[op0], offset-opimm);
-		return;
+		return 1;
 	}
 
 
@@ -149,7 +133,7 @@ static void one_insn(void)
 	case 0x2b: case 0x2c:
 	bad:
 		printf("<BAD>\n");
-		return;
+		return len;
 
 
 	// alu, base+displacement
@@ -159,10 +143,10 @@ static void one_insn(void)
 		print_alu_op_start();
 		printf("[bp+%02x]", opimm);
 		print_alu_op_end();
-		return;
+		return 1;
 	case 0x0d:
 		printf("[bp+%02x] = %s\n", opimm, regs[opA]);
-		return;
+		return 1;
 
 
 	// alu, 6-bit immediate
@@ -172,7 +156,7 @@ static void one_insn(void)
 		print_alu_op_start();
 		printf("%02x", opimm);
 		print_alu_op_end();
-		return;
+		return 1;
 
 
 	// pop insns
@@ -186,7 +170,7 @@ static void one_insn(void)
 			       regs[opA+1], regs[opA+opN], regs[opB]);
 		else
 			goto bad;
-		return;
+		return 1;
 
 
 	// push insns
@@ -196,7 +180,7 @@ static void one_insn(void)
 			       regs[opA+1-opN], regs[opA], regs[opB]);
 		else
 			goto bad;
-		return;
+		return 1;
 
 
 	// alu, indirect memory
@@ -206,11 +190,11 @@ static void one_insn(void)
 		print_alu_op_start();
 		print_indirect_op();
 		print_alu_op_end();
-		return;
+		return 1;
 	case 0x3d:
 		print_indirect_op();
 		printf(" = %s\n", regs[opA]);
-		return;
+		return 1;
 
 
 	case 0x40: case 0x41: case 0x42: case 0x43:
@@ -223,7 +207,7 @@ static void one_insn(void)
 			print_alu_op_start();
 			printf("%s", regs[opB]);
 			print_alu_op_end();
-			return;
+			return 1;
 
 		// alu, 16-bit immediate
 		case 1:
@@ -235,7 +219,7 @@ static void one_insn(void)
 			print_alu_op3();
 			printf("%04x", ximm);
 			print_alu_op_end();
-			return;
+			return 2;
 
 		// alu, direct memory
 		case 2:
@@ -247,7 +231,7 @@ static void one_insn(void)
 			print_alu_op3();
 			printf("[%04x]", ximm);
 			print_alu_op_end();
-			return;
+			return 2;
 
 		// alu, direct memory
 		case 3:
@@ -259,14 +243,14 @@ static void one_insn(void)
 			print_alu_op3();
 			printf("%s", regs[opA]);
 			print_alu_op_end();
-			return;
+			return 2;
 
 		// alu, with shift
 		default:
 			print_alu_op_start();
 			printf("%s asr %x", regs[opB], (opN & 3) + 1);
 			print_alu_op_end();
-			return;
+			return 1;
 		}
 
 	case 0x4d:
@@ -277,7 +261,7 @@ static void one_insn(void)
 			if (opA != opB)
 				goto bad;
 			printf("[%04x] = %s\n", ximm, regs[opB]);
-			return;
+			return 2;
 		default:
 			goto bad;
 		}
@@ -293,7 +277,7 @@ static void one_insn(void)
 		else
 			printf("%s lsr %x", regs[opB], (opN & 3) + 1);
 		print_alu_op_end();
-		return;
+		return 1;
 
 
 	// alu, with shift
@@ -306,7 +290,7 @@ static void one_insn(void)
 		else
 			printf("%s ror %x", regs[opB], (opN & 3) + 1);
 		print_alu_op_end();
-		return;
+		return 1;
 
 
 	// alu, direct memory
@@ -316,16 +300,16 @@ static void one_insn(void)
 		print_alu_op_start();
 		printf("[%02x]", opimm);
 		print_alu_op_end();
-		return;
+		return 1;
 	case 0x7d:
 		printf("[%02x] = %s\n", opimm, regs[opA]);
-		return;
+		return 1;
 
 
 	case 0x1f:
 		if (opA == 0) {
 			printf("call %04x\n", (opimm << 16) | ximm);
-			return;
+			return 2;
 		}
 		goto dunno;
 
@@ -336,7 +320,7 @@ static void one_insn(void)
 			if (opA == 7)
 				goto dunno;
 			printf("mr = %s*%s, us\n", regs[opA], regs[opB]);
-			return;
+			return 1;
 		default:
 			goto dunno;
 		}
@@ -347,7 +331,7 @@ static void one_insn(void)
 			if (opA == 7)
 				goto dunno;
 			printf("mr = %s*%s\n", regs[opA], regs[opB]);
-			return;
+			return 1;
 		default:
 			goto dunno;
 		}
@@ -358,16 +342,16 @@ static void one_insn(void)
 		switch (opimm) {
 		case 0x08:
 			printf("irq off\n");
-			return;
+			return 1;
 		case 0x09:
 			printf("irq on\n");
-			return;
+			return 1;
 		case 0x0c:
 			printf("fiq off\n");
-			return;
+			return 1;
 		case 0x0e:
 			printf("fiq on\n");
-			return;
+			return 1;
 		default:
 			goto dunno;
 		}
@@ -377,15 +361,10 @@ static void one_insn(void)
 	case 0x2f: case 0x3f: case 0x6f: case 0x7f:
 	dunno:
 		printf("<DUNNO>\n");
-		return;
+		return len;
 
 	default:
 		printf("<UH-OH, MY MISTAKE.  UNHANDLED, SORRY ABOUT THAT>");
+		return len;
 	}
-}
-
-int main(void)
-{
-	for (;;)
-		one_insn();
 }
