@@ -8,9 +8,6 @@
 #include "types.h"
 #include "disas.h"
 
-static u8 op0, opA, op1, opN, opB, opimm;
-static u16 op, ximm;
-
 
 static const char *regs[] = { "sp", "r1", "r2", "r3", "r4", "bp", "sr", "pc" };
 
@@ -19,7 +16,7 @@ static const char *jumps[] = {
 	"jbe", "ja", "jle", "jg", "jvc", "jvs", "jmp"
 };
 
-static void print_alu_op_start(void)
+static void print_alu_op_start(u8 op0, u8 opA)
 {
 	static const char *alu_op_start[] = {
 		"%s += ", "%s += ", "%s -= ", "%s -= ",
@@ -31,26 +28,26 @@ static void print_alu_op_start(void)
 	printf(alu_op_start[op0], regs[opA]);
 }
 
-static void print_alu_op3(void)
+static void print_alu_op3(u8 op0, u8 opB)
 {
-	static const char *alu_op3_start[] = {
+	static const char *alu_op3[] = {
 		"%s + ", "%s + ", "%s - ", "%s - ",
 		"cmp %s, ", "<BAD>", "-", "<BAD>",
 		"%s ^ ", "", "%s | ", "%s & ",
 		"test %s, "
 	};
 
-	printf(alu_op3_start[op0], regs[opB]);
+	printf(alu_op3[op0], regs[opB]);
 }
 
-static void print_alu_op_end(void)
+static void print_alu_op_end(u8 op0)
 {
 	if (op0 == 1 || op0 == 3)
 		printf(", carry");
 	printf("\n");
 }
 
-static void print_indirect_op(void)
+static void print_indirect_op(u8 opN, u8 opB)
 {
 	const char *forms[] = { "[%s]", "[%s--]", "[%s++]", "[++%s]" };
 
@@ -61,6 +58,8 @@ static void print_indirect_op(void)
 
 u32 disas(const u16 *mem, u32 offset)
 {
+	u8 op0, opA, op1, opN, opB, opimm;
+	u16 op, ximm = 0x0bad;
 	u32 len = 1;
 
 	printf("%04x: ", offset);
@@ -140,9 +139,9 @@ u32 disas(const u16 *mem, u32 offset)
 	case 0x00: case 0x01: case 0x02: case 0x03:
 	case 0x04: case 0x06: case 0x08: case 0x09:
 	case 0x0a: case 0x0b: case 0x0c:
-		print_alu_op_start();
+		print_alu_op_start(op0, opA);
 		printf("[bp+%02x]", opimm);
-		print_alu_op_end();
+		print_alu_op_end(op0);
 		return 1;
 	case 0x0d:
 		printf("[bp+%02x] = %s\n", opimm, regs[opA]);
@@ -153,9 +152,9 @@ u32 disas(const u16 *mem, u32 offset)
 	case 0x10: case 0x11: case 0x12: case 0x13:
 	case 0x14: case 0x16: case 0x18: case 0x19:
 	case 0x1a: case 0x1b: case 0x1c:
-		print_alu_op_start();
+		print_alu_op_start(op0, opA);
 		printf("%02x", opimm);
-		print_alu_op_end();
+		print_alu_op_end(op0);
 		return 1;
 
 
@@ -187,12 +186,12 @@ u32 disas(const u16 *mem, u32 offset)
 	case 0x30: case 0x31: case 0x32: case 0x33:
 	case 0x34: case 0x36: case 0x38: case 0x39:
 	case 0x3a: case 0x3b: case 0x3c:
-		print_alu_op_start();
-		print_indirect_op();
-		print_alu_op_end();
+		print_alu_op_start(op0, opA);
+		print_indirect_op(opN, opB);
+		print_alu_op_end(op0);
 		return 1;
 	case 0x3d:
-		print_indirect_op();
+		print_indirect_op(opN, opB);
 		printf(" = %s\n", regs[opA]);
 		return 1;
 
@@ -204,9 +203,9 @@ u32 disas(const u16 *mem, u32 offset)
 
 		// alu, register
 		case 0:
-			print_alu_op_start();
+			print_alu_op_start(op0, opA);
 			printf("%s", regs[opB]);
-			print_alu_op_end();
+			print_alu_op_end(op0);
 			return 1;
 
 		// alu, 16-bit immediate
@@ -216,9 +215,9 @@ u32 disas(const u16 *mem, u32 offset)
 				goto bad;
 			if (op0 != 4 && op0 != 12)
 				printf("%s = ", regs[opA]);
-			print_alu_op3();
+			print_alu_op3(op0, opB);
 			printf("%04x", ximm);
-			print_alu_op_end();
+			print_alu_op_end(op0);
 			return 2;
 
 		// alu, direct memory
@@ -228,9 +227,9 @@ u32 disas(const u16 *mem, u32 offset)
 				goto bad;
 			if (op0 != 4 && op0 != 12)
 				printf("%s = ", regs[opA]);
-			print_alu_op3();
+			print_alu_op3(op0, opB);
 			printf("[%04x]", ximm);
-			print_alu_op_end();
+			print_alu_op_end(op0);
 			return 2;
 
 		// alu, direct memory
@@ -240,16 +239,16 @@ u32 disas(const u16 *mem, u32 offset)
 			if ((op0 == 6 || op0 == 9) && opA != opB)
 				goto bad;
 			printf("[%04x] = ", ximm);
-			print_alu_op3();
+			print_alu_op3(op0, opB);
 			printf("%s", regs[opA]);
-			print_alu_op_end();
+			print_alu_op_end(op0);
 			return 2;
 
 		// alu, with shift
 		default:
-			print_alu_op_start();
+			print_alu_op_start(op0, opA);
 			printf("%s asr %x", regs[opB], (opN & 3) + 1);
-			print_alu_op_end();
+			print_alu_op_end(op0);
 			return 1;
 		}
 
@@ -271,12 +270,12 @@ u32 disas(const u16 *mem, u32 offset)
 	case 0x50: case 0x51: case 0x52: case 0x53:
 	case 0x54: case 0x56: case 0x58: case 0x59:
 	case 0x5a: case 0x5b: case 0x5c:
-		print_alu_op_start();
+		print_alu_op_start(op0, opA);
 		if ((opN & 4) == 0)
 			printf("%s lsl %x", regs[opB], (opN & 3) + 1);
 		else
 			printf("%s lsr %x", regs[opB], (opN & 3) + 1);
-		print_alu_op_end();
+		print_alu_op_end(op0);
 		return 1;
 
 
@@ -284,12 +283,12 @@ u32 disas(const u16 *mem, u32 offset)
 	case 0x60: case 0x61: case 0x62: case 0x63:
 	case 0x64: case 0x66: case 0x68: case 0x69:
 	case 0x6a: case 0x6b: case 0x6c:
-		print_alu_op_start();
+		print_alu_op_start(op0, opA);
 		if ((opN & 4) == 0)
 			printf("%s rol %x", regs[opB], (opN & 3) + 1);
 		else
 			printf("%s ror %x", regs[opB], (opN & 3) + 1);
-		print_alu_op_end();
+		print_alu_op_end(op0);
 		return 1;
 
 
@@ -297,9 +296,9 @@ u32 disas(const u16 *mem, u32 offset)
 	case 0x70: case 0x71: case 0x72: case 0x73:
 	case 0x74: case 0x76: case 0x78: case 0x79:
 	case 0x7a: case 0x7b: case 0x7c:
-		print_alu_op_start();
+		print_alu_op_start(op0, opA);
 		printf("[%02x]", opimm);
-		print_alu_op_end();
+		print_alu_op_end(op0);
 		return 1;
 	case 0x7d:
 		printf("[%02x] = %s\n", opimm, regs[opA]);
