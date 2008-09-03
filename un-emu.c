@@ -128,6 +128,10 @@ static void step(void)
 			if ((reg[6] & 0x0140) == 0x0040)
 				goto do_jump;
 			break;
+		case 10:
+			if ((reg[6] & 0x0180) != 0)
+				goto do_jump;
+			break;
 		case 11:
 			if ((reg[6] & 0x0180) == 0)
 				goto do_jump;
@@ -165,6 +169,20 @@ static void step(void)
 
 	if (op0 == 15) {
 		switch (op1) {
+		case 0:
+			if (opN == 1) {
+				if (opA == 7)
+					goto bad;
+				u32 x = reg[opA]*reg[opB];
+//printf("MUL US: %08x\n", x);
+				if (reg[opB] & 0x8000)
+					x -= reg[opA] << 10;
+//printf("MUL US: %08x\n", x);
+				reg[4] = x >> 16;
+				reg[3] = x;
+				return;
+			} else
+				goto bad;
 		case 1:		// call
 			x1 = mem[cs_pc()];
 			reg[7]++;
@@ -257,7 +275,7 @@ static void step(void)
 		goto bad;
 	}
 
-printf("--> args: %04x %04x\n", x0, x1);
+//printf("--> args: %04x %04x\n", x0, x1);
 
 	// then, perform the alu op
 	switch (op0) {
@@ -309,7 +327,7 @@ printf("--> args: %04x %04x\n", x0, x1);
 	if (op0 == 4 || op0 == 12)
 		return;
 
-printf("--> result: %04x\n", x);
+//printf("--> result: %04x\n", x);
 
 	if (op1 == 4 && opN == 3) {
 		store(x, d);
@@ -343,7 +361,8 @@ int main(void)
 	reg[7] = mem[0xfff7];	// reset vector
 
 	for (;;) {
-		print_state();
+		if (insn_count % 1000000 == 0)
+			print_state();
 		step();
 		insn_count++;
 	}
