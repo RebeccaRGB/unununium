@@ -331,7 +331,7 @@ static void step(void)
 
 	if (op1 == 4 && opN == 3) {
 		store(x, d);
-		printf("4.3 STORE STRANGE: [%04x] = %04x\n", d, x);
+//printf("4.3 STORE STRANGE: [%04x] = %04x\n", d, x);
 	} else
 		reg[opA] = x;
 
@@ -354,8 +354,11 @@ int main(void)
 
 	n = fread(mem, 2, N_MEM, stdin);
 
+// gross, but whatever
+#ifdef _BIG_ENDIAN
 	for (i = 0; i < n; i++)
 		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
+#endif
 
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector
