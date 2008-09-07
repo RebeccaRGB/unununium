@@ -70,7 +70,7 @@ static void store(u16 val, u32 addr)
 	printf("UNKNOWN STORE %04x to %04x\n", val, addr);
 }
 
-static u16 load(u32 addr)
+static u16 io_load(u32 addr)
 {
 	u16 val = mem[addr];
 
@@ -139,6 +139,19 @@ static u16 load(u32 addr)
 	return mem[addr];
 }
 
+static inline u16 load(u32 addr)
+{
+	u16 val = mem[addr];
+
+	if (addr < 0x2800)	// RAM
+		return val;
+
+	if (addr >= 0x4000)	// ROM
+		return val;
+
+	return io_load(addr);
+}
+
 static void dump(u32 addr, u32 len)
 {
 	u32 off, i;
@@ -152,7 +165,7 @@ static void dump(u32 addr, u32 len)
 	}
 }
 
-static u32 cs_pc(void)
+static inline u32 cs_pc(void)
 {
 	return ((reg[6] & 0x3f) << 16) | reg[7];
 }
