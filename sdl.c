@@ -10,11 +10,74 @@ static u16 *screen;
 static u32 pitch;
 
 
-static u8 x58(u32 x)
+static void blit_16x16x64(u16 *dest, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
 {
-	x &= 31;
-	x *= 33;
-	return x / 4;
+	u32 x, y;
+	u16 *m = mem + bitmap + 96*tile;
+
+	for (y = 0; y < 16; y++) {
+		u16 *p = dest + pitch*y;
+
+		for (x = 0; x < 2; x++) {
+			u16 b;
+			u32 c;
+
+			u16 b0 = *m++;
+			u16 b1 = *m++;
+			u16 b2 = *m++;
+			b0 = (b0 << 8) | (b0 >> 8);
+			b1 = (b1 << 8) | (b1 >> 8);
+			b2 = (b2 << 8) | (b2 >> 8);
+
+			b = b0 >> 10;
+			c = palette[b];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			b = (b0 >> 4) & 0x3f;
+			c = palette[b];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			b = ((b0 << 2) & 0x3c) | (b1 >> 14);
+			c = palette[b];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			b = (b1 >> 8) & 0x3f;
+			c = palette[b];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			b = (b1 >> 2) & 0x3f;
+			c = palette[b];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			b = ((b1 << 4) & 0x30) | (b2 >> 12);
+			c = palette[b];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			b = (b2 >> 6) & 0x3f;
+			c = palette[b];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			b = b2 & 0x3f;
+			c = palette[b];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+		}
+	}
 }
 
 static void blit_16x16x256(u16 *dest, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
@@ -46,76 +109,17 @@ static void blit_16x16x256(u16 *dest, u16 *mem, u32 bitmap, u16 tile, u32 *palet
 
 static void blit_page_16x16x64(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
 {
-	u32 x0, y0, x1, y1;
+	u32 x0, y0;
 
 	for (y0 = 0; y0 < 15; y0++)
 		for (x0 = 0; x0 < 20; x0++) {
 			u16 tile = mem[tilemap + x0 + 32*y0];
-			u16 *buf = screen + 16*pitch*y0 + 16*x0;
+			u16 *dest = screen + 16*pitch*y0 + 16*x0;
 
 			if (tile == 0)
 				continue;
 
-			for (y1 = 0; y1 < 16; y1++)
-				for (x1 = 0; x1 < 2; x1++) {
-					u32 c;
-					u32 o = bitmap + 96*tile + 6*y1 + 3*x1;
-
-					u16 b0 = mem[o];
-					u16 b1 = mem[o+1];
-					u16 b2 = mem[o+2];
-					b0 = (b0 << 8) | (b0 >> 8);
-					b1 = (b1 << 8) | (b1 >> 8);
-					b0 = (b2 << 8) | (b2 >> 8);
-
-					c = b0 >> 10;
-					c = palette[c];
-					if (c == (u32)-1)
-						continue;
-					buf[pitch*y1 + 8*x1] = c;
-
-					c = (b0 >> 4) & 0x3f;
-					c = palette[c];
-					if (c == (u32)-1)
-						continue;
-					buf[pitch*y1 + 8*x1 + 1] = c;
-
-					c = ((b0 << 2) & 0x3c) | (b1 >> 14);
-					c = palette[c];
-					if (c == (u32)-1)
-						continue;
-					buf[pitch*y1 + 8*x1 + 2] = c;
-
-					c = (b1 >> 8) & 0x3f;
-					c = palette[c];
-					if (c == (u32)-1)
-						continue;
-					buf[pitch*y1 + 8*x1 + 3] = c;
-
-					c = (b1 >> 2) & 0x3f;
-					c = palette[c];
-					if (c == (u32)-1)
-						continue;
-					buf[pitch*y1 + 8*x1 + 4] = c;
-
-					c = ((b1 << 4) & 0x30) | (b2 >> 12);
-					c = palette[c];
-					if (c == (u32)-1)
-						continue;
-					buf[pitch*y1 + 8*x1 + 5] = c;
-
-					c = (b2 >> 6) & 0x3f;
-					c = palette[c];
-					if (c == (u32)-1)
-						continue;
-					buf[pitch*y1 + 8*x1 + 6] = c;
-
-					c = b2 & 0x3f;
-					c = palette[c];
-					if (c == (u32)-1)
-						continue;
-					buf[pitch*y1 + 8*x1 + 7] = c;
-				}
+			blit_16x16x64(dest, mem, bitmap, tile, palette);
 		}
 }
 
@@ -149,6 +153,13 @@ static void blit_page(u16 *mem, u32 page, u32 bitmap, u32 tilemap, u32 mode,
 			fprintf(stderr, "page %u mode unexpected: %04x\n",
 			        page, mode);
 	}
+}
+
+static u8 x58(u32 x)
+{
+	x &= 31;
+	x *= 33;
+	return x / 4;
 }
 
 void update_screen(u16 *mem)
@@ -208,6 +219,11 @@ void update_screen(u16 *mem)
 
 	blit_page(mem, 0, 0x40*mem[0x2820], mem[0x2814], mem[0x2812], palette);
 	blit_page(mem, 1, 0x40*mem[0x2821], mem[0x281a], mem[0x2818], palette);
+
+	for (n = 0; n < 256; n++)
+		if (mem[0x2c00 + 4*n])
+			printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
+			       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
 
 	if (SDL_MUSTLOCK(surface))
 		SDL_UnlockSurface(surface);
