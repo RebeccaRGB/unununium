@@ -5,20 +5,59 @@
 #include "sdl.h"
 
 
+static const u8 sizes[] = { 8, 16, 32, 64 };
+
 static SDL_Surface *surface;
 static u16 *screen;
 static u32 pitch;
 
 
-static void blit_16x16x64(u16 *dest, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
+static void blit_16(u16 *dest, u32 w, u32 h, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
 {
 	u32 x, y;
-	u16 *m = mem + bitmap + 96*tile;
+	u16 *m = mem + bitmap + w*h/4*tile;
 
-	for (y = 0; y < 16; y++) {
+	for (y = 0; y < h; y++) {
 		u16 *p = dest + pitch*y;
 
-		for (x = 0; x < 2; x++) {
+		for (x = 0; x < w; x += 2) {
+			u16 b;
+			u32 c;
+
+			b = *m++;
+
+			c = palette[(b >> 4) & 0x0f];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			c = palette[b & 0x0f];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			c = palette[(b >> 12) & 0x0f];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+
+			c = palette[(b >> 8) & 0x0f];
+			if (c == (u32)-1)
+				c = *p;
+			*p++ = c;
+		}
+	}
+}
+
+static void blit_64(u16 *dest, u32 w, u32 h, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
+{
+	u32 x, y;
+	u16 *m = mem + bitmap + 3*w*h/8*tile;
+
+	for (y = 0; y < h; y++) {
+		u16 *p = dest + pitch*y;
+
+		for (x = 0; x < w; x += 8) {
 			u16 b;
 			u32 c;
 
@@ -80,15 +119,15 @@ static void blit_16x16x64(u16 *dest, u16 *mem, u32 bitmap, u16 tile, u32 *palett
 	}
 }
 
-static void blit_16x16x256(u16 *dest, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
+static void blit_256(u16 *dest, u32 w, u32 h, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
 {
 	u32 x, y;
-	u16 *m = mem + bitmap + 128*tile;
+	u16 *m = mem + bitmap + w*h/2*tile;
 
-	for (y = 0; y < 16; y++) {
+	for (y = 0; y < h; y++) {
 		u16 *p = dest + pitch*y;
 
-		for (x = 0; x < 8; x++) {
+		for (x = 0; x < w; x += 2) {
 			u16 b;
 			u32 c;
 
@@ -119,7 +158,7 @@ static void blit_page_16x16x64(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
 			if (tile == 0)
 				continue;
 
-			blit_16x16x64(dest, mem, bitmap, tile, palette);
+			blit_64(dest, 16, 16, mem, bitmap, tile, palette);
 		}
 }
 
@@ -135,7 +174,7 @@ static void blit_page_16x16x256(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
 			if (tile == 0)
 				continue;
 
-			blit_16x16x256(dest, mem, bitmap, tile, palette);
+			blit_256(dest, 16, 16, mem, bitmap, tile, palette);
 		}
 }
 
@@ -152,6 +191,49 @@ static void blit_page(u16 *mem, u32 page, u32 bitmap, u32 tilemap, u32 mode,
 		default:
 			fprintf(stderr, "page %u mode unexpected: %04x\n",
 			        page, mode);
+	}
+}
+
+static void blit_sprite(u16 *mem, u16 *sprite, u32 *palette)
+{
+	u16 tile, x, y, flags;
+	u16 *dest;
+	u32 bitmap = 0x40*mem[0x2822];
+	u32 w, h;
+
+	tile = *sprite++;
+	x = 160 + *sprite++;
+	y = 120 - *sprite++;
+	flags = *sprite++;
+
+	w = sizes[(flags >> 4) & 3];
+	h = sizes[(flags >> 6) & 3];
+
+	if (x + w > 320 || x >= 320 || y + h > 240 || y >= 240) {
+		printf("*** CLIP\n");
+		return;
+	}
+
+	palette += (flags >> 4) & 0xf0;
+
+	dest = screen + pitch*y + x;
+
+	if ((flags & 0x0c) != 0)
+		printf("DANGER WILL ROBINSON\n");
+
+	switch (flags & 3) {
+	case 0:
+		printf("DANGER WILL ROBINSON\n");
+		break;
+	case 1:
+		blit_16(dest, w, h, mem, bitmap, tile, palette);
+		break;
+	case 2:
+		blit_64(dest, w, h, mem, bitmap, tile, palette);
+		break;
+	case 3:
+		blit_256(dest, w, h, mem, bitmap, tile, palette);
+		break;
 	}
 }
 
@@ -221,9 +303,11 @@ void update_screen(u16 *mem)
 	blit_page(mem, 1, 0x40*mem[0x2821], mem[0x281a], mem[0x2818], palette);
 
 	for (n = 0; n < 256; n++)
-		if (mem[0x2c00 + 4*n])
+		if (mem[0x2c00 + 4*n]) {
 			printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
 			       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
+			blit_sprite(mem, mem + 0x2c00 + 4*n, palette);
+		}
 
 	if (SDL_MUSTLOCK(surface))
 		SDL_UnlockSurface(surface);
