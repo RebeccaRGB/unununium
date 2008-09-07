@@ -50,3 +50,8 @@ void sdl_init(void)
 		SDL_UpdateRect(screen, 0, 0, 320, 240);
 	}
 }
+
+void update_screen(u16 *mem)
+{
+	printf("LOOK, NO HANDS!\n");
+}
