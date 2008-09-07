@@ -20,7 +20,7 @@ static void blit_16(u16 *dest, u32 w, u32 h, u16 *mem, u32 bitmap, u16 tile, u32
 	for (y = 0; y < h; y++) {
 		u16 *p = dest + pitch*y;
 
-		for (x = 0; x < w; x += 2) {
+		for (x = 0; x < w; x += 4) {
 			u16 b;
 			u32 c;
 
