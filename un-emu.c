@@ -26,6 +26,19 @@ static u8 irq, fiq;
 static u64 insn_count = 0;
 
 
+static void dump(u32 addr, u32 len)
+{
+	u32 off, i;
+
+	for (off = addr & ~0x0f; off < addr + len; off += 0x10) {
+		printf("%06x:", off);
+
+		for (i = 0; i < 16; i++)
+			printf(" %04x", mem[off+i]);
+		printf("\n");
+	}
+}
+
 static void store(u16 val, u32 addr)
 {
 	if (store_trace)
@@ -37,8 +50,10 @@ static void store(u16 val, u32 addr)
 		return;
 
 	if (addr >= 0x2800 && addr < 0x2900) {		// video regs
-		if (addr == 0x2863)	// video IRQ ACK
+		if (addr == 0x2863) {	// video IRQ ACK
 			update_screen(mem);
+			dump(0x2800, 0x100);
+		}
 		//printf("STORE %04x to %04x\n", val, addr);
 		return;
 	}
@@ -150,19 +165,6 @@ static inline u16 load(u32 addr)
 		return val;
 
 	return io_load(addr);
-}
-
-static void dump(u32 addr, u32 len)
-{
-	u32 off, i;
-
-	for (off = addr & ~0x0f; off < addr + len; off += 0x10) {
-		printf("%06x:", off);
-
-		for (i = 0; i < 16; i++)
-			printf(" %04x", mem[off+i]);
-		printf("\n");
-	}
 }
 
 static inline u32 cs_pc(void)
@@ -606,13 +608,20 @@ static void do_irq(int irqno)
 
 static void emu(void)
 {
-	for (;;) {
-		if (trace)
-			print_state();
+	int i;
 
-		if (cs_pc() == 0x3316e) {
-			printf("##### SHOW SPRITE %04x at (%04x,%04x) flags %04x\n",
-			       mem[reg[0]+3], mem[reg[0]+4], mem[reg[0]+5], mem[reg[0]+6]);
+	for (;;) {
+		for (i = 0; i < 0x1000; i++) {
+			if (trace)
+				print_state();
+
+			if (cs_pc() == 0x3316e) {
+				printf("##### SHOW SPRITE %04x at (%04x,%04x) flags %04x\n",
+				       mem[reg[0]+3], mem[reg[0]+4], mem[reg[0]+5], mem[reg[0]+6]);
+			}
+
+			step();
+			insn_count++;
 		}
 
 		// flip some I/O reg bits
@@ -626,9 +635,6 @@ static void emu(void)
 		// trigger an interrupt
 		if ((insn_count & 0x0001ffff) == 0)
 			do_irq(random() % 9);
-
-		step();
-		insn_count++;
 	}
 }
 
