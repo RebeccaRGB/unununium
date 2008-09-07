@@ -604,23 +604,8 @@ static void do_irq(int irqno)
 	reg[6] = 0;
 }
 
-int main(int argc, char *argv[])
+static void emu(void)
 {
-	u32 i, n;
-
-	n = fread(mem, 2, N_MEM, stdin);
-
-// gross, but whatever.  one day i'll fix this, but not today
-#ifdef _BIG_ENDIAN
-	for (i = 0; i < n; i++)
-		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
-#endif
-
-	memset(reg, 0, sizeof reg);
-	reg[7] = mem[0xfff7];	// reset vector
-
-	sdl_init();
-
 	for (;;) {
 		if (trace)
 			print_state();
@@ -645,6 +630,26 @@ int main(int argc, char *argv[])
 		step();
 		insn_count++;
 	}
+}
+
+int main(int argc, char *argv[])
+{
+	u32 i, n;
+
+	n = fread(mem, 2, N_MEM, stdin);
+
+// gross, but whatever.  one day i'll fix this, but not today
+#ifdef _BIG_ENDIAN
+	for (i = 0; i < n; i++)
+		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
+#endif
+
+	memset(reg, 0, sizeof reg);
+	reg[7] = mem[0xfff7];	// reset vector
+
+	sdl_init();
+
+	emu();
 
 	return 0;
 }
