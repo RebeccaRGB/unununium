@@ -59,7 +59,82 @@ static u8 x58(u32 x)
 	return x / 4;
 }
 
-void blit_page(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
+void blit_page_16x16x64(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
+{
+	u32 x0, y0, x1, y1;
+
+	for (y0 = 0; y0 < 15; y0++)
+		for (x0 = 0; x0 < 20; x0++) {
+			u16 tile = mem[tilemap + x0 + 32*y0];
+			u16 *buf = (u16 *)screen->pixels + 8*y0*screen->pitch + 16*x0;
+
+			if (tile == 0)
+				continue;
+
+			for (y1 = 0; y1 < 16; y1++)
+				for (x1 = 0; x1 < 2; x1++) {
+					u32 c;
+					u32 o = bitmap + 96*tile + 6*y1 + 3*x1;
+
+					u16 b0 = mem[o];
+					u16 b1 = mem[o+1];
+					u16 b2 = mem[o+2];
+					b0 = (b0 << 8) | (b0 >> 8);
+					b1 = (b1 << 8) | (b1 >> 8);
+					b0 = (b2 << 8) | (b2 >> 8);
+
+					c = b0 >> 10;
+					c = palette[c];
+					if (c == (u32)-1)
+						continue;
+					buf[y1*screen->pitch/2 + 8*x1] = c;
+
+					c = (b0 >> 4) & 0x3f;
+					c = palette[c];
+					if (c == (u32)-1)
+						continue;
+					buf[y1*screen->pitch/2 + 8*x1 + 1] = c;
+
+					c = ((b0 << 2) & 0x3c) | (b1 >> 14);
+					c = palette[c];
+					if (c == (u32)-1)
+						continue;
+					buf[y1*screen->pitch/2 + 8*x1 + 2] = c;
+
+					c = (b1 >> 8) & 0x3f;
+					c = palette[c];
+					if (c == (u32)-1)
+						continue;
+					buf[y1*screen->pitch/2 + 8*x1 + 3] = c;
+
+					c = (b1 >> 2) & 0x3f;
+					c = palette[c];
+					if (c == (u32)-1)
+						continue;
+					buf[y1*screen->pitch/2 + 8*x1 + 4] = c;
+
+					c = ((b1 << 4) & 0x30) | (b2 >> 12);
+					c = palette[c];
+					if (c == (u32)-1)
+						continue;
+					buf[y1*screen->pitch/2 + 8*x1 + 5] = c;
+
+					c = (b2 >> 6) & 0x3f;
+					c = palette[c];
+					if (c == (u32)-1)
+						continue;
+					buf[y1*screen->pitch/2 + 8*x1 + 6] = c;
+
+					c = b2 & 0x3f;
+					c = palette[c];
+					if (c == (u32)-1)
+						continue;
+					buf[y1*screen->pitch/2 + 8*x1 + 7] = c;
+				}
+		}
+}
+
+void blit_page_16x16x256(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
 {
 	u32 x0, y0, x1, y1;
 
@@ -89,6 +164,22 @@ void blit_page(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
 					buf[y1*screen->pitch/2 + x1] = c;
 				}
 		}
+}
+
+void blit_page(u16 *mem, u32 page, u32 bitmap, u32 tilemap, u32 mode,
+               u32 *palette)
+{
+	switch (mode & 0xff) {
+		case 0x52:
+			blit_page_16x16x64(mem, bitmap, tilemap, palette);
+			break;
+		case 0x53:
+			blit_page_16x16x256(mem, bitmap, tilemap, palette);
+			break;
+		default:
+			fprintf(stderr, "page %u mode unexpected: %04x\n",
+			        page, mode);
+	}
 }
 
 void update_screen(u16 *mem)
@@ -146,8 +237,8 @@ void update_screen(u16 *mem)
 			exit(1);
 		}
 
-	blit_page(mem, 0x40*mem[0x2820], mem[0x2814], palette);
-	blit_page(mem, 0x40*mem[0x2821], mem[0x281a], palette);
+	blit_page(mem, 0, 0x40*mem[0x2820], mem[0x2814], mem[0x2812], palette);
+	blit_page(mem, 1, 0x40*mem[0x2821], mem[0x281a], mem[0x2818], palette);
 
 	if (SDL_MUSTLOCK(screen))
 		SDL_UnlockSurface(screen);
