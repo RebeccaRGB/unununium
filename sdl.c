@@ -51,6 +51,13 @@ void sdl_init(void)
 	}
 }
 
+static u8 x58(u32 x)
+{
+	x &= 31;
+	x *= 33;
+	return x / 4;
+}
+
 void update_screen(u16 *mem)
 {
 	printf("\n\n");
@@ -79,6 +86,17 @@ void update_screen(u16 *mem)
 
 	printf("\n");
 
+	u32 palette[256];
+	u32 n;
+	for (n = 0; n < 256; n++) {
+		u32 c = mem[0x2b00 + n];
+		if (c & 0x8000)
+			c = -1;
+		else
+			c = SDL_MapRGB(screen->format, x58(c >> 10), x58(c >> 5), x58(c));
+		palette[n] = c;
+	}
+
 	if (SDL_MUSTLOCK(screen))
 		if (SDL_LockSurface(screen) < 0) {
 			printf("oh crap.\n");
@@ -98,7 +116,7 @@ void update_screen(u16 *mem)
 
 			for (y1 = 0; y1 < 16; y1++)
 				for (x1 = 0; x1 < 16; x1++) {
-					u16 c;
+					u32 c;
 
 					c = mem[bitmap + 128*tile + (16*y1 + x1)/2];
 					if (x1 & 1)
@@ -106,9 +124,9 @@ void update_screen(u16 *mem)
 					else
 						c &= 0xff;
 
-					c = mem[0x2b00 + c];
+					c = palette[c];
 
-					if (c & 0x8000)
+					if (c == -1)
 						continue;
 
 					u16 *buf = (u16 *)screen->pixels + (16*y0 + y1)*screen->pitch/2 + (16*x0 + x1);
