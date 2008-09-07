@@ -202,7 +202,7 @@ static void blit_sprite(u16 *mem, u16 *sprite, u32 *palette)
 	u32 w, h;
 
 	tile = *sprite++;
-	x = 160 + *sprite++;
+	x = 160 - 16 + *sprite++;
 	y = 120 - *sprite++;
 	flags = *sprite++;
 
