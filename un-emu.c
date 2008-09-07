@@ -66,15 +66,15 @@ static void store(u16 val, u32 addr)
 		return;
 	}
 	if (addr >= 0x3000 && addr < 0x3200) {		// audio something (32 channels)
-		printf("STORE %04x to %04x\n", val, addr);
+		//printf("STORE %04x to %04x\n", val, addr);
 		return;
 	}
 	if (addr >= 0x3200 && addr < 0x3300) {		// audio something
-		printf("STORE %04x to %04x\n", val, addr);
+		//printf("STORE %04x to %04x\n", val, addr);
 		return;
 	}
 	if (addr >= 0x3400 && addr < 0x3600) {		// audio something (two blocks)
-		printf("STORE %04x to %04x\n", val, addr);
+		//printf("STORE %04x to %04x\n", val, addr);
 		return;
 	}
 	if (addr >= 0x3d00 && addr < 0x3e00) {		// I/O
@@ -113,15 +113,15 @@ static u16 io_load(u32 addr)
 		return val;
 	}
 	if (addr >= 0x3000 && addr < 0x3200) {		// audio something
-		printf("LOAD %04x from %04x\n", val, addr);
+		//printf("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
 	if (addr >= 0x3200 && addr < 0x3300) {		// audio something
-		printf("LOAD %04x from %04x\n", val, addr);
+		//printf("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
 	if (addr >= 0x3400 && addr < 0x3600) {		// audio something
-		printf("LOAD %04x from %04x\n", val, addr);
+		//printf("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
 	if (addr >= 0x3d00 && addr < 0x3e00) {		// I/O

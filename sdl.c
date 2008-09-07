@@ -194,31 +194,31 @@ void update_screen(u16 *mem)
 		return;
 	last = now;
 
-	printf("\n\n");
+	printf("\033[H\033[2J\n\n");
 	printf("-----  VIDEO UPDATE  -----\n");
 
-	printf("page 0:\n");
-	printf("  dunno0 = %04x\n", mem[0x2810]);
-	printf("  dunno1 = %04x\n", mem[0x2811]);
-	printf("  mode   = %04x\n", mem[0x2812]);
-	printf("  flags  = %04x\n", mem[0x2813]);
-	printf("  tiles  = %04x\n", mem[0x2814]);
-	printf("  dunno5 = %04x\n", mem[0x2815]);
-	printf("  bitmap = %04x\n", mem[0x2820]);
+//	printf("page 0:\n");
+//	printf("  dunno0 = %04x\n", mem[0x2810]);
+//	printf("  dunno1 = %04x\n", mem[0x2811]);
+//	printf("  mode   = %04x\n", mem[0x2812]);
+//	printf("  flags  = %04x\n", mem[0x2813]);
+//	printf("  tiles  = %04x\n", mem[0x2814]);
+//	printf("  dunno5 = %04x\n", mem[0x2815]);
+//	printf("  bitmap = %04x\n", mem[0x2820]);
 
-	printf("page 1:\n");
-	printf("  dunno0 = %04x\n", mem[0x2816]);
-	printf("  dunno1 = %04x\n", mem[0x2817]);
-	printf("  mode   = %04x\n", mem[0x2818]);
-	printf("  flags  = %04x\n", mem[0x2819]);
-	printf("  tiles  = %04x\n", mem[0x281a]);
-	printf("  dunno5 = %04x\n", mem[0x281b]);
-	printf("  bitmap = %04x\n", mem[0x2821]);
+//	printf("page 1:\n");
+//	printf("  dunno0 = %04x\n", mem[0x2816]);
+//	printf("  dunno1 = %04x\n", mem[0x2817]);
+//	printf("  mode   = %04x\n", mem[0x2818]);
+//	printf("  flags  = %04x\n", mem[0x2819]);
+//	printf("  tiles  = %04x\n", mem[0x281a]);
+//	printf("  dunno5 = %04x\n", mem[0x281b]);
+//	printf("  bitmap = %04x\n", mem[0x2821]);
 
-	printf("sprites:\n");
-	printf("  bitmap = %04x\n", mem[0x2822]);
+//	printf("sprites:\n");
+//	printf("  bitmap = %04x\n", mem[0x2822]);
 
-	printf("\n");
+//	printf("\n");
 
 	u32 palette[256];
 	u32 n;
