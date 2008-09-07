@@ -1,7 +1,7 @@
 CC := gcc
-CFLAGS := -Wall -W -O2 $(shell sdl-config --cflags)
+CFLAGS := -Wall -W -O2 -g $(shell sdl-config --cflags)
 #CFLAGS := -Wall -W -O0 -g $(shell sdl-config --cflags)
-LDFLAGS := -lpng $(shell sdl-config --libs)
+LDFLAGS := -g -lpng $(shell sdl-config --libs)
 
 all: un-disas un-emu     page0 page1
 
