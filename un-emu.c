@@ -633,8 +633,11 @@ static void emu(void)
 			print_state();
 
 		// trigger an interrupt
-		if ((insn_count & 0x0001ffff) == 0)
-			do_irq(random() % 9);
+		if ((insn_count & 0x00007fff) == 0)
+			do_irq(0);
+
+		if ((insn_count & 0x0001ffff) == 0x14000)
+			do_irq(1 + (random() % 8));
 	}
 }
 
@@ -654,6 +657,8 @@ int main(int argc, char *argv[])
 	reg[7] = mem[0xfff7];	// reset vector
 
 	sdl_init();
+
+srandom(42);
 
 	emu();
 
