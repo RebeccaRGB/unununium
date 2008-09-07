@@ -618,15 +618,15 @@ int main(int argc, char *argv[])
 		}
 
 		// flip some I/O reg bits
-		if (insn_count % 1000 == 0)
+		if ((insn_count & 0x0fff) == 0)
 			do_irq(7);
 
 		// progress report
-		if (insn_count % 1000000 == 0)
+		if ((insn_count & 0x00ffffff) == 0)
 			print_state();
 
 		// trigger an interrupt
-		if (insn_count % 100000 == 0)
+		if ((insn_count & 0x0001ffff) == 0)
 			do_irq(random() % 9);
 
 		step();
