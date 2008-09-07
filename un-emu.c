@@ -9,6 +9,7 @@
 
 #include "types.h"
 #include "disas.h"
+#include "sdl.h"
 
 
 #define N_MEM 0x400000
@@ -588,7 +589,7 @@ static void do_irq(int irqno)
 	reg[6] = 0;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
 	u32 i, n;
 
@@ -602,6 +603,8 @@ int main(void)
 
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector
+
+	sdl_init();
 
 	for (;;) {
 		if (trace)
