@@ -9,7 +9,7 @@ static SDL_Surface *screen;
 
 static void ttt(int x, int y)
 {
-	u32 color = SDL_MapRGB(screen->format, 200, 150, 100);
+	u32 color = SDL_MapRGB(screen->format, 250, 150, 100);
 
 	u16 *bufp;
 
