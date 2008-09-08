@@ -196,13 +196,14 @@ static void blit_page(u16 *mem, u32 page, u32 bitmap, u32 tilemap, u32 mode,
 
 static void blit_sprite(u16 *mem, u16 *sprite, u32 *palette)
 {
-	u16 tile, x, y, flags;
+	u16 tile, flags;
+	s16 x, y;
 	u16 *dest;
 	u32 bitmap = 0x40*mem[0x2822];
 	u32 w, h;
 
 	tile = *sprite++;
-	x = 160 - 16 + *sprite++;
+	x = 160 + *sprite++;
 	y = 120 - *sprite++;
 	flags = *sprite++;
 
@@ -216,8 +217,13 @@ static void blit_sprite(u16 *mem, u16 *sprite, u32 *palette)
 	h = sizes[(flags & 0x00c0) >> 6];
 	w = sizes[(flags & 0x0030) >> 4];
 
-	if (x + w > 320 || x >= 320 || y + h > 240 || y >= 240) {
+x -= (w/2);
+y -= (h/2);
+
+	// These are unsigned, so they check for "< 0" as well.
+	if (x + w > 320+128 || y + h > 240+128) {
 		printf("*** CLIP\n");
+		printf("x,y=%d,%d w,h=%d,%d\n", (int)x, (int)y, (int)w, (int)h);
 		return;
 	}
 
@@ -309,15 +315,15 @@ void update_screen(u16 *mem)
 
 	for (n = 0; n < 256; n++)
 		if (mem[0x2c00 + 4*n]) {
-			printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
-			       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
+//			printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
+//			       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
 			blit_sprite(mem, mem + 0x2c00 + 4*n, palette);
 		}
 
 	if (SDL_MUSTLOCK(surface))
 		SDL_UnlockSurface(surface);
 
-	SDL_UpdateRect(surface, 0, 0, 320, 240);
+	SDL_UpdateRect(surface, 0, 0, 320+128, 240+128);
 }
 
 void sdl_init(void)
@@ -328,7 +334,7 @@ void sdl_init(void)
 	}
 	atexit(SDL_Quit);
 
-	surface = SDL_SetVideoMode(320, 240, 16, SDL_SWSURFACE);
+	surface = SDL_SetVideoMode(320+128, 240+128, 16, SDL_SWSURFACE);
 	if (!surface) {
 		fprintf(stderr, "Unable to set 320x240 video: %s\n", SDL_GetError());
 		exit(1);
@@ -336,4 +342,6 @@ void sdl_init(void)
 
 	screen = surface->pixels;
 	pitch = surface->pitch / 2;
+
+	screen += 64*(pitch + 1);
 }
