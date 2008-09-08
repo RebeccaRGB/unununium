@@ -206,24 +206,29 @@ static void blit_sprite(u16 *mem, u16 *sprite, u32 *palette)
 	y = 120 - *sprite++;
 	flags = *sprite++;
 
-	w = sizes[(flags >> 4) & 3];
-	h = sizes[(flags >> 6) & 3];
+//if (flags & 0x8000) return;	// dunno
+//if (flags & 0x4000) return;	// dunno
+//if (flags & 0x2000) return;	// depth
+//if (flags & 0x1000) return;	// depth
+
+	palette += (flags & 0x0f00) >> 4;
+
+	h = sizes[(flags & 0x00c0) >> 6];
+	w = sizes[(flags & 0x0030) >> 4];
 
 	if (x + w > 320 || x >= 320 || y + h > 240 || y >= 240) {
 		printf("*** CLIP\n");
 		return;
 	}
 
-	palette += (flags >> 4) & 0xf0;
+//if (flags & 0x0008) return;	// Y flip
+//if (flags & 0x0004) return;	// X flip
 
 	dest = screen + pitch*y + x;
 
-	if ((flags & 0x0c) != 0)
-		printf("DANGER WILL ROBINSON\n");
-
 	switch (flags & 3) {
 	case 0:
-		printf("DANGER WILL ROBINSON\n");
+		printf("DANGER WILL ROBINSON\n");	// 4-colour
 		break;
 	case 1:
 		blit_16(dest, w, h, mem, bitmap, tile, palette);
