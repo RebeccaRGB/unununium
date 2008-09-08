@@ -28,7 +28,12 @@ static void blit(u16 *dest, u16 flags, u16 *mem, u32 bitmap, u16 tile, u32 *pale
 	nbits = 0;
 
 	for (y = 0; y < h; y++) {
-		u16 *p = dest + pitch*y;
+		u16 *p;
+
+		if (flags & 0x0008)
+			p = dest + pitch*(h - 1 - y);
+		else
+			p = dest + pitch*y;
 
 		for (x = 0; x < w; x++) {
 			u16 b;
@@ -54,7 +59,7 @@ static void blit(u16 *dest, u16 flags, u16 *mem, u32 bitmap, u16 tile, u32 *pale
 	}
 }
 
-static void blit_page(u16 *mem, u32 page, u32 bitmap, u32 tilemap, u32 flags, u32 *palette)
+static void blit_page(u16 *mem, u32 bitmap, u32 tilemap, u32 flags, u32 *palette)
 {
 	u32 x0, y0;
 
@@ -183,8 +188,8 @@ void update_screen(u16 *mem)
 			exit(1);
 		}
 
-	blit_page(mem, 0, 0x40*mem[0x2820], mem[0x2814], mem[0x2812], palette);
-	blit_page(mem, 1, 0x40*mem[0x2821], mem[0x281a], mem[0x2818], palette);
+	blit_page(mem, 0x40*mem[0x2820], mem[0x2814], mem[0x2812], palette);
+	blit_page(mem, 0x40*mem[0x2821], mem[0x281a], mem[0x2818], palette);
 
 	for (n = 0; n < 256; n++)
 		if (mem[0x2c00 + 4*n]) {
