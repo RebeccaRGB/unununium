@@ -54,52 +54,30 @@ static void blit(u16 *dest, u16 flags, u16 *mem, u32 bitmap, u16 tile, u32 *pale
 	}
 }
 
-static void blit_page_16x16x64(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
+static void blit_page(u16 *mem, u32 page, u32 bitmap, u32 tilemap, u32 flags, u32 *palette)
 {
 	u32 x0, y0;
 
-	for (y0 = 0; y0 < 15; y0++)
-		for (x0 = 0; x0 < 20; x0++) {
-			u16 tile = mem[tilemap + x0 + 32*y0];
-			u16 *dest = screen + 16*pitch*y0 + 16*x0;
-
-			if (tile == 0)
-				continue;
-
-			blit(dest, 0x0052, mem, bitmap, tile, palette);
-		}
-}
-
-static void blit_page_16x16x256(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
-{
-	u32 x0, y0;
-
-	for (y0 = 0; y0 < 15; y0++)
-		for (x0 = 0; x0 < 20; x0++) {
-			u16 tile = mem[tilemap + x0 + 32*y0];
-			u16 *dest = screen + 16*pitch*y0 + 16*x0;
-
-			if (tile == 0)
-				continue;
-
-			blit(dest, 0x0053, mem, bitmap, tile, palette);
-		}
-}
-
-static void blit_page(u16 *mem, u32 page, u32 bitmap, u32 tilemap, u32 mode,
-               u32 *palette)
-{
-	switch (mode & 0xff) {
-		case 0x52:
-			blit_page_16x16x64(mem, bitmap, tilemap, palette);
-			break;
-		case 0x53:
-			blit_page_16x16x256(mem, bitmap, tilemap, palette);
-			break;
-		default:
-			fprintf(stderr, "page %u mode unexpected: %04x\n",
-			        page, mode);
+	if (flags == 0) {	// shouldn't get here, but we generate IRQs too early
+		printf("FIXME, early video IRQ\n");
+		return;
 	}
+
+	if ((flags & 0xf0) != 0x50) {
+		printf("Background page flags %04x unhandled, QUIT\n", flags);
+		exit(1);
+	}
+
+	for (y0 = 0; y0 < 15; y0++)
+		for (x0 = 0; x0 < 20; x0++) {
+			u16 tile = mem[tilemap + x0 + 32*y0];
+			u16 *dest = screen + 16*pitch*y0 + 16*x0;
+
+			if (tile == 0)
+				continue;
+
+			blit(dest, flags, mem, bitmap, tile, palette);
+		}
 }
 
 static void blit_sprite(u16 *mem, u16 *sprite, u32 *palette)
@@ -168,8 +146,8 @@ void update_screen(u16 *mem)
 //	printf("page 0:\n");
 //	printf("  dunno0 = %04x\n", mem[0x2810]);
 //	printf("  dunno1 = %04x\n", mem[0x2811]);
-//	printf("  mode   = %04x\n", mem[0x2812]);
-//	printf("  flags  = %04x\n", mem[0x2813]);
+//	printf("  flags  = %04x\n", mem[0x2812]);
+//	printf("  flags2 = %04x\n", mem[0x2813]);
 //	printf("  tiles  = %04x\n", mem[0x2814]);
 //	printf("  dunno5 = %04x\n", mem[0x2815]);
 //	printf("  bitmap = %04x\n", mem[0x2820]);
@@ -177,8 +155,8 @@ void update_screen(u16 *mem)
 //	printf("page 1:\n");
 //	printf("  dunno0 = %04x\n", mem[0x2816]);
 //	printf("  dunno1 = %04x\n", mem[0x2817]);
-//	printf("  mode   = %04x\n", mem[0x2818]);
-//	printf("  flags  = %04x\n", mem[0x2819]);
+//	printf("  flags  = %04x\n", mem[0x2818]);
+//	printf("  flags2 = %04x\n", mem[0x2819]);
 //	printf("  tiles  = %04x\n", mem[0x281a]);
 //	printf("  dunno5 = %04x\n", mem[0x281b]);
 //	printf("  bitmap = %04x\n", mem[0x2821]);
