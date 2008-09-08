@@ -6,139 +6,40 @@
 
 
 static const u8 sizes[] = { 8, 16, 32, 64 };
+static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 static SDL_Surface *surface;
 static u16 *screen;
 static u32 pitch;
 
 
-static void blit_16(u16 *dest, u32 w, u32 h, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
+static void blit(u16 *dest, u32 w, u32 h, u32 nc, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
 {
 	u32 x, y;
-	u16 *m = mem + bitmap + w*h/4*tile;
+	u16 *m = mem + bitmap + nc*w*h/16*tile;
+	u32 bits = 0;
+	u32 nbits = 0;
 
 	for (y = 0; y < h; y++) {
 		u16 *p = dest + pitch*y;
 
-		for (x = 0; x < w; x += 4) {
+		for (x = 0; x < w; x++) {
 			u16 b;
 			u32 c;
 
-			b = *m++;
+			bits <<= nc;
+			if (nbits < nc) {
+				b = *m++;
+				b = (b << 8) | (b >> 8);
+				bits |= b << (nc - nbits);
+				nbits += 16;
+			}
+			nbits -= nc;
 
-			c = palette[(b >> 4) & 0x0f];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
+			b = bits >> 16;
+			bits &= 0xffff;
 
-			c = palette[b & 0x0f];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			c = palette[(b >> 12) & 0x0f];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			c = palette[(b >> 8) & 0x0f];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-		}
-	}
-}
-
-static void blit_64(u16 *dest, u32 w, u32 h, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
-{
-	u32 x, y;
-	u16 *m = mem + bitmap + 3*w*h/8*tile;
-
-	for (y = 0; y < h; y++) {
-		u16 *p = dest + pitch*y;
-
-		for (x = 0; x < w; x += 8) {
-			u16 b;
-			u32 c;
-
-			u16 b0 = *m++;
-			u16 b1 = *m++;
-			u16 b2 = *m++;
-			b0 = (b0 << 8) | (b0 >> 8);
-			b1 = (b1 << 8) | (b1 >> 8);
-			b2 = (b2 << 8) | (b2 >> 8);
-
-			b = b0 >> 10;
 			c = palette[b];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			b = (b0 >> 4) & 0x3f;
-			c = palette[b];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			b = ((b0 << 2) & 0x3c) | (b1 >> 14);
-			c = palette[b];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			b = (b1 >> 8) & 0x3f;
-			c = palette[b];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			b = (b1 >> 2) & 0x3f;
-			c = palette[b];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			b = ((b1 << 4) & 0x30) | (b2 >> 12);
-			c = palette[b];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			b = (b2 >> 6) & 0x3f;
-			c = palette[b];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			b = b2 & 0x3f;
-			c = palette[b];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-		}
-	}
-}
-
-static void blit_256(u16 *dest, u32 w, u32 h, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
-{
-	u32 x, y;
-	u16 *m = mem + bitmap + w*h/2*tile;
-
-	for (y = 0; y < h; y++) {
-		u16 *p = dest + pitch*y;
-
-		for (x = 0; x < w; x += 2) {
-			u16 b;
-			u32 c;
-
-			b = *m++;
-
-			c = palette[b & 0xff];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
-
-			c = palette[b >> 8];
 			if (c == (u32)-1)
 				c = *p;
 			*p++ = c;
@@ -158,7 +59,7 @@ static void blit_page_16x16x64(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
 			if (tile == 0)
 				continue;
 
-			blit_64(dest, 16, 16, mem, bitmap, tile, palette);
+			blit(dest, 16, 16, 6, mem, bitmap, tile, palette);
 		}
 }
 
@@ -174,7 +75,7 @@ static void blit_page_16x16x256(u16 *mem, u32 bitmap, u32 tilemap, u32 *palette)
 			if (tile == 0)
 				continue;
 
-			blit_256(dest, 16, 16, mem, bitmap, tile, palette);
+			blit(dest, 16, 16, 8, mem, bitmap, tile, palette);
 		}
 }
 
@@ -232,20 +133,7 @@ y -= (h/2);
 
 	dest = screen + (s32)(pitch*y + x);
 
-	switch (flags & 3) {
-	case 0:
-		printf("DANGER WILL ROBINSON\n");	// 4-colour
-		break;
-	case 1:
-		blit_16(dest, w, h, mem, bitmap, tile, palette);
-		break;
-	case 2:
-		blit_64(dest, w, h, mem, bitmap, tile, palette);
-		break;
-	case 3:
-		blit_256(dest, w, h, mem, bitmap, tile, palette);
-		break;
-	}
+	blit(dest, w, h, colour_sizes[flags & 3], mem, bitmap, tile, palette);
 }
 
 static u8 x58(u32 x)
