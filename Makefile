@@ -11,4 +11,4 @@ un-emu: un-emu.o disas.o sdl.o
 *.o: *.h
 
 clean:
-	rm -f un-disas un-emu un-disas.o un-emu.o disas.o
+	rm -f un-disas un-emu un-disas.o un-emu.o disas.o sdl.o
