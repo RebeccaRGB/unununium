@@ -230,7 +230,7 @@ y -= (h/2);
 //if (flags & 0x0008) return;	// Y flip
 //if (flags & 0x0004) return;	// X flip
 
-	dest = screen + pitch*y + x;
+	dest = screen + (s32)(pitch*y + x);
 
 	switch (flags & 3) {
 	case 0:
