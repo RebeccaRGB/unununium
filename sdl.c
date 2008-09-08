@@ -35,6 +35,9 @@ static void blit(u16 *dest, u16 flags, u16 *mem, u32 bitmap, u16 tile, u32 *pale
 		else
 			p = dest + pitch*y;
 
+		if (flags & 0x0004)
+			p += w - 1;
+
 		for (x = 0; x < w; x++) {
 			u16 b;
 			u32 c;
@@ -52,9 +55,13 @@ static void blit(u16 *dest, u16 flags, u16 *mem, u32 bitmap, u16 tile, u32 *pale
 			bits &= 0xffff;
 
 			c = palette[b];
-			if (c == (u32)-1)
-				c = *p;
-			*p++ = c;
+			if (c != (u32)-1)
+				*p = c;
+
+			if (flags & 0x0004)
+				p--;
+			else
+				p++;
 		}
 	}
 }
