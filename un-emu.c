@@ -52,7 +52,7 @@ static void store(u16 val, u32 addr)
 	if (addr >= 0x2800 && addr < 0x2900) {		// video regs
 		if (addr == 0x2863) {	// video IRQ ACK
 			update_screen(mem);
-			dump(0x2800, 0x100);
+			//dump(0x2800, 0x100);
 		}
 		//printf("STORE %04x to %04x\n", val, addr);
 		return;
@@ -615,10 +615,10 @@ static void emu(void)
 			if (trace)
 				print_state();
 
-			if (cs_pc() == 0x3316e) {
-				printf("##### SHOW SPRITE %04x at (%04x,%04x) flags %04x\n",
-				       mem[reg[0]+3], mem[reg[0]+4], mem[reg[0]+5], mem[reg[0]+6]);
-			}
+//			if (cs_pc() == 0x3316e) {
+//				printf("##### SHOW SPRITE %04x at (%04x,%04x) flags %04x\n",
+//				       mem[reg[0]+3], mem[reg[0]+4], mem[reg[0]+5], mem[reg[0]+6]);
+//			}
 
 			step();
 			insn_count++;
