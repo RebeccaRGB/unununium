@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <sys/time.h>
 
 #include "types.h"
 #include "sdl.h"
@@ -142,17 +141,7 @@ static u8 x58(u32 x)
 
 void update_screen(u16 *mem)
 {
-	static u32 last = 0;
-	u32 now;
-	struct timeval tv;
-
-	gettimeofday(&tv, 0);
-	now = 1000000*tv.tv_sec + tv.tv_usec;
-	if (now < last + 40000)	// 25 FPS
-		return;
-	last = now;
-
-	printf("\033[H\033[2J\n\n");
+	//printf("\033[H\033[2J\n\n");
 	printf("-----  VIDEO UPDATE  -----\n");
 
 //	printf("page 0:\n");

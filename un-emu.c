@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "types.h"
 #include "disas.h"
@@ -96,11 +97,11 @@ static u16 io_load(u32 addr)
 		return val;
 
 	if (addr >= 0x2800 && addr < 0x2900) {		// video regs
-		if (addr == 0x2863) {
-			u16 val = 1 << (random() % 3);
-			printf("(random 1, 2, 4) LOAD %04x from %04x\n", val, addr);
-			return val;
-		}
+//		if (addr == 0x2863) {
+//			u16 val = 1 << (random() % 3);
+//			printf("(random 1, 2, 4) LOAD %04x from %04x\n", val, addr);
+//			return val;
+//		}
 		//printf("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
@@ -134,7 +135,31 @@ static u16 io_load(u32 addr)
 			static int count = 0;
 			switch (count) {
 			case 0:
+#if 1
 				val = random() % 256;
+#endif
+
+#if 0
+				val = 0;
+				if ((random() & 3) == 0)
+					val = 1 << (random() & 7);
+				else
+					val = 1 << (random() & 3);
+#endif
+
+#if 0
+				val = 0;
+				if (random() % 20 == 0)
+					//val = 0x80;
+					//val = 0x40;
+					//val = 0x20;
+					//val = 0x10;
+					//val = 0x08;	// ?
+					//val = 0x04;	// down
+					//val = 0x02;	// ?
+					//val = 0x01;	// ?
+#endif
+
 				printf("----- BUTTONS: %02x\n", val);
 				break;
 			case 6:
@@ -606,9 +631,42 @@ static void do_irq(int irqno)
 	reg[6] = 0;
 }
 
+static void do_idle(void)
+{
+	static u32 last = 0;
+	u32 now;
+	struct timeval tv;
+	static u32 which = 1;
+
+	printf("### IDLE ###\n");
+
+	gettimeofday(&tv, 0);
+	now = 1000000*tv.tv_sec + tv.tv_usec;
+	if (now < last + 20000) {
+		printf("  sleeping %dus\n", last + 20000 - now);
+		usleep(last + 20000 - now);
+		gettimeofday(&tv, 0);
+		now = 1000000*tv.tv_sec + tv.tv_usec;
+	} else
+		printf("### LAG ###\n");
+
+	last = now;
+
+	mem[0x2863] = mem[0x2862] & which;
+	if (which == 1)
+		reg[7] += 3;
+	do_irq(0);
+	which ^= 3;
+}
+
 static void emu(void)
 {
 	int i;
+	u32 idle_pc;
+
+	idle_pc = 0;
+	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43)
+		idle_pc = 0x42daa;
 
 	for (;;) {
 		for (i = 0; i < 0x1000; i++) {
@@ -622,19 +680,18 @@ static void emu(void)
 
 			step();
 			insn_count++;
+
+			if (idle_pc == cs_pc())
+				do_idle();
 		}
 
 		// flip some I/O reg bits
 		if ((insn_count & 0x0fff) == 0)
 			do_irq(7);
 
-		// progress report
-		if ((insn_count & 0x00ffffff) == 0)
-			print_state();
-
-		// trigger an interrupt
-		if ((insn_count & 0x00007fff) == 0)
-			do_irq(0);
+//		// progress report
+//		if ((insn_count & 0x000fffff) == 0)
+//			print_state();
 
 		if ((insn_count & 0x0001ffff) == 0x14000)
 			do_irq(1 + (random() % 8));
