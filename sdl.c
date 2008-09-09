@@ -120,6 +120,7 @@ static void blit_sprite(u16 *mem, u16 *sprite, u32 *palette)
 
 x -= (w/2);
 y -= (h/2);
+y += 8;
 
 	// These are unsigned, so they check for "< 0" as well.
 	if (x + w > 320+128 || y + h > 240+128) {
@@ -145,7 +146,7 @@ static u8 x58(u32 x)
 
 void update_screen(u16 *mem)
 {
-	//printf("\033[H\033[2J\n\n");
+//	printf("\033[H\033[2J\n\n");
 //	printf("-----  VIDEO UPDATE  -----\n");
 
 //	printf("page 0:\n");
