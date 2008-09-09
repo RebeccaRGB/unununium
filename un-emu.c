@@ -632,37 +632,25 @@ static void do_irq(int irqno)
 	reg[6] = 0;
 }
 
+static u32 last_retrace_time = 0;
+
 static void do_idle(void)
 {
-	static u32 last = 0;
 	u32 now;
 	struct timeval tv;
-	static u32 which = 1;
 
 //	printf("### IDLE ###\n");
 
 	gettimeofday(&tv, 0);
 	now = 1000000*tv.tv_sec + tv.tv_usec;
-	if (now < last + 20000) {
-//		printf("  sleeping %dus\n", last + 20000 - now);
-		usleep(last + 20000 - now);
-		gettimeofday(&tv, 0);
-		now = 1000000*tv.tv_sec + tv.tv_usec;
-	} else
-		printf("### LAG ###\n");
-
-	last = now;
-
-	mem[0x2863] = mem[0x2862] & which;
-	if (which == 1)
-		reg[7] += 3;
-	do_irq(0);
-	which ^= 3;
+	if (now < last_retrace_time + 10000) {
+//		printf("  sleeping %dus\n", last_retrace_time + 10000 - now);
+		usleep(last_retrace_time + 10000 - now);
+	}
 }
 
 static void emu(void)
 {
-	int i;
 	u32 idle_pc;
 
 	idle_pc = 0;
@@ -670,6 +658,8 @@ static void emu(void)
 		idle_pc = 0x42daa;
 
 	for (;;) {
+		int i;
+
 		for (i = 0; i < 0x1000; i++) {
 			if (trace)
 				print_state();
@@ -682,8 +672,30 @@ static void emu(void)
 			step();
 			insn_count++;
 
-			if (idle_pc == cs_pc())
-				do_idle();
+			static u32 flipflop = 0;
+			if (idle_pc == cs_pc()) {
+				flipflop ^= 1;
+				if (flipflop) {
+					do_idle();
+					insn_count = (insn_count + 0xfff) & ~0xfffULL;
+					break;
+				}
+			}
+		}
+
+		struct timeval tv;
+		u32 now;
+
+		gettimeofday(&tv, 0);
+		now = 1000000*tv.tv_sec + tv.tv_usec;
+
+		if (now >= last_retrace_time + 10000) {
+			static u32 which = 1;
+
+			mem[0x2863] = mem[0x2862] & which;
+			which ^= 3;
+			do_irq(0);
+			last_retrace_time = now;
 		}
 
 		// flip some I/O reg bits
