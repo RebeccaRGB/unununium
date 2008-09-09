@@ -620,7 +620,8 @@ static void do_irq(int irqno)
 			return;
 		irq |= 2;
 		vec = 0xfff8 + irqno;
-		printf("### IRQ #%x ###\n", irqno);
+		if (irqno)
+			printf("### IRQ #%x ###\n", irqno);
 	}
 
 	// XXX: should handle swapping SB here.  we have a slight
@@ -638,12 +639,12 @@ static void do_idle(void)
 	struct timeval tv;
 	static u32 which = 1;
 
-	printf("### IDLE ###\n");
+//	printf("### IDLE ###\n");
 
 	gettimeofday(&tv, 0);
 	now = 1000000*tv.tv_sec + tv.tv_usec;
 	if (now < last + 20000) {
-		printf("  sleeping %dus\n", last + 20000 - now);
+//		printf("  sleeping %dus\n", last + 20000 - now);
 		usleep(last + 20000 - now);
 		gettimeofday(&tv, 0);
 		now = 1000000*tv.tv_sec + tv.tv_usec;

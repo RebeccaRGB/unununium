@@ -8,11 +8,11 @@ static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 static SDL_Surface *surface;
-static u16 *screen;
+static u32 *screen;
 static u32 pitch;
 
 
-static void blit(u16 *dest, u16 flags, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
+static void blit(u32 *dest, u16 flags, u16 *mem, u32 bitmap, u16 tile, u32 *palette)
 {
 	u32 x, y, h, w, nc;
 	u16 *m;
@@ -27,7 +27,7 @@ static void blit(u16 *dest, u16 flags, u16 *mem, u32 bitmap, u16 tile, u32 *pale
 	nbits = 0;
 
 	for (y = 0; y < h; y++) {
-		u16 *p;
+		u32 *p;
 
 		if (flags & 0x0008)
 			p = dest + pitch*(h - 1 - y);
@@ -82,7 +82,7 @@ static void blit_page(u16 *mem, u32 bitmap, u32 tilemap, u32 flags, u32 *palette
 	for (y0 = 0; y0 < 15; y0++)
 		for (x0 = 0; x0 < 20; x0++) {
 			u16 tile = mem[tilemap + x0 + 32*y0];
-			u16 *dest = screen + 16*pitch*y0 + 16*x0;
+			u32 *dest = screen + 16*pitch*y0 + 16*x0;
 
 			if (tile == 0)
 				continue;
@@ -95,7 +95,7 @@ static void blit_sprite(u16 *mem, u16 *sprite, u32 *palette)
 {
 	u16 tile, flags;
 	s16 x, y;
-	u16 *dest;
+	u32 *dest;
 	u32 bitmap = 0x40*mem[0x2822];
 	u32 w, h;
 
@@ -142,7 +142,7 @@ static u8 x58(u32 x)
 void update_screen(u16 *mem)
 {
 	//printf("\033[H\033[2J\n\n");
-	printf("-----  VIDEO UPDATE  -----\n");
+//	printf("-----  VIDEO UPDATE  -----\n");
 
 //	printf("page 0:\n");
 //	printf("  dunno0 = %04x\n", mem[0x2810]);
@@ -208,14 +208,14 @@ void sdl_init(void)
 	}
 	atexit(SDL_Quit);
 
-	surface = SDL_SetVideoMode(320+128, 240+128, 16, SDL_SWSURFACE);
+	surface = SDL_SetVideoMode(320+128, 240+128, 32, SDL_SWSURFACE);
 	if (!surface) {
 		fprintf(stderr, "Unable to set 320x240 video: %s\n", SDL_GetError());
 		exit(1);
 	}
 
 	screen = surface->pixels;
-	pitch = surface->pitch / 2;
+	pitch = surface->pitch / 4;
 
 	screen += 64*(pitch + 1);
 }
