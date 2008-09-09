@@ -142,7 +142,7 @@ static u16 io_load(u32 addr)
 			switch (count) {
 			case 0:
 				val = button_state;
-				printf("----- BUTTONS: %02x\n", val);
+				//printf("----- BUTTONS: %02x\n", val);
 				break;
 			case 6:
 				val = 0xff;
@@ -602,8 +602,8 @@ static void do_irq(int irqno)
 			return;
 		irq |= 2;
 		vec = 0xfff8 + irqno;
-		if (irqno)
-			printf("### IRQ #%x ###\n", irqno);
+		//if (irqno)
+		//	printf("### IRQ #%x ###\n", irqno);
 	}
 
 	// XXX: should handle swapping SB here.  we have a slight
@@ -754,7 +754,7 @@ static void emu(void)
 			do_irq(3);
 
 		if ((insn_count & 0x0001ffff) == 0x14000)
-			do_irq(1 + (random() % 8));
+			do_irq(1 + (random() % 7));
 	}
 }
 
