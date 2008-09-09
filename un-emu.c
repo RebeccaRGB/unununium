@@ -16,15 +16,17 @@
 #define N_MEM 0x400000
 
 
-static int trace = 0;
-static int store_trace = 0;
+static int trace;
+static int store_trace;
 
 
 static u16 mem[N_MEM];
 static u16 reg[8];
 static u8 sb;
 static u8 irq, fiq;
-static u64 insn_count = 0;
+static u64 insn_count;
+
+static u32 button_state;
 
 
 static void dump(u32 addr, u32 len)
@@ -52,6 +54,7 @@ static void store(u16 val, u32 addr)
 
 	if (addr >= 0x2800 && addr < 0x2900) {		// video regs
 		if (addr == 0x2863) {	// video IRQ ACK
+			mem[0x2863] &= ~val;
 			update_screen(mem);
 			//dump(0x2800, 0x100);
 		}
@@ -126,6 +129,9 @@ static u16 io_load(u32 addr)
 		return val;
 	}
 	if (addr >= 0x3d00 && addr < 0x3e00) {		// I/O
+		if (addr == 0x3d22)	// IRQ
+			return mem[0x3d21];
+
 		if (addr == 0x3d31) {
 			val = 3;
 			//printf("(hard 3) LOAD %04x from %04x\n", val, addr);
@@ -135,31 +141,7 @@ static u16 io_load(u32 addr)
 			static int count = 0;
 			switch (count) {
 			case 0:
-#if 1
-				val = random() % 256;
-#endif
-
-#if 0
-				val = 0;
-				if ((random() & 3) == 0)
-					val = 1 << (random() & 7);
-				else
-					val = 1 << (random() & 3);
-#endif
-
-#if 0
-				val = 0;
-				if (random() % 20 == 0)
-					//val = 0x80;
-					//val = 0x40;
-					//val = 0x20;
-					//val = 0x10;
-					//val = 0x08;	// ?
-					//val = 0x04;	// down
-					//val = 0x02;	// ?
-					//val = 0x01;	// ?
-#endif
-
+				val = button_state;
 				printf("----- BUTTONS: %02x\n", val);
 				break;
 			case 6:
@@ -649,6 +631,65 @@ static void do_idle(void)
 	}
 }
 
+static void do_buttons(void)
+{
+	SDL_Event event;
+	u32 keymask = 0;
+	u32 down, up;
+
+	down = up = 0;
+	while (SDL_PollEvent(&event)) {
+		if (event.type == SDL_QUIT) {
+			printf("Goodbye.\n");
+			exit(0);
+		}
+
+		if (event.type != SDL_KEYDOWN && event.type != SDL_KEYUP) {
+			printf("Unknown event type %d\n", event.type);
+			continue;
+		}
+
+		switch (event.key.keysym.sym) {
+			case SDLK_ESCAPE:
+				printf("Goodbye.\n");
+				exit(0);
+			case SDLK_LEFT:
+				keymask = 0x01;
+				break;
+			case SDLK_RIGHT:
+				keymask = 0x02;
+				break;
+			case SDLK_DOWN:
+				keymask = 0x04;
+				break;
+			case SDLK_UP:
+				keymask = 0x08;
+				break;
+			case SDLK_SPACE:	// "A" button
+				keymask = 0x10;
+				break;
+			case '6':
+				keymask = 0x20;
+				break;
+			case SDLK_0:
+				keymask = 0x40;
+				break;
+			case '8':
+				keymask = 0x80;
+				break;
+			default:
+				return;
+		}
+
+		if (event.type == SDL_KEYDOWN)
+			down |= keymask;
+		else
+			up |= keymask;
+	}
+
+	button_state = (button_state & ~up) | down;
+}
+
 static void emu(void)
 {
 	u32 idle_pc;
@@ -694,6 +735,9 @@ static void emu(void)
 
 			mem[0x2863] = mem[0x2862] & which;
 			which ^= 3;
+
+			do_buttons();
+
 			do_irq(0);
 			last_retrace_time = now;
 		}
@@ -705,6 +749,9 @@ static void emu(void)
 //		// progress report
 //		if ((insn_count & 0x000fffff) == 0)
 //			print_state();
+
+		if ((insn_count & 0x0001ffff) == 0)
+			do_irq(3);
 
 		if ((insn_count & 0x0001ffff) == 0x14000)
 			do_irq(1 + (random() % 8));
