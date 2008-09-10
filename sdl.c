@@ -81,7 +81,7 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 	}
 }
 
-static void blit_page(u16 *mem, u32 bitmap, u32 tilemap, u32 flags)
+static void blit_page(u32 depth, u16 *mem, u32 bitmap, u32 tilemap, u32 flags)
 {
 	u32 x0, y0;
 
@@ -89,6 +89,9 @@ static void blit_page(u16 *mem, u32 bitmap, u32 tilemap, u32 flags)
 		printf("FIXME, early video IRQ\n");
 		return;
 	}
+
+	if ((flags & 0x3000) >> 12 != depth)
+		return;
 
 	if ((flags & 0xf0) != 0x50) {
 		printf("Background page flags %04x unhandled, QUIT\n", flags);
@@ -106,7 +109,7 @@ static void blit_page(u16 *mem, u32 bitmap, u32 tilemap, u32 flags)
 		}
 }
 
-static void blit_sprite(u16 *mem, u16 *sprite)
+static void blit_sprite(u32 depth, u16 *mem, u16 *sprite)
 {
 	u16 tile, flags;
 	s16 x, y;
@@ -122,6 +125,9 @@ static void blit_sprite(u16 *mem, u16 *sprite)
 //if (flags & 0x8000) return;	// dunno
 //if (flags & 0x4000) return;	// dunno
 
+	if ((u32)(flags & 0x3000) >> 12 != depth)
+		return;
+
 	h = sizes[(flags & 0x00c0) >> 6];
 	w = sizes[(flags & 0x0030) >> 4];
 
@@ -134,7 +140,7 @@ y += 8;
 	blit(x, y, flags, mem+bitmap, tile);
 }
 
-static void blit_sprites(u16 *mem)
+static void blit_sprites(u32 depth, u16 *mem)
 {
 	u32 n;
 	for (n = 0; n < 256; n++)
@@ -142,7 +148,7 @@ static void blit_sprites(u16 *mem)
 			if (mem[0x2c00 + 4*n] & 0xc000)
 				printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
 				       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
-			blit_sprite(mem, mem + 0x2c00 + 4*n);
+			blit_sprite(depth, mem, mem + 0x2c00 + 4*n);
 		}
 }
 
@@ -204,9 +210,12 @@ void update_screen(u16 *mem)
 			exit(1);
 		}
 
-	blit_page(mem, 0x40*mem[0x2820], mem[0x2814], mem[0x2812]);
-	blit_page(mem, 0x40*mem[0x2821], mem[0x281a], mem[0x2818]);
-	blit_sprites(mem);
+	u32 depth;
+	for (depth = 0; depth < 4; depth++) {
+		blit_page(depth, mem, 0x40*mem[0x2820], mem[0x2814], mem[0x2812]);
+		blit_page(depth, mem, 0x40*mem[0x2821], mem[0x281a], mem[0x2818]);
+		blit_sprites(depth, mem);
+	}
 
 	if (SDL_MUSTLOCK(surface))
 		SDL_UnlockSurface(surface);
