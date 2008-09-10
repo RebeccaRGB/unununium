@@ -47,6 +47,11 @@ static void store(u16 val, u32 addr)
 	if (store_trace)
 		printf("WRITE %04x TO %04x (was %04x)\n", val, addr, mem[addr]);
 
+	if (addr >= 0x4000) {
+		printf("ROM STORE %04x to %04x\n", val, addr);
+		return;
+	}
+
 	mem[addr] = val;
 
 	if (addr < 0x2800)	// RAM
