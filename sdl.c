@@ -139,11 +139,36 @@ y += 8;
 	blit(dest, flags, mem, bitmap, tile, palette_offset);
 }
 
+static void blit_sprites(u16 *mem)
+{
+	u32 n;
+	for (n = 0; n < 256; n++)
+		if (mem[0x2c00 + 4*n]) {
+			if (mem[0x2c00 + 4*n] & 0xc000)
+				printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
+				       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
+			blit_sprite(mem, mem + 0x2c00 + 4*n);
+		}
+}
+
 static u8 x58(u32 x)
 {
 	x &= 31;
 	x *= 33;
 	return x / 4;
+}
+
+static void set_palette(u16 *mem)
+{
+	u32 n;
+	for (n = 0; n < 256; n++) {
+		u32 c = mem[0x2b00 + n];
+		if (c & 0x8000)
+			c = -1;
+		else
+			c = SDL_MapRGB(surface->format, x58(c >> 10), x58(c >> 5), x58(c));
+		palette[n] = c;
+	}
 }
 
 void update_screen(u16 *mem)
@@ -176,15 +201,7 @@ void update_screen(u16 *mem)
 	printf("\n");
 #endif
 
-	u32 n;
-	for (n = 0; n < 256; n++) {
-		u32 c = mem[0x2b00 + n];
-		if (c & 0x8000)
-			c = -1;
-		else
-			c = SDL_MapRGB(surface->format, x58(c >> 10), x58(c >> 5), x58(c));
-		palette[n] = c;
-	}
+	set_palette(mem);
 
 	if (SDL_MUSTLOCK(surface))
 		if (SDL_LockSurface(surface) < 0) {
@@ -194,14 +211,7 @@ void update_screen(u16 *mem)
 
 	blit_page(mem, 0x40*mem[0x2820], mem[0x2814], mem[0x2812]);
 	blit_page(mem, 0x40*mem[0x2821], mem[0x281a], mem[0x2818]);
-
-	for (n = 0; n < 256; n++)
-		if (mem[0x2c00 + 4*n]) {
-			if (mem[0x2c00 + 4*n] & 0xc000)
-				printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
-				       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
-			blit_sprite(mem, mem + 0x2c00 + 4*n);
-		}
+	blit_sprites(mem);
 
 	if (SDL_MUSTLOCK(surface))
 		SDL_UnlockSurface(surface);
