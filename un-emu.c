@@ -639,12 +639,23 @@ static void do_buttons(void)
 
 	down = up = 0;
 	while (SDL_PollEvent(&event)) {
-		if (event.type == SDL_QUIT) {
+
+		switch (event.type) {
+		case SDL_KEYDOWN:
+		case SDL_KEYUP:
+			break;
+
+		case SDL_QUIT:
 			printf("Goodbye.\n");
 			exit(0);
-		}
 
-		if (event.type != SDL_KEYDOWN && event.type != SDL_KEYUP) {
+		case SDL_ACTIVEEVENT:
+		case SDL_MOUSEMOTION:
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
+			continue;
+
+		default:
 			printf("Unknown event type %d\n", event.type);
 			continue;
 		}
