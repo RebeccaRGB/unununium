@@ -17,17 +17,26 @@ static u32 pitch;
 static u32 palette[256];
 
 
-static void blit(s32 xx, s32 yy, u16 flags, u16 *mem, u32 bitmap, u16 tile, u8 palette_offset)
+static void blit(s32 xx, s32 yy, u16 flags, u16 *mem, u32 bitmap, u16 tile)
 {
 	u32 x, y, h, w, nc;
 	u16 *m;
 	u32 bits, nbits;
+	u8 palette_offset;
+
+	xx += 64;
+	yy += 64;
+
+	if ((u32)xx >= 320+64 || (u32)yy >= 240+64)
+		return;
 
 	u32 *dest = screen + (s32)(pitch*yy + xx);
 
 	h = sizes[(flags & 0x00c0) >> 6];
 	w = sizes[(flags & 0x0030) >> 4];
 	nc = colour_sizes[flags & 0x0003];
+
+	palette_offset = (flags & 0x0f00) >> 4;
 
 	m = mem + bitmap + nc*w*h/16*tile;
 	bits = 0;
@@ -89,12 +98,11 @@ static void blit_page(u16 *mem, u32 bitmap, u32 tilemap, u32 flags)
 	for (y0 = 0; y0 < 15; y0++)
 		for (x0 = 0; x0 < 20; x0++) {
 			u16 tile = mem[tilemap + x0 + 32*y0];
-			u32 *dest = screen + 16*pitch*y0 + 16*x0;
 
 			if (tile == 0)
 				continue;
 
-			blit(16*x0, 16*y0, flags, mem, bitmap, tile, 0);
+			blit(16*x0, 16*y0, flags, mem, bitmap, tile);
 		}
 }
 
@@ -105,7 +113,6 @@ static void blit_sprite(u16 *mem, u16 *sprite)
 	u32 *dest;
 	u32 bitmap = 0x40*mem[0x2822];
 	u32 w, h;
-	u8 palette_offset;
 
 	tile = *sprite++;
 	x = 160 + *sprite++;
@@ -114,10 +121,6 @@ static void blit_sprite(u16 *mem, u16 *sprite)
 
 //if (flags & 0x8000) return;	// dunno
 //if (flags & 0x4000) return;	// dunno
-//if (flags & 0x2000) return;	// depth
-//if (flags & 0x1000) return;	// depth
-
-	palette_offset = (flags & 0x0f00) >> 4;
 
 	h = sizes[(flags & 0x00c0) >> 6];
 	w = sizes[(flags & 0x0030) >> 4];
@@ -126,19 +129,9 @@ x -= (w/2);
 y -= (h/2);
 y += 8;
 
-	// These are unsigned, so they check for "< 0" as well.
-	if (x + w > 320+128 || y + h > 240+128) {
-		printf("*** CLIP\n");
-		printf("x,y=%d,%d w,h=%d,%d\n", (int)x, (int)y, (int)w, (int)h);
-		return;
-	}
-
-//if (flags & 0x0008) return;	// Y flip
-//if (flags & 0x0004) return;	// X flip
-
 	dest = screen + (s32)(pitch*y + x);
 
-	blit(x, y, flags, mem, bitmap, tile, palette_offset);
+	blit(x, y, flags, mem, bitmap, tile);
 }
 
 static void blit_sprites(u16 *mem)
@@ -237,6 +230,4 @@ void sdl_init(void)
 
 	screen = surface->pixels;
 	pitch = surface->pitch / 4;
-
-	screen += 64*(pitch + 1);
 }
