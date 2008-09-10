@@ -17,11 +17,13 @@ static u32 pitch;
 static u32 palette[256];
 
 
-static void blit(u32 *dest, u16 flags, u16 *mem, u32 bitmap, u16 tile, u8 palette_offset)
+static void blit(s32 xx, s32 yy, u16 flags, u16 *mem, u32 bitmap, u16 tile, u8 palette_offset)
 {
 	u32 x, y, h, w, nc;
 	u16 *m;
 	u32 bits, nbits;
+
+	u32 *dest = screen + (s32)(pitch*yy + xx);
 
 	h = sizes[(flags & 0x00c0) >> 6];
 	w = sizes[(flags & 0x0030) >> 4];
@@ -92,7 +94,7 @@ static void blit_page(u16 *mem, u32 bitmap, u32 tilemap, u32 flags)
 			if (tile == 0)
 				continue;
 
-			blit(dest, flags, mem, bitmap, tile, 0);
+			blit(16*x0, 16*y0, flags, mem, bitmap, tile, 0);
 		}
 }
 
@@ -136,7 +138,7 @@ y += 8;
 
 	dest = screen + (s32)(pitch*y + x);
 
-	blit(dest, flags, mem, bitmap, tile, palette_offset);
+	blit(x, y, flags, mem, bitmap, tile, palette_offset);
 }
 
 static void blit_sprites(u16 *mem)
