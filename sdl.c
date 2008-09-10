@@ -205,7 +205,7 @@ void update_screen(u16 *mem)
 	if (SDL_MUSTLOCK(surface))
 		SDL_UnlockSurface(surface);
 
-	SDL_UpdateRect(surface, 0, 0, 320+128, 240+128);
+	SDL_UpdateRect(surface, 0, 0, 0, 0);
 }
 
 void sdl_init(void)
