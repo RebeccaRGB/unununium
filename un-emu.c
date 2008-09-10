@@ -741,7 +741,7 @@ static void emu(void)
 		gettimeofday(&tv, 0);
 		now = 1000000*tv.tv_sec + tv.tv_usec;
 
-		if (now >= last_retrace_time + 10000) {
+		if (now - last_retrace_time >= 10000) {
 			static u32 which = 1;
 
 			mem[0x2863] = mem[0x2862] & which;
