@@ -147,30 +147,32 @@ static u8 x58(u32 x)
 void update_screen(u16 *mem)
 {
 //	printf("\033[H\033[2J\n\n");
-//	printf("-----  VIDEO UPDATE  -----\n");
+#if 0
+	printf("-----  VIDEO UPDATE  -----\n");
 
-//	printf("page 0:\n");
-//	printf("  dunno0 = %04x\n", mem[0x2810]);
-//	printf("  dunno1 = %04x\n", mem[0x2811]);
-//	printf("  flags  = %04x\n", mem[0x2812]);
-//	printf("  flags2 = %04x\n", mem[0x2813]);
-//	printf("  tiles  = %04x\n", mem[0x2814]);
-//	printf("  dunno5 = %04x\n", mem[0x2815]);
-//	printf("  bitmap = %04x\n", mem[0x2820]);
+	printf("page 0:\n");
+	printf("  x off  = %04x\n", mem[0x2810]);
+	printf("  y off  = %04x\n", mem[0x2811]);
+	printf("  flags  = %04x\n", mem[0x2812]);
+	printf("  flags2 = %04x\n", mem[0x2813]);
+	printf("  tiles  = %04x\n", mem[0x2814]);
+	printf("  dunno5 = %04x\n", mem[0x2815]);
+	printf("  bitmap = %04x\n", mem[0x2820]);
 
-//	printf("page 1:\n");
-//	printf("  dunno0 = %04x\n", mem[0x2816]);
-//	printf("  dunno1 = %04x\n", mem[0x2817]);
-//	printf("  flags  = %04x\n", mem[0x2818]);
-//	printf("  flags2 = %04x\n", mem[0x2819]);
-//	printf("  tiles  = %04x\n", mem[0x281a]);
-//	printf("  dunno5 = %04x\n", mem[0x281b]);
-//	printf("  bitmap = %04x\n", mem[0x2821]);
+	printf("page 1:\n");
+	printf("  x off  = %04x\n", mem[0x2816]);
+	printf("  y off  = %04x\n", mem[0x2817]);
+	printf("  flags  = %04x\n", mem[0x2818]);
+	printf("  flags2 = %04x\n", mem[0x2819]);
+	printf("  tiles  = %04x\n", mem[0x281a]);
+	printf("  dunno5 = %04x\n", mem[0x281b]);
+	printf("  bitmap = %04x\n", mem[0x2821]);
 
-//	printf("sprites:\n");
-//	printf("  bitmap = %04x\n", mem[0x2822]);
+	printf("sprites:\n");
+	printf("  bitmap = %04x\n", mem[0x2822]);
 
-//	printf("\n");
+	printf("\n");
+#endif
 
 	u32 palette[256];
 	u32 n;
@@ -194,8 +196,9 @@ void update_screen(u16 *mem)
 
 	for (n = 0; n < 256; n++)
 		if (mem[0x2c00 + 4*n]) {
-//			printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
-//			       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
+			if (mem[0x2c00 + 4*n] & 0xc000)
+				printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
+				       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
 			blit_sprite(mem, mem + 0x2c00 + 4*n, palette);
 		}
 
