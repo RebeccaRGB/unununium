@@ -689,7 +689,7 @@ static void do_buttons(void)
 				keymask = 0x80;
 				break;
 			default:
-				return;
+				continue;
 		}
 
 		if (event.type == SDL_KEYDOWN)
