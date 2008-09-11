@@ -231,6 +231,8 @@ void sdl_init(void)
 	}
 	atexit(SDL_Quit);
 
+	SDL_WM_SetCaption("Unununium", 0);
+
 	surface = SDL_SetVideoMode(320+128, 240+128, 32, SDL_SWSURFACE);
 	if (!surface) {
 		fprintf(stderr, "Unable to set 320x240 video: %s\n", SDL_GetError());
