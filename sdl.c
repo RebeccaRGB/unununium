@@ -81,9 +81,11 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 	}
 }
 
-static void blit_page(u32 depth, u16 *mem, u32 bitmap, u32 tilemap, u32 flags)
+static void blit_page(u32 depth, u16 *mem, u32 bitmap, u16 *regs)
 {
 	u32 x0, y0;
+	u32 tilemap = regs[4];
+	u32 flags = regs[2];
 
 	if (flags == 0) {	// shouldn't get here, but we generate IRQs too early
 		printf("FIXME, early video IRQ\n");
@@ -212,8 +214,8 @@ void update_screen(u16 *mem)
 
 	u32 depth;
 	for (depth = 0; depth < 4; depth++) {
-		blit_page(depth, mem, 0x40*mem[0x2820], mem[0x2814], mem[0x2812]);
-		blit_page(depth, mem, 0x40*mem[0x2821], mem[0x281a], mem[0x2818]);
+		blit_page(depth, mem, 0x40*mem[0x2820], mem + 0x2810);
+		blit_page(depth, mem, 0x40*mem[0x2821], mem + 0x2816);
 		blit_sprites(depth, mem);
 	}
 
