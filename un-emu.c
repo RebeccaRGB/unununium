@@ -729,12 +729,13 @@ static void emu(void)
 			step();
 			insn_count++;
 
-			static u32 flipflop = 0;
+			static u32 counter = 0;
 			if (idle_pc == cs_pc()) {
-				flipflop ^= 1;
-				if (flipflop) {
+				counter++;
+				if (counter == 5000) {
 					do_idle();
 					insn_count = (insn_count + 0xfff) & ~0xfffULL;
+					counter = 0;
 					break;
 				}
 			}
