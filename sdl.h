@@ -12,6 +12,6 @@
 #include "types.h"
 
 void sdl_init(void);
-void update_screen(u16 *mem);
+void update_screen(void);
 
 #endif

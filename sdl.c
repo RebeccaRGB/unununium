@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "types.h"
+#include "emu.h"
 #include "sdl.h"
 
 
@@ -81,7 +82,7 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 	}
 }
 
-static void blit_page(u32 depth, u16 *mem, u32 bitmap, u16 *regs)
+static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 {
 	u32 x0, y0;
 	u32 tilemap = regs[4];
@@ -111,7 +112,7 @@ static void blit_page(u32 depth, u16 *mem, u32 bitmap, u16 *regs)
 		}
 }
 
-static void blit_sprite(u32 depth, u16 *mem, u16 *sprite)
+static void blit_sprite(u32 depth, u16 *sprite)
 {
 	u16 tile, flags;
 	s16 x, y;
@@ -142,7 +143,7 @@ y += 8;
 	blit(x, y, flags, mem+bitmap, tile);
 }
 
-static void blit_sprites(u32 depth, u16 *mem)
+static void blit_sprites(u32 depth)
 {
 	u32 n;
 	for (n = 0; n < 256; n++)
@@ -150,7 +151,7 @@ static void blit_sprites(u32 depth, u16 *mem)
 			if (mem[0x2c00 + 4*n] & 0xc000)
 				printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
 				       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
-			blit_sprite(depth, mem, mem + 0x2c00 + 4*n);
+			blit_sprite(depth, mem + 0x2c00 + 4*n);
 		}
 }
 
@@ -161,7 +162,7 @@ static u8 x58(u32 x)
 	return x / 4;
 }
 
-static void set_palette(u16 *mem)
+static void set_palette(void)
 {
 	u32 n;
 	for (n = 0; n < 256; n++) {
@@ -174,7 +175,7 @@ static void set_palette(u16 *mem)
 	}
 }
 
-void update_screen(u16 *mem)
+void update_screen(void)
 {
 //	printf("\033[H\033[2J\n\n");
 #if 0
@@ -204,7 +205,7 @@ void update_screen(u16 *mem)
 	printf("\n");
 #endif
 
-	set_palette(mem);
+	set_palette();
 
 	if (SDL_MUSTLOCK(surface))
 		if (SDL_LockSurface(surface) < 0) {
@@ -214,9 +215,9 @@ void update_screen(u16 *mem)
 
 	u32 depth;
 	for (depth = 0; depth < 4; depth++) {
-		blit_page(depth, mem, 0x40*mem[0x2820], mem + 0x2810);
-		blit_page(depth, mem, 0x40*mem[0x2821], mem + 0x2816);
-		blit_sprites(depth, mem);
+		blit_page(depth, 0x40*mem[0x2820], mem + 0x2810);
+		blit_page(depth, 0x40*mem[0x2821], mem + 0x2816);
+		blit_sprites(depth);
 	}
 
 	if (SDL_MUSTLOCK(surface))
