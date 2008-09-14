@@ -12,20 +12,20 @@
 #include "emu.h"
 
 
-#define N_MEM 0x400000
+u16 mem[N_MEM];
 
 
 static int trace;
 static int store_trace;
 
 
-u16 mem[N_MEM];
-u16 reg[8];
+static u16 reg[8];
 static u8 sb;
 static u8 irq, fiq;
 static u64 insn_count;
 
 static u32 button_state;
+static u32 idle_pc;
 
 
 static void dump(u32 addr, u32 len)
@@ -705,71 +705,76 @@ static void do_buttons(void)
 	button_state = (button_state & ~up) | down;
 }
 
+static void run(void)
+{
+	int i;
+
+	for (i = 0; i < 0x1000; i++) {
+		if (trace)
+			print_state();
+
+//		if (cs_pc() == 0x3316e) {
+//			printf("##### SHOW SPRITE %04x at (%04x,%04x) flags %04x\n",
+//			       mem[reg[0]+3], mem[reg[0]+4], mem[reg[0]+5], mem[reg[0]+6]);
+//		}
+
+		step();
+		insn_count++;
+
+		static u32 counter = 0;
+		if (idle_pc == cs_pc()) {
+			counter++;
+			if (counter == 5000) {
+				do_idle();
+				insn_count = (insn_count + 0xfff) & ~0xfffULL;
+				counter = 0;
+				break;
+			}
+		}
+	}
+
+	struct timeval tv;
+	u32 now;
+
+	gettimeofday(&tv, 0);
+	now = 1000000*tv.tv_sec + tv.tv_usec;
+
+	if (now - last_retrace_time >= 10000) {
+		static u32 which = 1;
+
+		mem[0x2863] = mem[0x2862] & which;
+		which ^= 3;
+
+		do_buttons();
+
+		do_irq(0);
+		last_retrace_time = now;
+	}
+
+	// flip some I/O reg bits
+	if ((insn_count & 0x0fff) == 0)
+		do_irq(7);
+
+//	// progress report
+//	if ((insn_count & 0x000fffff) == 0)
+//		print_state();
+
+	if ((insn_count & 0x0001ffff) == 0)
+		do_irq(3);
+
+	if ((insn_count & 0x0001ffff) == 0x14000)
+		do_irq(1 + (random() % 7));
+}
+
 void emu(void)
 {
-	u32 idle_pc;
+	memset(reg, 0, sizeof reg);
+	reg[7] = mem[0xfff7];	// reset vector
 
 	idle_pc = 0;
 	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43)
 		idle_pc = 0x42daa;
 
-	for (;;) {
-		int i;
-
-		for (i = 0; i < 0x1000; i++) {
-			if (trace)
-				print_state();
-
-//			if (cs_pc() == 0x3316e) {
-//				printf("##### SHOW SPRITE %04x at (%04x,%04x) flags %04x\n",
-//				       mem[reg[0]+3], mem[reg[0]+4], mem[reg[0]+5], mem[reg[0]+6]);
-//			}
-
-			step();
-			insn_count++;
-
-			static u32 counter = 0;
-			if (idle_pc == cs_pc()) {
-				counter++;
-				if (counter == 5000) {
-					do_idle();
-					insn_count = (insn_count + 0xfff) & ~0xfffULL;
-					counter = 0;
-					break;
-				}
-			}
-		}
-
-		struct timeval tv;
-		u32 now;
-
-		gettimeofday(&tv, 0);
-		now = 1000000*tv.tv_sec + tv.tv_usec;
-
-		if (now - last_retrace_time >= 10000) {
-			static u32 which = 1;
-
-			mem[0x2863] = mem[0x2862] & which;
-			which ^= 3;
-
-			do_buttons();
-
-			do_irq(0);
-			last_retrace_time = now;
-		}
-
-		// flip some I/O reg bits
-		if ((insn_count & 0x0fff) == 0)
-			do_irq(7);
-
-//		// progress report
-//		if ((insn_count & 0x000fffff) == 0)
-//			print_state();
-
-		if ((insn_count & 0x0001ffff) == 0)
-			do_irq(3);
-
-		if ((insn_count & 0x0001ffff) == 0x14000)
-			do_irq(1 + (random() % 7));
-	}
+	for (;;)
+		run();
 }

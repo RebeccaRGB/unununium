@@ -8,7 +8,6 @@
 #define N_MEM 0x400000
 
 extern u16 mem[N_MEM];
-extern u16 reg[8];
 
 void emu(void);
 

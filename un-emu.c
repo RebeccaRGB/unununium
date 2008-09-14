@@ -22,9 +22,6 @@ int main(int argc, char *argv[])
 		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
 #endif
 
-	memset(reg, 0, sizeof reg);
-	reg[7] = mem[0xfff7];	// reset vector
-
 	sdl_init();
 
 srandom(42);
