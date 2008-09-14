@@ -577,16 +577,6 @@ static void do_irq(int irqno)
 {
 	u16 vec;
 
-	// randomly change some I/O reg, this helps make progress until
-	// we figure out how to properly emulate I/O
-	if (irqno == 7) {
-		u16 addr = 0x3d00 + (random() % 0x100);
-		u16 val = random();
-		//printf("MAKE A MESS: %04x to %04x (was %04x)\n", val, addr, mem[addr]);
-		mem[addr] = val;
-		return;
-	}
-
 	// some of these crash (program bug, not emulator bug -- well the
 	// emulator shouldn't fire IRQs that weren't enabled.  until then,
 	// just ignore these IRQs)
@@ -705,10 +695,29 @@ static void do_buttons(void)
 	button_state = (button_state & ~up) | down;
 }
 
-static void run(void)
+static void run_until_reti(void)
+{
+	int done;
+
+fprintf(stderr, "** RUN IRQ\n");
+	for (done = 0; !done; ) {
+		if (trace)
+			print_state();
+
+		if (mem[cs_pc()] == 0x9a98)
+			done = 1;
+
+		step();
+		insn_count++;
+	}
+fprintf(stderr, "** RUN IRQ DONE\n");
+}
+
+static void run_main(void)
 {
 	int i;
 
+fprintf(stderr, "** RUN MAIN\n");
 	for (i = 0; i < 0x1000; i++) {
 		if (trace)
 			print_state();
@@ -726,12 +735,24 @@ static void run(void)
 			counter++;
 			if (counter == 5000) {
 				do_idle();
-				insn_count = (insn_count + 0xfff) & ~0xfffULL;
 				counter = 0;
 				break;
 			}
 		}
 	}
+fprintf(stderr, "** RUN MAIN DONE\n");
+}
+
+static void run(void)
+{
+	run_main();
+
+	if (irq != 1)
+		return;
+
+	// FIXME
+	if (insn_count < 1000000)
+		return;
 
 	struct timeval tv;
 	u32 now;
@@ -745,25 +766,37 @@ static void run(void)
 		mem[0x2863] = mem[0x2862] & which;
 		which ^= 3;
 
+		do_irq(0);
+		run_until_reti();
+
+		last_retrace_time = now;
+
 		do_buttons();
 
-		do_irq(0);
-		last_retrace_time = now;
+		do_irq(3);
+		run_until_reti();
 	}
 
 	// flip some I/O reg bits
-	if ((insn_count & 0x0fff) == 0)
-		do_irq(7);
+	if (1 || (insn_count & 0x0fff) == 0) {
+		u16 addr = 0x3d00 + (random() % 0x100);
+		u16 val = random();
+		//printf("MAKE A MESS: %04x to %04x (was %04x)\n", val, addr, mem[addr]);
+		mem[addr] = val;
+	}
+
 
 //	// progress report
 //	if ((insn_count & 0x000fffff) == 0)
 //		print_state();
 
-	if ((insn_count & 0x0001ffff) == 0)
-		do_irq(3);
+//	if (1 || (insn_count & 0x0001ffff) == 0) {
+//		do_irq(3);
+//		run_until_reti();
+//	}
 
-	if ((insn_count & 0x0001ffff) == 0x14000)
-		do_irq(1 + (random() % 7));
+//	if ((insn_count & 0x0001ffff) == 0x14000)
+//		do_irq(1 + (random() % 7));
 }
 
 void emu(void)
