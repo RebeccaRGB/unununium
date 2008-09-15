@@ -573,41 +573,6 @@ bad:
 	exit(1);
 }
 
-static void do_irq(int irqno)
-{
-	u16 vec;
-
-	// some of these crash (program bug, not emulator bug -- well the
-	// emulator shouldn't fire IRQs that weren't enabled.  until then,
-	// just ignore these IRQs)
-	if (irqno == 1 || irqno == 2 || irqno == 5 || irqno == 6 || irqno == 7)
-		return;
-
-	if (irqno >= 8) {	// that's how we say "FIQ"
-		if (fiq != 1)
-			return;
-		fiq |= 2;
-		vec = 0xfff6;
-		printf("### FIQ ###\n");
-	} else {
-		if (fiq & 2)
-			return;
-		if (irq != 1)
-			return;
-		irq |= 2;
-		vec = 0xfff8 + irqno;
-		//if (irqno)
-		//	printf("### IRQ #%x ###\n", irqno);
-	}
-
-	// XXX: should handle swapping SB here.  we have a slight
-	// chance of corrupting SB as it is now
-	push(reg[7], 0);
-	push(reg[6], 0);
-	reg[7] = mem[vec];
-	reg[6] = 0;
-}
-
 static u32 last_retrace_time = 0;
 
 static void do_idle(void)
@@ -695,11 +660,43 @@ static void do_buttons(void)
 	button_state = (button_state & ~up) | down;
 }
 
-static void run_until_reti(void)
+static void do_irq(int irqno)
 {
+	u16 vec;
+
+	// some of these crash (program bug, not emulator bug -- well the
+	// emulator shouldn't fire IRQs that weren't enabled.  until then,
+	// just ignore these IRQs)
+//	if (irqno == 1 || irqno == 2 || irqno == 5 || irqno == 6 || irqno == 7)
+//		return;
+
+	if (irqno == 8) {	// that's how we say "FIQ"
+		if (fiq != 1)
+			return;
+		fiq |= 2;
+		vec = 0xfff6;
+		printf("### FIQ ###\n");
+	} else {
+		if (fiq & 2)
+			return;
+		if (irq != 1)
+			return;
+		irq |= 2;
+		vec = 0xfff8 + irqno;
+		//if (irqno)
+		//	printf("### IRQ #%x ###\n", irqno);
+	}
+
+	// XXX: should handle swapping SB here.  we have a slight
+	// chance of corrupting SB as it is now
+	push(reg[7], 0);
+	push(reg[6], 0);
+	reg[7] = mem[vec];
+	reg[6] = 0;
+
 	int done;
 
-fprintf(stderr, "** RUN IRQ\n");
+fprintf(stderr, "** RUN IRQ %d\n", irqno);
 	for (done = 0; !done; ) {
 		if (trace)
 			print_state();
@@ -710,7 +707,7 @@ fprintf(stderr, "** RUN IRQ\n");
 		step();
 		insn_count++;
 	}
-fprintf(stderr, "** RUN IRQ DONE\n");
+fprintf(stderr, "** RUN IRQ %d DONE\n", irqno);
 }
 
 static void run_main(void)
@@ -767,14 +764,12 @@ static void run(void)
 		which ^= 3;
 
 		do_irq(0);
-		run_until_reti();
 
 		last_retrace_time = now;
 
 		do_buttons();
 
 		do_irq(3);
-		run_until_reti();
 	}
 
 	// flip some I/O reg bits
@@ -789,14 +784,6 @@ static void run(void)
 //	// progress report
 //	if ((insn_count & 0x000fffff) == 0)
 //		print_state();
-
-//	if (1 || (insn_count & 0x0001ffff) == 0) {
-//		do_irq(3);
-//		run_until_reti();
-//	}
-
-//	if ((insn_count & 0x0001ffff) == 0x14000)
-//		do_irq(1 + (random() % 7));
 }
 
 void emu(void)
