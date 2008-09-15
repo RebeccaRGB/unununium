@@ -712,32 +712,23 @@ fprintf(stderr, "** RUN IRQ %d DONE\n", irqno);
 
 static void run_main(void)
 {
-	int i;
+	int i, done;
 
 fprintf(stderr, "** RUN MAIN\n");
-	for (i = 0; i < 0x1000; i++) {
+	for (i = 0, done = 0; i < 0x1000 && !done; i++) {
 		if (trace)
 			print_state();
 
-//		if (cs_pc() == 0x3316e) {
-//			printf("##### SHOW SPRITE %04x at (%04x,%04x) flags %04x\n",
-//			       mem[reg[0]+3], mem[reg[0]+4], mem[reg[0]+5], mem[reg[0]+6]);
-//		}
+		if (cs_pc() == idle_pc)
+			done = 1;
 
 		step();
 		insn_count++;
-
-		static u32 counter = 0;
-		if (idle_pc == cs_pc()) {
-			counter++;
-			if (counter == 5000) {
-				do_idle();
-				counter = 0;
-				break;
-			}
-		}
 	}
 fprintf(stderr, "** RUN MAIN DONE\n");
+
+	if (done)
+		do_idle();
 }
 
 static void run(void)
