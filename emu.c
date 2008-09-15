@@ -136,6 +136,9 @@ static u16 io_load(u32 addr)
 		if (addr == 0x3d22)	// IRQ
 			return mem[0x3d21];
 
+		if (addr == 0x3d2c || addr == 0x3d2d)
+			return random();
+
 		if (addr == 0x3d31) {
 			val = 3;
 			//printf("(hard 3) LOAD %04x from %04x\n", val, addr);
