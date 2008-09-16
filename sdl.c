@@ -221,7 +221,7 @@ void update_screen(void)
 		}
 
 	u32 y;
-	void *p = sdl_surface->pixels + 64*4 + 64*sdl_surface->pitch;
+	void *p = sdl_surface->pixels;
 	for (y = 0; y < 240; y++)
 		memcpy(p + y*sdl_surface->pitch, screen + 64 + (64+y)*pitch, 320*4);
 
@@ -241,7 +241,7 @@ void sdl_init(void)
 
 	SDL_WM_SetCaption("Unununium", 0);
 
-	sdl_surface = SDL_SetVideoMode(320+128, 240+128, 32, SDL_SWSURFACE);
+	sdl_surface = SDL_SetVideoMode(320, 240, 32, SDL_SWSURFACE);
 	if (!sdl_surface) {
 		fprintf(stderr, "Unable to set 320x240 video: %s\n", SDL_GetError());
 		exit(1);
