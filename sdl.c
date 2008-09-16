@@ -14,7 +14,7 @@ static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 static SDL_Surface *sdl_surface;
 static u32 screen[(320+128)*(240+128)];
-static u32 pitch;
+static u32 pitch = 320+128;
 static u32 palette[256];
 
 
@@ -223,7 +223,7 @@ void update_screen(void)
 	u32 y;
 	void *p = sdl_surface->pixels + 64*4 + 64*sdl_surface->pitch;
 	for (y = 0; y < 240; y++)
-		memcpy(p + y*sdl_surface->pitch, screen + 64 + (64+y)*(320+128), 320*4);
+		memcpy(p + y*sdl_surface->pitch, screen + 64 + (64+y)*pitch, 320*4);
 
 	if (SDL_MUSTLOCK(sdl_surface))
 		SDL_UnlockSurface(sdl_surface);
@@ -246,6 +246,4 @@ void sdl_init(void)
 		fprintf(stderr, "Unable to set 320x240 video: %s\n", SDL_GetError());
 		exit(1);
 	}
-
-	pitch = sdl_surface->pitch / 4;
 }
