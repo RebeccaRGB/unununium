@@ -207,18 +207,18 @@ void update_screen(void)
 
 	set_palette();
 
-	if (SDL_MUSTLOCK(sdl_surface))
-		if (SDL_LockSurface(sdl_surface) < 0) {
-			printf("oh crap.\n");
-			exit(1);
-		}
-
 	u32 depth;
 	for (depth = 0; depth < 4; depth++) {
 		blit_page(depth, 0x40*mem[0x2820], mem + 0x2810);
 		blit_page(depth, 0x40*mem[0x2821], mem + 0x2816);
 		blit_sprites(depth);
 	}
+
+	if (SDL_MUSTLOCK(sdl_surface))
+		if (SDL_LockSurface(sdl_surface) < 0) {
+			printf("oh crap.\n");
+			exit(1);
+		}
 
 	memcpy(sdl_surface->pixels, screen, sizeof screen);
 
