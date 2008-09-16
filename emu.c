@@ -59,7 +59,8 @@ static void store(u16 val, u32 addr)
 	if (addr >= 0x2800 && addr < 0x2900) {		// video regs
 		if (addr == 0x2863) {	// video IRQ ACK
 			mem[0x2863] &= ~val;
-			update_screen();
+			if (val & 1)
+				update_screen();
 			//dump(0x2800, 0x100);
 		}
 		//printf("STORE %04x to %04x\n", val, addr);

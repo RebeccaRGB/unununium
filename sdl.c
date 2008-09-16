@@ -85,13 +85,12 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 {
 	u32 x0, y0;
-	u32 tilemap = regs[4];
 	u32 flags = regs[2];
+	u32 flags2 = regs[3];
+	u32 tilemap = regs[4];
 
-	if (flags == 0) {	// shouldn't get here, but we generate IRQs too early
-		printf("FIXME, early video IRQ\n");
+	if ((flags2 & 8) == 0)
 		return;
-	}
 
 	if ((flags & 0x3000) >> 12 != depth)
 		return;
