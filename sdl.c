@@ -12,8 +12,8 @@
 static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
-static SDL_Surface *surface;
-static u32 *screen;
+static SDL_Surface *sdl_surface;
+static u32 screen[(320+128)*(240+128)];
 static u32 pitch;
 static u32 palette[256];
 
@@ -170,7 +170,7 @@ static void set_palette(void)
 		if (c & 0x8000)
 			c = -1;
 		else
-			c = SDL_MapRGB(surface->format, x58(c >> 10), x58(c >> 5), x58(c));
+			c = SDL_MapRGB(sdl_surface->format, x58(c >> 10), x58(c >> 5), x58(c));
 		palette[n] = c;
 	}
 }
@@ -207,8 +207,8 @@ void update_screen(void)
 
 	set_palette();
 
-	if (SDL_MUSTLOCK(surface))
-		if (SDL_LockSurface(surface) < 0) {
+	if (SDL_MUSTLOCK(sdl_surface))
+		if (SDL_LockSurface(sdl_surface) < 0) {
 			printf("oh crap.\n");
 			exit(1);
 		}
@@ -220,10 +220,12 @@ void update_screen(void)
 		blit_sprites(depth);
 	}
 
-	if (SDL_MUSTLOCK(surface))
-		SDL_UnlockSurface(surface);
+	memcpy(sdl_surface->pixels, screen, sizeof screen);
 
-	SDL_UpdateRect(surface, 0, 0, 0, 0);
+	if (SDL_MUSTLOCK(sdl_surface))
+		SDL_UnlockSurface(sdl_surface);
+
+	SDL_UpdateRect(sdl_surface, 0, 0, 0, 0);
 }
 
 void sdl_init(void)
@@ -236,12 +238,11 @@ void sdl_init(void)
 
 	SDL_WM_SetCaption("Unununium", 0);
 
-	surface = SDL_SetVideoMode(320+128, 240+128, 32, SDL_SWSURFACE);
-	if (!surface) {
+	sdl_surface = SDL_SetVideoMode(320+128, 240+128, 32, SDL_SWSURFACE);
+	if (!sdl_surface) {
 		fprintf(stderr, "Unable to set 320x240 video: %s\n", SDL_GetError());
 		exit(1);
 	}
 
-	screen = surface->pixels;
-	pitch = surface->pitch / 4;
+	pitch = sdl_surface->pitch / 4;
 }
