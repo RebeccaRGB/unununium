@@ -752,6 +752,7 @@ static void run(void)
 	now = 1000000*tv.tv_sec + tv.tv_usec;
 
 	if (now - last_retrace_time >= 10000) {
+		// video
 		static u32 which = 1;
 
 		mem[0x2863] = mem[0x2862] & which;
@@ -763,7 +764,11 @@ static void run(void)
 
 		do_buttons();
 
+		// controller
 		do_irq(3);
+
+		// sound
+		do_irq(4);
 	}
 
 	// flip some I/O reg bits
