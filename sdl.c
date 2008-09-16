@@ -13,7 +13,7 @@ static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 static SDL_Surface *sdl_surface;
-static u32 screen[(320+128)*(240+128)];
+static u8 screen[(320+128)*(240+128)];
 static u32 pitch = 320+128;
 static u32 palette[256];
 
@@ -31,7 +31,7 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 	if ((u32)xx >= 320+64 || (u32)yy >= 240+64)
 		return;
 
-	u32 *dest = screen + (s32)(pitch*yy + xx);
+	u8 *dest = screen + (s32)(pitch*yy + xx);
 
 	h = sizes[(flags & 0x00c0) >> 6];
 	w = sizes[(flags & 0x0030) >> 4];
@@ -44,7 +44,7 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 	nbits = 0;
 
 	for (y = 0; y < h; y++) {
-		u32 *p;
+		u8 *p;
 
 		if (flags & 0x0008)
 			p = dest + pitch*(h - 1 - y);
@@ -72,7 +72,7 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 
 			c = palette[palette_offset + b];
 			if (c != (u32)-1)
-				*p = c;
+				*p = palette_offset + b;
 
 			if (flags & 0x0004)
 				p--;
@@ -115,7 +115,6 @@ static void blit_sprite(u32 depth, u16 *sprite)
 {
 	u16 tile, flags;
 	s16 x, y;
-	u32 *dest;
 	u32 bitmap = 0x40*mem[0x2822];
 	u32 w, h;
 
@@ -136,8 +135,6 @@ static void blit_sprite(u32 depth, u16 *sprite)
 x -= (w/2);
 y -= (h/2);
 y += 8;
-
-	dest = screen + (s32)(pitch*y + x);
 
 	blit(x, y, flags, mem+bitmap, tile);
 }
@@ -223,13 +220,17 @@ void update_screen(void)
 	for (y = 0; y < 240; y++) {
 		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;
 		u32 *p2 = sdl_surface->pixels + (2*y+1)*sdl_surface->pitch;
-		u32 *s = screen + 64 + (64+y)*pitch;
+		u8 *s = screen + 64 + (64+y)*pitch;
 
 		for (x = 0; x < 320; x += 4) {
 			u32 c0 = s[0];
 			u32 c1 = s[1];
 			u32 c2 = s[2];
 			u32 c3 = s[3];
+			c0 = palette[c0];
+			c1 = palette[c1];
+			c2 = palette[c2];
+			c3 = palette[c3];
 			s += 4;
 
 			p[0] = c0;
