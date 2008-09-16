@@ -10,6 +10,15 @@
 #include "emu.h"
 
 
+#ifdef __APPLE__
+void CGSSetConnectionProperty(int, int, int, int);
+int _CGSDefaultConnection();
+int CGSCreateCString(char *);
+int CGSCreateBoolean(unsigned char);
+void CGSReleaseObj(int);
+#endif
+
+
 int main(int argc, char *argv[])
 {
 	FILE *in;
@@ -37,6 +46,14 @@ int main(int argc, char *argv[])
 #endif
 
 	sdl_init();
+
+#ifdef __APPLE__
+	// Hack to speed up display refresh
+	int propertyString = CGSCreateCString("DisableDeferredUpdates");
+	int cid = _CGSDefaultConnection();
+	CGSSetConnectionProperty(cid, cid, propertyString, CGSCreateBoolean(1));
+	CGSReleaseObj(propertyString);
+#endif
 
 srandom(42);
 
