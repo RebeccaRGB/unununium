@@ -718,7 +718,7 @@ static void run_main(void)
 	int i, done;
 
 fprintf(stderr, "** RUN MAIN\n");
-	for (i = 0, done = 0; i < 0x1000 && !done; i++) {
+	for (i = 0, done = 0; i < 0x10000 && !done; i++) {
 		if (trace)
 			print_state();
 
