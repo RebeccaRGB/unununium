@@ -220,10 +220,13 @@ void update_screen(void)
 			exit(1);
 		}
 
-	u32 y;
-	void *p = sdl_surface->pixels;
-	for (y = 0; y < 240; y++)
-		memcpy(p + y*sdl_surface->pitch, screen + 64 + (64+y)*pitch, 320*4);
+	u32 x, y;
+	for (y = 0; y < 240; y++) {
+		u32 *p = sdl_surface->pixels + y*sdl_surface->pitch;
+
+		for (x = 0; x < 320; x++)
+			p[x] = screen[64 + x + (64+y)*pitch];
+	}
 
 	if (SDL_MUSTLOCK(sdl_surface))
 		SDL_UnlockSurface(sdl_surface);
