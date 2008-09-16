@@ -224,12 +224,34 @@ void update_screen(void)
 	for (y = 0; y < 240; y++) {
 		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;
 		u32 *p2 = sdl_surface->pixels + (2*y+1)*sdl_surface->pitch;
+		u32 *s = screen + 64 + (64+y)*pitch;
 
-		for (x = 0; x < 320; x++) {
-			p[2*x] = screen[64 + x + (64+y)*pitch];
-			p[2*x+1] = screen[64 + x + (64+y)*pitch];
-			p2[2*x] = screen[64 + x + (64+y)*pitch];
-			p2[2*x+1] = screen[64 + x + (64+y)*pitch];
+		s--;
+		p--;
+		p2--;
+		for (x = 0; x < 320; x += 4) {
+			u32 c0 = *++s;
+			u32 c1 = *++s;
+			u32 c2 = *++s;
+			u32 c3 = *++s;
+
+			*++p = c0;
+			*++p = c0;
+			*++p = c1;
+			*++p = c1;
+			*++p = c2;
+			*++p = c2;
+			*++p = c3;
+			*++p = c3;
+
+			*++p2 = c0;
+			*++p2 = c0;
+			*++p2 = c1;
+			*++p2 = c1;
+			*++p2 = c2;
+			*++p2 = c2;
+			*++p2 = c3;
+			*++p2 = c3;
 		}
 	}
 
