@@ -18,16 +18,8 @@ static u32 pitch = 320+128;
 static u32 palette[256];
 
 
-static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
+static void blit(s32 xoff, s32 yoff, u16 flags, u16 *bitmap, u16 tile)
 {
-	xx += 64;
-	yy += 64;
-
-	if ((u32)xx >= 320+64 || (u32)yy >= 240+64)
-		return;
-
-	u8 *dest = screen + (s32)(pitch*yy + xx);
-
 	u32 h = sizes[(flags & 0x00c0) >> 6];
 	u32 w = sizes[(flags & 0x0030) >> 4];
 
@@ -43,29 +35,26 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 	u32 nbits = 0;
 
 	for (u32 y = 0; y < h; y++) {
-		u8 *p;
-
-		p = dest + pitch*(y ^ yflipmask);
+		u32 yy = yoff + (y ^ yflipmask);
 
 		for (u32 x = 0; x < w; x++) {
-			u16 b;
-			u32 c;
+			u32 xx = xoff + (x ^ xflipmask);
 
 			bits <<= nc;
 			if (nbits < nc) {
-				b = *m++;
+				u16 b = *m++;
 				b = (b << 8) | (b >> 8);
 				bits |= b << (nc - nbits);
 				nbits += 16;
 			}
 			nbits -= nc;
 
-			b = bits >> 16;
+			u32 pal = palette_offset + (bits >> 16);
 			bits &= 0xffff;
 
-			c = palette[palette_offset + b];
-			if (c != (u32)-1)
-				p[x ^ xflipmask] = palette_offset + b;
+			if (xx < 320 && yy < 240)
+				if (palette[pal] != (u32)-1)
+					screen[pitch*yy + xx] = pal;
 		}
 	}
 }
@@ -208,7 +197,7 @@ void update_screen(void)
 	for (y = 0; y < 240; y++) {
 		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;
 		u32 *p2 = sdl_surface->pixels + (2*y+1)*sdl_surface->pitch;
-		u8 *s = screen + 64 + (64+y)*pitch;
+		u8 *s = screen + y*pitch;
 
 		for (x = 0; x < 320; x += 4) {
 			u32 c0 = s[0];
