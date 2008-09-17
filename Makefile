@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -W -O2 -g $(shell sdl-config --cflags)
+CFLAGS := -std=gnu99 -Wall -W -Os -g $(shell sdl-config --cflags)
 #CFLAGS := -Wall -W -O0 -g $(shell sdl-config --cflags)
 LDFLAGS := -g -lpng $(shell sdl-config --libs)
 

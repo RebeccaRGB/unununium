@@ -20,11 +20,6 @@ static u32 palette[256];
 
 static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 {
-	u32 x, y, h, w, nc;
-	u16 *m;
-	u32 bits, nbits;
-	u8 palette_offset;
-
 	xx += 64;
 	yy += 64;
 
@@ -33,26 +28,26 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 
 	u8 *dest = screen + (s32)(pitch*yy + xx);
 
-	h = sizes[(flags & 0x00c0) >> 6];
-	w = sizes[(flags & 0x0030) >> 4];
+	u32 h = sizes[(flags & 0x00c0) >> 6];
+	u32 w = sizes[(flags & 0x0030) >> 4];
 
 	u32 yflipmask = flags & 0x0008 ? h - 1 : 0;
 	u32 xflipmask = flags & 0x0004 ? w - 1 : 0;
 
-	nc = colour_sizes[flags & 0x0003];
+	u32 nc = colour_sizes[flags & 0x0003];
 
-	palette_offset = (flags & 0x0f00) >> 4;
+	u32 palette_offset = (flags & 0x0f00) >> 4;
 
-	m = bitmap + nc*w*h/16*tile;
-	bits = 0;
-	nbits = 0;
+	u16 *m = bitmap + nc*w*h/16*tile;
+	u32 bits = 0;
+	u32 nbits = 0;
 
-	for (y = 0; y < h; y++) {
+	for (u32 y = 0; y < h; y++) {
 		u8 *p;
 
 		p = dest + pitch*(y ^ yflipmask);
 
-		for (x = 0; x < w; x++) {
+		for (u32 x = 0; x < w; x++) {
 			u16 b;
 			u32 c;
 
