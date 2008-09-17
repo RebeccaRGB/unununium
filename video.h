@@ -2,15 +2,13 @@
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-#ifndef _EMU_H
-#define _EMU_H
+#ifndef _VIDEO_H
+#define _VIDEO_H
 
 #include "types.h"
 
-#define N_MEM 0x400000
+extern u8 screen[320*240];
 
-extern u16 mem[N_MEM];
-
-void emu(void);
+void blit_screen(void);
 
 #endif
