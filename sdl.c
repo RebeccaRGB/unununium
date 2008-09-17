@@ -35,6 +35,10 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 
 	h = sizes[(flags & 0x00c0) >> 6];
 	w = sizes[(flags & 0x0030) >> 4];
+
+	u32 yflipmask = flags & 0x0008 ? h - 1 : 0;
+	u32 xflipmask = flags & 0x0004 ? w - 1 : 0;
+
 	nc = colour_sizes[flags & 0x0003];
 
 	palette_offset = (flags & 0x0f00) >> 4;
@@ -46,13 +50,7 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 	for (y = 0; y < h; y++) {
 		u8 *p;
 
-		if (flags & 0x0008)
-			p = dest + pitch*(h - 1 - y);
-		else
-			p = dest + pitch*y;
-
-		if (flags & 0x0004)
-			p += w - 1;
+		p = dest + pitch*(y ^ yflipmask);
 
 		for (x = 0; x < w; x++) {
 			u16 b;
@@ -72,12 +70,7 @@ static void blit(s32 xx, s32 yy, u16 flags, u16 *bitmap, u16 tile)
 
 			c = palette[palette_offset + b];
 			if (c != (u32)-1)
-				*p = palette_offset + b;
-
-			if (flags & 0x0004)
-				p--;
-			else
-				p++;
+				p[x ^ xflipmask] = palette_offset + b;
 		}
 	}
 }
