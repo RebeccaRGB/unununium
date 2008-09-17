@@ -651,6 +651,10 @@ static void do_buttons(void)
 			case '8':
 				keymask = 0x80;
 				break;
+			case 'x':
+				if (event.type == SDL_KEYDOWN)
+					dump(0, 0x4000);
+				break;
 			default:
 				continue;
 		}
