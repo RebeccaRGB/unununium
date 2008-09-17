@@ -13,8 +13,8 @@ static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 static SDL_Surface *sdl_surface;
-static u8 screen[(320+128)*(240+128)];
-static u32 pitch = 320+128;
+static u8 screen[320*240];
+static const u32 pitch = 320;
 static u32 palette[256];
 
 
