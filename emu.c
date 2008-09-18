@@ -704,7 +704,7 @@ static void do_irq(int irqno)
 
 	int done;
 
-fprintf(stderr, "** RUN IRQ %d\n", irqno);
+//fprintf(stderr, "** RUN IRQ %d\n", irqno);
 	for (done = 0; !done; ) {
 		if (trace)
 			print_state();
@@ -715,14 +715,14 @@ fprintf(stderr, "** RUN IRQ %d\n", irqno);
 		step();
 		insn_count++;
 	}
-fprintf(stderr, "** RUN IRQ %d DONE\n", irqno);
+//fprintf(stderr, "** RUN IRQ %d DONE\n", irqno);
 }
 
 static void run_main(void)
 {
 	int i, done;
 
-fprintf(stderr, "** RUN MAIN\n");
+//fprintf(stderr, "** RUN MAIN\n");
 	for (i = 0, done = 0; i < 0x10000 && !done; i++) {
 		if (trace)
 			print_state();
@@ -733,7 +733,7 @@ fprintf(stderr, "** RUN MAIN\n");
 		step();
 		insn_count++;
 	}
-fprintf(stderr, "** RUN MAIN DONE\n");
+//fprintf(stderr, "** RUN MAIN DONE\n");
 
 	if (done)
 		do_idle();
