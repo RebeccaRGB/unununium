@@ -801,7 +801,9 @@ void emu(void)
 	reg[7] = mem[0xfff7];	// reset vector
 
 	idle_pc = 0;
-	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43)
+	if (mem[0x19792] == 0x4311 && mem[0x19794] == 0x4e43)	// VII
+		idle_pc = 0x19792;
+	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43)	// VC1
 		idle_pc = 0x42daa;
 
 	for (;;)
