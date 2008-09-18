@@ -720,15 +720,20 @@ static void do_irq(int irqno)
 
 static void run_main(void)
 {
-	int i, done;
+	int i, idle, done;
+
+	idle = 0;
 
 //fprintf(stderr, "** RUN MAIN\n");
 	for (i = 0, done = 0; i < 0x10000 && !done; i++) {
 		if (trace)
 			print_state();
 
-		if (cs_pc() == idle_pc)
-			done = 1;
+		if (cs_pc() == idle_pc) {
+			idle++;
+			if (idle == 2)
+				done = 1;
+		}
 
 		step();
 		insn_count++;
