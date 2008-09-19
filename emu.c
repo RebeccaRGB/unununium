@@ -100,12 +100,6 @@ static u16 io_load(u32 addr)
 {
 	u16 val = mem[addr];
 
-	if (addr < 0x2800)	// RAM
-		return val;
-
-	if (addr >= 0x4000)	// ROM
-		return val;
-
 	if (addr >= 0x2800 && addr < 0x2900) {		// video regs
 //		if (addr == 0x2863) {
 //			u16 val = 1 << (random() % 3);
