@@ -2,16 +2,26 @@ CC := gcc
 CFLAGS := -std=gnu99 -Wall -W -Os -g
 LDFLAGS := -g
 
-all: un-disas un-emu
+# Build for what platform?
+PLATFORM := sdl
 
+# Default targets.
+all: un-disas uuu-$(PLATFORM)
+
+# The disassembler.
 un-disas: un-disas.o disas.o
 
-un-emu: un-emu.o emu.o video.o disas.o sdl.o
+# The emulator.
+uuu-$(PLATFORM): uuu-%: uuu-%.o platform-%.o emu.o video.o disas.o
 
-sdl.o un-emu.o: CFLAGS += $(shell sdl-config --cflags)
-un-emu: LDFLAGS += $(shell sdl-config --libs)
+# SDL needs special compiler flags and some libraries.
+platform-sdl.o uuu-sdl.o: CFLAGS += $(shell sdl-config --cflags)
+uuu-sdl: LDFLAGS += $(shell sdl-config --libs)
 
+# Laziness rules, and lazy rules rule most of all.
 *.o: *.h
 
+# Clean up.
 clean:
-	rm -f un-disas un-emu un-disas.o un-emu.o disas.o sdl.o emu.o video.o
+	rm -f un-disas un-disas.o disas.o emu.o video.o
+	rm -f uuu-sdl uuu-sdl.o platform-sdl.o
