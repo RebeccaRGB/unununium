@@ -60,6 +60,7 @@ static void blit(s32 xoff, s32 yoff, u16 flags, u16 *bitmap, u16 tile)
 static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 {
 	u32 x0, y0;
+	u32 yscroll = regs[1];
 	u32 flags = regs[2];
 	u32 flags2 = regs[3];
 	u32 tilemap = regs[4];
@@ -75,14 +76,15 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 		exit(1);
 	}
 
-	for (y0 = 0; y0 < 15; y0++)
-		for (x0 = 0; x0 < 20; x0++) {
+	for (y0 = 0; y0 < 16; y0++)
+		for (x0 = 0; x0 < 32; x0++) {
 			u16 tile = mem[tilemap + x0 + 32*y0];
 
 			if (tile == 0)
 				continue;
 
-			blit(16*x0, 16*y0, flags, mem+bitmap, tile);
+			u32 yy = ((16*y0 - yscroll + 0x10) & 0xff) - 0x10;
+			blit(16*x0, yy, flags, mem+bitmap, tile);
 		}
 }
 
