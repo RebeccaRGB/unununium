@@ -83,6 +83,10 @@ static void store(u16 val, u32 addr)
 		//printf("STORE %04x to %04x\n", val, addr);
 		return;
 	}
+	if (addr >= 0x2900 && addr < 0x2b00) {		// scroll per raster line
+		//printf("STORE %04x to %04x\n", val, addr);
+		return;
+	}
 	if (addr >= 0x2b00 && addr < 0x2c00) {		// palette
 		//printf("STORE %04x to %04x\n", val, addr);
 		return;
