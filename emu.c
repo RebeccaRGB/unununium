@@ -79,7 +79,6 @@ static void store(u16 val, u32 addr)
 			mem[0x2863] &= ~val;
 			if (val & 1)
 				update_screen();
-			//dump(0x2800, 0x100);
 		}
 		//printf("STORE %04x to %04x\n", val, addr);
 		return;
