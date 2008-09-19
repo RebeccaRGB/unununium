@@ -12,14 +12,31 @@
 
 static u16 mem[N_MEM];
 
-int main(void)
+int main(int argc, char *argv[])
 {
+	FILE *in;
 	u32 i, n;
 
-	n = fread(mem, 2, N_MEM, stdin);
+	if (argc != 2) {
+		fprintf(stderr, "usage: %s <rom-file>\n", argv[0]);
+		exit(1);
+	}
 
+	in = fopen(argv[1], "rb");
+	if (!in) {
+		perror("Cannot read ROM file");
+		exit(1);
+	}
+
+	n = fread(mem, 2, N_MEM, in);
+
+	fclose(in);
+
+// gross, but whatever.  one day i'll fix this, but not today
+#ifdef _BIG_ENDIAN
 	for (i = 0; i < n; i++)
 		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
+#endif
 
 	for (i = 0; i < n; )
 		i += disas(mem, i);
