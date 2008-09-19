@@ -53,6 +53,9 @@ static void blit(s32 xoff, s32 yoff, u32 flags, u16 *bitmap, u16 tile)
 			if ((flags & 0x00100000) && yy < 240)
 				xx = ((xx - mem[0x2900 + yy] + 0x10) & 0x01ff) - 0x10;
 
+			//if ((flags & 0x00200000) && yy < 240)
+			//	xx = ((xx - mem[0x2a00 + yy] + 0x10) & 0x01ff) - 0x10;
+
 			if (xx < 320 && yy < 240)
 				if ((mem[0x2b00 + pal] & 0x8000) == 0)
 					screen[xx + 320*yy] = pal;
