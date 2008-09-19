@@ -35,14 +35,14 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	n = fread(mem, 2, N_MEM, in);
+	n = fread(all_the_mem, 2, 4*N_MEM, in);
 
 	fclose(in);
 
 // gross, but whatever.  one day i'll fix this, but not today
 #ifdef _BIG_ENDIAN
 	for (i = 0; i < n; i++)
-		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
+		all_the_mem[i] = (all_the_mem[i] << 8) | (all_the_mem[i] >> 8);
 #endif
 
 	sdl_init();

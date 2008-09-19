@@ -12,6 +12,7 @@
 #include "emu.h"
 
 
+u16 all_the_mem[4*N_MEM];
 u16 mem[N_MEM];
 
 static int trace = 0;
@@ -29,6 +30,20 @@ static u64 insn_count;
 static u32 button_state;
 static u32 idle_pc;
 
+
+static void switch_bank(u32 bank)
+{
+	memcpy(mem + 0x4000, all_the_mem + (bank << 22) + 0x4000, 2*(N_MEM - 0x4000));
+	memset(ever_ran_this, 0, N_MEM);
+
+	idle_pc = 0;
+	if (mem[0x19792] == 0x4311 && mem[0x19794] == 0x4e43)	// VII bank 0
+		idle_pc = 0x19792;
+	if (mem[0x21653] == 0x4311 && mem[0x21655] == 0x4e43)	// VII bank 2
+		idle_pc = 0x21653;
+	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43)	// VC1
+		idle_pc = 0x42daa;
+}
 
 static void dump(u32 addr, u32 len)
 {
@@ -89,6 +104,12 @@ static void store(u16 val, u32 addr)
 		return;
 	}
 	if (addr >= 0x3d00 && addr < 0x3e00) {		// I/O
+		if (addr == 0x3d07) {
+			printf("STORE %04x to %04x (port C?)\n", val, addr);
+			u32 bank = ((val & 0x80) >> 7) | ((val & 0x20) >> 4);
+			switch_bank(bank);
+			printf("switched to bank %x\n", bank);
+		}
 		//printf("STORE %04x to %04x\n", val, addr);
 		return;
 	}
@@ -815,14 +836,10 @@ static void run(void)
 
 void emu(void)
 {
+	switch_bank(0);
+
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector
-
-	idle_pc = 0;
-	if (mem[0x19792] == 0x4311 && mem[0x19794] == 0x4e43)	// VII
-		idle_pc = 0x19792;
-	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43)	// VC1
-		idle_pc = 0x42daa;
 
 	for (;;)
 		run();
