@@ -6,6 +6,9 @@
 #include <string.h>
 #include <time.h>
 
+// We need to include this here, since it redefines main().
+#include <SDL.h>
+
 #include "types.h"
 #include "sdl.h"
 #include "emu.h"

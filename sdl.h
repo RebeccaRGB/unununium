@@ -6,10 +6,13 @@
 #ifndef _MY_SDL_H
 #define _MY_SDL_H
 
-// Include this here, since it redefines what main() means.  No taste.
-#include <SDL.h>
+#include "types.h"
+
+extern u8 controller_input[8];
+extern u8 controller_output[7];
 
 void sdl_init(void);
 void update_screen(void);
+char update_controller(void);
 
 #endif

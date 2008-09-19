@@ -3,6 +3,8 @@
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
 
@@ -27,7 +29,6 @@ static u8 irq, fiq;
 
 static u64 insn_count;
 
-static u32 button_state;
 static u32 idle_pc;
 
 
@@ -162,22 +163,14 @@ static u16 io_load(u32 addr)
 			//printf("(hard 3) LOAD %04x from %04x\n", val, addr);
 			return val;
 		}
+
 		if (addr == 0x3d36) {
 			static int count = 0;
-			switch (count) {
-			case 0:
-				val = button_state;
-				//printf("----- BUTTONS: %02x\n", val);
-				break;
-			case 6:
-				val = 0xff;
-				break;
-			default:
-				val = 0;
-			}
+			val = controller_input[count];
 			count = (count + 1) % 8;
 			return val;
 		}
+
 		//printf("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
@@ -614,85 +607,6 @@ static void do_idle(void)
 	}
 }
 
-static void do_buttons(void)
-{
-	SDL_Event event;
-	u32 keymask = 0;
-	u32 down, up;
-
-	down = up = 0;
-	while (SDL_PollEvent(&event)) {
-
-		switch (event.type) {
-		case SDL_KEYDOWN:
-		case SDL_KEYUP:
-			break;
-
-		case SDL_QUIT:
-			printf("Goodbye.\n");
-			exit(0);
-
-		case SDL_ACTIVEEVENT:
-		case SDL_MOUSEMOTION:
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEBUTTONUP:
-			continue;
-
-		default:
-			printf("Unknown event type %d\n", event.type);
-			continue;
-		}
-
-		switch (event.key.keysym.sym) {
-			case SDLK_ESCAPE:
-				printf("Goodbye.\n");
-				exit(0);
-			case SDLK_LEFT:
-				keymask = 0x01;
-				break;
-			case SDLK_RIGHT:
-				keymask = 0x02;
-				break;
-			case SDLK_DOWN:
-				keymask = 0x04;
-				break;
-			case SDLK_UP:
-				keymask = 0x08;
-				break;
-			case SDLK_SPACE:	// "A" button
-				keymask = 0x10;
-				break;
-			case 'b':		// "B" button
-				keymask = 0x20;
-				break;
-			case SDLK_0:
-				keymask = 0x40;
-				break;
-			case '8':
-				keymask = 0x80;
-				break;
-
-			case 't':
-				if (event.type == SDL_KEYDOWN)
-					trace = !trace;
-				break;
-			case 'x':
-				if (event.type == SDL_KEYDOWN)
-					dump(0, 0x4000);
-				break;
-			default:
-				continue;
-		}
-
-		if (event.type == SDL_KEYDOWN)
-			down |= keymask;
-		else
-			up |= keymask;
-	}
-
-	button_state = (button_state & ~up) | down;
-}
-
 static void do_irq(int irqno)
 {
 	u16 vec;
@@ -774,6 +688,41 @@ static void run_main(void)
 		do_idle();
 }
 
+static void do_controller(void)
+{
+	char key;
+
+	do {
+		key = update_controller();
+
+		switch (key) {
+		case 0x1b:
+			printf("Goodbye.\n");
+			exit(0);
+
+		case 't':
+			trace ^= 1;
+			break;
+
+		case 'y':
+			trace_new ^= 1;
+			break;
+
+		case 'u':
+			pause_after_every_frame ^= 1;
+			break;
+
+		case 'v':
+			dump(0x2800, 0x80);
+			break;
+
+		case 'x':
+			dump(0, 0x4000);
+			break;
+		}
+	} while (key);
+}
+
 static void run(void)
 {
 	run_main();
@@ -803,7 +752,7 @@ static void run(void)
 
 		last_retrace_time = now;
 
-		do_buttons();
+		do_controller();
 
 		// controller
 		if (mem[0x3d21])
@@ -815,8 +764,8 @@ static void run(void)
 		if (pause_after_every_frame) {
 			printf("*** paused, press a key to continue\n");
 
-			while (button_state == 0)
-				do_buttons();
+			while (update_controller() == 0)
+				;
 		}
 	}
 

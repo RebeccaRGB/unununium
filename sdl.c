@@ -3,6 +3,8 @@
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <SDL.h>
 
 #include "types.h"
 #include "emu.h"
@@ -87,6 +89,111 @@ void update_screen(void)
 		SDL_UnlockSurface(sdl_surface);
 
 	SDL_UpdateRect(sdl_surface, 0, 0, 0, 0);
+}
+
+
+u8 controller_input[8];
+u8 controller_output[7];
+
+
+static char handle_debug_key(int key)
+{
+	switch (key) {
+	case SDLK_ESCAPE:
+		return 0x1b;
+	case 't':
+	case 'y':
+	case 'u':
+	case 'v':
+	case 'x':
+		return (key);
+	}
+
+	return 0;
+}
+
+static void handle_controller_key(int key, int down)
+{
+	u8 bit;
+
+	switch (key) {
+	case SDLK_LEFT:
+		bit = 0x01;
+		break;
+	case SDLK_RIGHT:
+		bit = 0x02;
+		break;
+	case SDLK_DOWN:
+		bit = 0x04;
+		break;
+	case SDLK_UP:
+		bit = 0x08;
+		break;
+	case SDLK_SPACE:	// "A" button
+		bit = 0x10;
+		break;
+	case 'b':		// "B" button
+		bit = 0x20;
+		break;
+	case SDLK_0:
+		bit = 0x40;
+		break;
+	case '8':
+		bit = 0x80;
+		break;
+	default:
+		return;
+	}
+
+	if (down)
+		controller_input[0] |= bit;
+	else
+		controller_input[0] &= ~bit;
+
+	controller_input[1] = 0;
+	controller_input[2] = 0;
+	controller_input[3] = 0;
+	controller_input[4] = 0;
+	controller_input[5] = 0;
+	controller_input[6] = 0xff;
+	controller_input[7] = 0;
+}
+
+char update_controller(void)
+{
+	SDL_Event event;
+	char key;
+
+	while (SDL_PollEvent(&event)) {
+
+		switch (event.type) {
+		case SDL_KEYDOWN:
+			key = handle_debug_key(event.key.keysym.sym);
+			if (key)
+				return (key);
+
+			// Fallthrough.
+		case SDL_KEYUP:
+			handle_controller_key(event.key.keysym.sym,
+			                      (event.type == SDL_KEYDOWN));
+			break;
+
+		case SDL_QUIT:
+			return 0x1b;
+
+		case SDL_ACTIVEEVENT:
+		case SDL_MOUSEMOTION:
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
+			continue;
+
+		default:
+			fprintf(stderr, "Unknown SDL event type %d\n", event.type);
+			continue;
+		}
+	}
+
+	return 0;
 }
 
 void sdl_init(void)
