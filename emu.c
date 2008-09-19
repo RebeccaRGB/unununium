@@ -641,7 +641,7 @@ static void do_buttons(void)
 			case SDLK_SPACE:	// "A" button
 				keymask = 0x10;
 				break;
-			case '6':
+			case 'b':		// "B" button
 				keymask = 0x20;
 				break;
 			case SDLK_0:
