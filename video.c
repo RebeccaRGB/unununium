@@ -127,9 +127,8 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	h = sizes[(flags & 0x00c0) >> 6];
 	w = sizes[(flags & 0x0030) >> 4];
 
-x -= (w/2);
-y -= (h/2);
-y += 8;
+	x -= (w/2);
+	y -= (h/2) - 8;
 
 	blit(x, y, flags, mem + bitmap, tile);
 }
