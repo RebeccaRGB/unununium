@@ -16,7 +16,7 @@ static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 
-static void blit(s32 xoff, s32 yoff, u16 flags, u16 *bitmap, u16 tile)
+static void blit(s32 xoff, s32 yoff, u32 flags, u16 *bitmap, u16 tile)
 {
 	u32 h = sizes[(flags & 0x00c0) >> 6];
 	u32 w = sizes[(flags & 0x0030) >> 4];
@@ -50,6 +50,9 @@ static void blit(s32 xoff, s32 yoff, u16 flags, u16 *bitmap, u16 tile)
 			u32 pal = palette_offset + (bits >> 16);
 			bits &= 0xffff;
 
+			if ((flags & 0x00100000) && yy < 240)
+				xx = ((xx - mem[0x2900 + yy] + 0x10) & 0x01ff) - 0x10;
+
 			if (xx < 320 && yy < 240)
 				if ((mem[0x2b00 + pal] & 0x8000) == 0)
 					screen[xx + 320*yy] = pal;
@@ -65,6 +68,7 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 	u32 flags = regs[2];
 	u32 flags2 = regs[3];
 	u32 tilemap = regs[4];
+	u32 palette_map = regs[5];
 
 	if ((flags2 & 8) == 0)
 		return;
@@ -84,10 +88,18 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 			if (tile == 0)
 				continue;
 
+			u16 palette = mem[palette_map + (x0 + 32*y0)/2];
+			if (x0 & 1)
+				palette >>= 8;
+			palette &= 0x0f;
+
+			// XXX: there probably is a register bit to enable this
+			flags |= (palette << 8);
+
 			u32 yy = ((16*y0 - yscroll + 0x10) & 0xff) - 0x10;
 			u32 xx = ((16*x0 - xscroll + 0x10) & 0x1ff) - 0x10;
 
-			blit(xx, yy, flags, mem+bitmap, tile);
+			blit(xx, yy, (flags2 << 16) | flags | (palette << 16), mem + bitmap, tile);
 		}
 }
 
@@ -116,7 +128,7 @@ x -= (w/2);
 y -= (h/2);
 y += 8;
 
-	blit(x, y, flags, mem+bitmap, tile);
+	blit(x, y, flags, mem + bitmap, tile);
 }
 
 static void blit_sprites(u32 depth)
