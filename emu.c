@@ -777,14 +777,16 @@ static void run(void)
 		mem[0x2863] = mem[0x2862] & which;
 		which ^= 3;
 
-		do_irq(0);
+		if (mem[0x2863])
+			do_irq(0);
 
 		last_retrace_time = now;
 
 		do_buttons();
 
 		// controller
-		do_irq(3);
+		if (mem[0x3d21])
+			do_irq(3);
 
 		// sound
 		//do_irq(4);	// XXX: gate me
