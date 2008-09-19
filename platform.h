@@ -9,6 +9,7 @@
 
 extern u8 controller_input[8];
 extern u8 controller_output[7];
+extern int controller_should_be_rotated;
 
 void platform_init(void);
 void update_screen(void);

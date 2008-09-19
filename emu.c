@@ -42,8 +42,10 @@ static void switch_bank(u32 bank)
 		idle_pc = 0x19792;
 	if (mem[0x21653] == 0x4311 && mem[0x21655] == 0x4e43)	// VII bank 2
 		idle_pc = 0x21653;
-	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43)	// VC1
+	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43) {	// VC1
 		idle_pc = 0x42daa;
+		controller_should_be_rotated = 1;
+	}
 }
 
 static void dump(u32 addr, u32 len)

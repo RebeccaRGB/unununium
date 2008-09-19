@@ -94,6 +94,7 @@ void update_screen(void)
 
 u8 controller_input[8];
 u8 controller_output[7];
+int controller_should_be_rotated;
 
 
 static char handle_debug_key(int key)
@@ -117,17 +118,17 @@ static void handle_controller_key(int key, int down)
 	u8 bit;
 
 	switch (key) {
-	case SDLK_LEFT:
-		bit = 0x01;
-		break;
-	case SDLK_RIGHT:
-		bit = 0x02;
+	case SDLK_UP:
+		bit = controller_should_be_rotated ? 0x08 : 0x01;
 		break;
 	case SDLK_DOWN:
-		bit = 0x04;
+		bit = controller_should_be_rotated ? 0x04 : 0x02;
 		break;
-	case SDLK_UP:
-		bit = 0x08;
+	case SDLK_LEFT:
+		bit = controller_should_be_rotated ? 0x01 : 0x04;
+		break;
+	case SDLK_RIGHT:
+		bit = controller_should_be_rotated ? 0x02 : 0x08;
 		break;
 	case SDLK_SPACE:	// "A" button
 		bit = 0x10;
