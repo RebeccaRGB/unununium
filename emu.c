@@ -703,7 +703,7 @@ static void do_irq(int irqno)
 	// chance of corrupting SB as it is now
 	push(reg[7], 0);
 	push(reg[6], 0);
-	reg[7] = mem[vec];
+	reg[7] = load(vec);
 	reg[6] = 0;
 
 	int done;
