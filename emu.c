@@ -14,14 +14,16 @@
 
 u16 mem[N_MEM];
 
-
-static int trace;
-static int store_trace;
-
+static int trace = 0;
+static int trace_new = 0;
+static int store_trace = 0;
+static int pause_after_every_frame = 0;
+static u8 ever_ran_this[N_MEM];
 
 static u16 reg[8];
 static u8 sb;
 static u8 irq, fiq;
+
 static u64 insn_count;
 
 static u32 button_state;
@@ -654,6 +656,11 @@ static void do_buttons(void)
 			case '8':
 				keymask = 0x80;
 				break;
+
+			case 't':
+				if (event.type == SDL_KEYDOWN)
+					trace = !trace;
+				break;
 			case 'x':
 				if (event.type == SDL_KEYDOWN)
 					dump(0, 0x4000);
@@ -732,6 +739,11 @@ static void run_main(void)
 		if (trace)
 			print_state();
 
+		if (trace_new && ever_ran_this[cs_pc()] == 0) {
+			ever_ran_this[cs_pc()] = 1;
+			print_state();
+		}
+
 		if (cs_pc() == idle_pc) {
 			idle++;
 			if (idle == 2)
@@ -781,7 +793,14 @@ static void run(void)
 		do_irq(3);
 
 		// sound
-		do_irq(4);
+		//do_irq(4);	// XXX: gate me
+
+		if (pause_after_every_frame) {
+			printf("*** paused, press a key to continue\n");
+
+			while (button_state == 0)
+				do_buttons();
+		}
 	}
 
 	// flip some I/O reg bits
