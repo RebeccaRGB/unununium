@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "types.h"
 #include "sdl.h"
@@ -55,7 +56,7 @@ int main(int argc, char *argv[])
 	CGSReleaseObj(propertyString);
 #endif
 
-srandom(42);
+	srandom(time(0));
 
 	emu();
 
