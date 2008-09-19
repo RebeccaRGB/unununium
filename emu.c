@@ -10,7 +10,7 @@
 
 #include "types.h"
 #include "disas.h"
-#include "sdl.h"
+#include "platform.h"
 #include "emu.h"
 
 

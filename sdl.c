@@ -9,7 +9,7 @@
 #include "types.h"
 #include "emu.h"
 #include "video.h"
-#include "sdl.h"
+#include "platform.h"
 
 
 static SDL_Surface *sdl_surface;
@@ -196,7 +196,7 @@ char update_controller(void)
 	return 0;
 }
 
-void sdl_init(void)
+void platform_init(void)
 {
 	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO) < 0) {
 		fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());

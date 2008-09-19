@@ -10,7 +10,7 @@
 #include <SDL.h>
 
 #include "types.h"
-#include "sdl.h"
+#include "platform.h"
 #include "emu.h"
 
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 		all_the_mem[i] = (all_the_mem[i] << 8) | (all_the_mem[i] >> 8);
 #endif
 
-	sdl_init();
+	platform_init();
 
 #ifdef __APPLE__
 	// Hack to speed up display refresh
