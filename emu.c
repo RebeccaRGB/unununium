@@ -713,7 +713,7 @@ static void do_irq(int irqno)
 		if (trace)
 			print_state();
 
-		if (mem[cs_pc()] == 0x9a98)
+		if (mem[cs_pc()] == 0x9a98)	// RETI
 			done = 1;
 
 		step();
