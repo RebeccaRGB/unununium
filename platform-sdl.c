@@ -151,11 +151,21 @@ static void handle_controller_key(int key, int down)
 	else
 		controller_input[0] &= ~bit;
 
-	controller_input[1] = 0;
-	controller_input[2] = 0;
-	controller_input[3] = 0;
+	u32 x = random() & 0x3ff;
+	u32 y = random() & 0x3ff;
+	u32 z = random() & 0x3ff;
+
+	controller_input[1] = x;
+	controller_input[2] = y;
+	controller_input[3] = z;
+
+	x >>= 8;
+	y >>= 8;
+	z >>= 8;
+
+	controller_input[5] = (z << 4) | (y << 2) | x;
+
 	controller_input[4] = 0;
-	controller_input[5] = 0;
 	controller_input[6] = 0xff;
 	controller_input[7] = 0;
 }
