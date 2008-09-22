@@ -65,66 +65,139 @@ static void dump(u32 addr, u32 len)
 	}
 }
 
+static void video_store(u16 val, u32 addr)
+{
+	if (addr < 0x2900) {		// video regs
+		switch (addr) {
+		case 0x2810 ... 0x2815:	// page 0 regs
+		case 0x2816 ... 0x281b:	// page 1 regs
+			break;
+
+		case 0x281c:		// XXX
+			if (val != 0x0020)
+				printf("VIDEO STORE %04x to %04x\n", val, addr);
+			break;
+
+		case 0x2820 ... 0x2822:	// bitmap offsets
+			break;
+
+		case 0x2836:
+		case 0x2837:		// XXX
+			if (val != 0xffff)
+				printf("VIDEO STORE %04x to %04x\n", val, addr);
+			break;
+
+		case 0x2842:		// XXX
+			if (val != 0x0001)
+				printf("VIDEO STORE %04x to %04x\n", val, addr);
+			break;
+
+		case 0x2863:		// video IRQ ACK
+			mem[addr] &= ~val;
+			if (val & 1)
+				update_screen();
+			return;
+
+		default:
+			printf("VIDEO STORE %04x to %04x\n", val, addr);
+		}
+	} else if (addr < 0x2b00) {	// scroll per raster line
+	} else if (addr < 0x2c00) {	// palette
+	} else {			// sprites
+	}
+
+	mem[addr] = val;
+}
+
+static void audio_store(u16 val, u32 addr)
+{
+	mem[addr] = val;
+
+	if (addr < 0x3200) {
+	} else if (addr < 0x3400) {
+	} else {
+	}
+
+	printf("AUDIO STORE %04x to %04x\n", val, addr);
+}
+
+static void io_store(u16 val, u32 addr)
+{
+	switch (addr) {
+	case 0x3d07:		// port B data write
+		printf("STORE %04x to %04x (port B)\n", val, addr);
+		u32 bank = ((val & 0x80) >> 7) | ((val & 0x20) >> 4);
+		switch_bank(bank);
+		printf("switched to bank %x\n", bank);
+		break;
+
+	case 0x3d01 ... 0x3d06:
+	case 0x3d08 ... 0x3d0f:	// ports A..C
+		break;
+
+	case 0x3d22:		// IRQ ack
+		mem[addr] &= ~val;
+		return;
+
+	case 0x3d24:		// XXX
+		if (val != 0x55aa)
+			printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3d2f:		// set DS
+		reg[6] = (reg[6] & 0x03ff) | (val << 10);
+		break;
+
+	case 0x3d31:		// XXX UART
+		if (val != 0x0003)
+			printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3d33:		// UART baud rate
+		printf("SET UART BAUD RATE to %d\n", 27000000 / (0x10000 - val));
+		break;
+
+	case 0x3d35:		// UART TX data
+		break;
+
+	default:
+		printf("IO STORE %04x to %04x\n", val, addr);
+	}
+
+	mem[addr] = val;
+}
+
 static void store(u16 val, u32 addr)
 {
 	if (store_trace)
 		printf("WRITE %04x TO %04x (was %04x)\n", val, addr, mem[addr]);
 
-	if (addr >= 0x4000) {
-		printf("ROM STORE %04x to %04x\n", val, addr);
+	if (addr < 0x2800) {	// RAM
+		mem[addr] = val;
 		return;
 	}
 
-	mem[addr] = val;
-
-	if (addr < 0x2800)	// RAM
-		return;
-
-	if (addr >= 0x2800 && addr < 0x2900) {		// video regs
-		if (addr == 0x2863) {	// video IRQ ACK
-			mem[addr] &= ~val;
-			if (val & 1)
-				update_screen();
-		}
-		//printf("STORE %04x to %04x\n", val, addr);
-		return;
-	}
-	if (addr >= 0x2900 && addr < 0x2b00) {		// scroll per raster line
-		//printf("STORE %04x to %04x\n", val, addr);
-		return;
-	}
-	if (addr >= 0x2b00 && addr < 0x2c00) {		// palette
-		//printf("STORE %04x to %04x\n", val, addr);
-		return;
-	}
-	if (addr >= 0x2c00 && addr < 0x3000) {		// sprite regs
-		//printf("STORE %04x to %04x\n", val, addr);
-		return;
-	}
-	if (addr >= 0x3000 && addr < 0x3200) {		// audio something (32 channels)
-		//printf("STORE %04x to %04x\n", val, addr);
-		return;
-	}
-	if (addr >= 0x3200 && addr < 0x3300) {		// audio something
-		//printf("STORE %04x to %04x\n", val, addr);
-		return;
-	}
-	if (addr >= 0x3400 && addr < 0x3600) {		// audio something (two blocks)
-		//printf("STORE %04x to %04x\n", val, addr);
-		return;
-	}
-	if (addr >= 0x3d00 && addr < 0x3e00) {		// I/O
-		if (addr == 0x3d07) {
-			printf("STORE %04x to %04x (port B)\n", val, addr);
-			u32 bank = ((val & 0x80) >> 7) | ((val & 0x20) >> 4);
-			switch_bank(bank);
-			printf("switched to bank %x\n", bank);
-		}
-		//printf("STORE %04x to %04x\n", val, addr);
+	if (addr < 0x3000) {
+		video_store(val, addr);
 		return;
 	}
 
-	printf("UNKNOWN STORE %04x to %04x\n", val, addr);
+	if (addr < 0x3500) {
+		audio_store(val, addr);
+		return;
+	}
+
+	if (addr >= 0x3d00 && addr < 0x3e00) {
+		io_store(val, addr);
+		return;
+	}
+
+	if (addr < 0x4000) {
+		printf("BAD STORE %04x to %04x\n", val, addr);
+		return;
+	}
+
+	printf("ROM STORE %04x to %04x\n", val, addr);
 }
 
 static u16 io_load(u32 addr)
