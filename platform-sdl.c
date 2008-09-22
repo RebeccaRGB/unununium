@@ -102,6 +102,7 @@ static char handle_debug_key(int key)
 	switch (key) {
 	case SDLK_ESCAPE:
 		return 0x1b;
+	case '1' ... '7':
 	case 't':
 	case 'y':
 	case 'u':

@@ -709,6 +709,11 @@ static void do_controller(void)
 			printf("Goodbye.\n");
 			exit(0);
 
+		case '1' ... '7':
+			printf("*** doing IRQ %c\n", key);
+			do_irq(key - '0');
+			break;
+
 		case 't':
 			trace ^= 1;
 			break;
