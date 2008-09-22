@@ -115,7 +115,7 @@ static void store(u16 val, u32 addr)
 	}
 	if (addr >= 0x3d00 && addr < 0x3e00) {		// I/O
 		if (addr == 0x3d07) {
-			printf("STORE %04x to %04x (port C?)\n", val, addr);
+			printf("STORE %04x to %04x (port B)\n", val, addr);
 			u32 bank = ((val & 0x80) >> 7) | ((val & 0x20) >> 4);
 			switch_bank(bank);
 			printf("switched to bank %x\n", bank);
