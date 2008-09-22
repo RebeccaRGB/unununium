@@ -14,6 +14,10 @@
 #include "emu.h"
 
 
+#define FREQ 60
+#define PERIOD (500000/FREQ)
+
+
 u16 all_the_mem[4*N_MEM];
 u16 mem[N_MEM];
 
@@ -606,9 +610,9 @@ static void do_idle(void)
 
 	gettimeofday(&tv, 0);
 	now = 1000000*tv.tv_sec + tv.tv_usec;
-	if (now < last_retrace_time + 10000) {
-//		printf("  sleeping %dus\n", last_retrace_time + 10000 - now);
-		usleep(last_retrace_time + 10000 - now);
+	if (now < last_retrace_time + PERIOD) {
+//		printf("  sleeping %dus\n", last_retrace_time + PERIOD - now);
+		usleep(last_retrace_time + PERIOD - now);
 	}
 }
 
@@ -745,7 +749,7 @@ static void run(void)
 	gettimeofday(&tv, 0);
 	now = 1000000*tv.tv_sec + tv.tv_usec;
 
-	if (now - last_retrace_time >= 10000) {
+	if (now - last_retrace_time >= PERIOD) {
 		// video
 		static u32 which = 1;
 
