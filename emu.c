@@ -725,8 +725,7 @@ static void do_irq(int irqno)
 		//	printf("### IRQ #%x ###\n", irqno);
 	}
 
-	// XXX: should handle swapping SB here.  we have a slight
-	// chance of corrupting SB as it is now
+	u32 saved_sb = sb;
 	push(reg[7], 0);
 	push(reg[6], 0);
 	reg[7] = load(vec);
@@ -745,6 +744,9 @@ static void do_irq(int irqno)
 		step();
 		insn_count++;
 	}
+
+	sb = saved_sb;
+
 //fprintf(stderr, "** RUN IRQ %d DONE\n", irqno);
 }
 
