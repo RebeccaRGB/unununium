@@ -92,6 +92,9 @@ static void video_store(u16 val, u32 addr)
 				printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
+		case 0x2862:		// video IRQ enable
+			break;
+
 		case 0x2863:		// video IRQ ACK
 			mem[addr] &= ~val;
 			if (val & 1)
@@ -113,9 +116,12 @@ static void audio_store(u16 val, u32 addr)
 {
 	mem[addr] = val;
 
-	if (addr < 0x3200) {
-	} else if (addr < 0x3400) {
-	} else {
+	if (addr < 0x3200) {		// XXX
+		return;
+	} else if (addr < 0x3400) {	// XXX
+		return;
+	} else {			// XXX
+		return;
 	}
 
 	printf("AUDIO STORE %04x to %04x\n", val, addr);
@@ -234,6 +240,9 @@ static u16 io_load(u32 addr)
 		return val;
 	}
 	if (addr >= 0x3d00 && addr < 0x3e00) {		// I/O
+		if (addr >= 0x3d01 && addr <= 0x3d0f)	// GPIO
+			return val;
+
 		if (addr == 0x3d22)	// IRQ
 			return mem[0x3d21];
 
@@ -253,7 +262,7 @@ static u16 io_load(u32 addr)
 			return val;
 		}
 
-		//printf("LOAD %04x from %04x\n", val, addr);
+		printf("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
 
