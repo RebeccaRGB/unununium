@@ -444,7 +444,7 @@ static void step(void)
 					goto bad;
 				x = reg[opA]*reg[opB];
 				if (reg[opB] & 0x8000)
-					x -= reg[opA] << 10;
+					x -= reg[opA] << 16;
 				reg[4] = x >> 16;
 				reg[3] = x;
 				return;
@@ -464,9 +464,9 @@ static void step(void)
 					goto bad;
 				x = reg[opA]*reg[opB];
 				if (reg[opB] & 0x8000)
-					x -= reg[opA] << 10;
+					x -= reg[opA] << 16;
 				if (reg[opA] & 0x8000)
-					x -= reg[opB] << 10;
+					x -= reg[opB] << 16;
 				reg[4] = x >> 16;
 				reg[3] = x;
 				return;
