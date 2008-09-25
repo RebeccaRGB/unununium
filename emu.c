@@ -10,6 +10,7 @@
 
 #include "types.h"
 #include "disas.h"
+#include "video.h"
 #include "platform.h"
 #include "emu.h"
 
@@ -67,53 +68,6 @@ static void dump(u32 addr, u32 len)
 			printf(" %04x", mem[off+i]);
 		printf("\n");
 	}
-}
-
-static void video_store(u16 val, u32 addr)
-{
-	if (addr < 0x2900) {		// video regs
-		switch (addr) {
-		case 0x2810 ... 0x2815:	// page 0 regs
-		case 0x2816 ... 0x281b:	// page 1 regs
-			break;
-
-		case 0x281c:		// XXX
-			if (val != 0x0020)
-				printf("VIDEO STORE %04x to %04x\n", val, addr);
-			break;
-
-		case 0x2820 ... 0x2822:	// bitmap offsets
-			break;
-
-		case 0x2836:
-		case 0x2837:		// XXX
-			if (val != 0xffff)
-				printf("VIDEO STORE %04x to %04x\n", val, addr);
-			break;
-
-		case 0x2842:		// XXX
-			if (val != 0x0001)
-				printf("VIDEO STORE %04x to %04x\n", val, addr);
-			break;
-
-		case 0x2862:		// video IRQ enable
-			break;
-
-		case 0x2863:		// video IRQ ACK
-			mem[addr] &= ~val;
-			if (val & 1)
-				update_screen();
-			return;
-
-		default:
-			printf("VIDEO STORE %04x to %04x\n", val, addr);
-		}
-	} else if (addr < 0x2b00) {	// scroll per raster line
-	} else if (addr < 0x2c00) {	// palette
-	} else {			// sprites
-	}
-
-	mem[addr] = val;
 }
 
 static void audio_store(u16 val, u32 addr)

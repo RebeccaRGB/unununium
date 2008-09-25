@@ -9,6 +9,8 @@
 
 extern u8 screen[320*240];
 
+void video_store(u16 val, u32 addr);
+
 void blit_screen(void);
 
 #endif
