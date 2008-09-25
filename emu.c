@@ -21,6 +21,8 @@
 u16 all_the_mem[4*N_MEM];
 u16 mem[N_MEM];
 
+static int trainer = 0;
+
 static int trace = 0;
 static int trace_new = 0;
 static int store_trace = 0;
@@ -49,6 +51,8 @@ static void switch_bank(u32 bank)
 	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43) {	// VC1
 		idle_pc = 0x42daa;
 		controller_should_be_rotated = 1;
+		if (trainer)
+			mem[0x38ecf] = 0;	// no life lost in LP
 	}
 }
 
