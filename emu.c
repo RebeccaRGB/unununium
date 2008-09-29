@@ -88,6 +88,10 @@ static void audio_store(u16 val, u32 addr)
 static void io_store(u16 val, u32 addr)
 {
 	switch (addr) {
+	case 0x3d00:		// GPIO special function select
+		printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
 	case 0x3d07:		// port B data write
 		printf("STORE %04x to %04x (port B)\n", val, addr);
 		u32 bank = ((val & 0x80) >> 7) | ((val & 0x20) >> 4);
@@ -122,6 +126,38 @@ static void io_store(u16 val, u32 addr)
 		break;
 
 	case 0x3d35:		// UART TX data
+		break;
+
+	case 0x3d58:		// IIC command
+		printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3d59:		// IIC status/ack
+		printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3d5a:		// IIC access mode?  always 80, "combined mode"
+		printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3d5b:		// IIC device address
+		printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3d5c:		// IIC subadr
+		printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3d5d:		// IIC data out
+		printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3d5e:		// IIC data in
+		printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3d5f:		// IIC controller mode
+		printf("IO STORE %04x to %04x\n", val, addr);
 		break;
 
 	default:
