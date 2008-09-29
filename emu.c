@@ -11,6 +11,7 @@
 #include "types.h"
 #include "disas.h"
 #include "video.h"
+#include "audio.h"
 #include "platform.h"
 #include "emu.h"
 
@@ -68,21 +69,6 @@ static void dump(u32 addr, u32 len)
 			printf(" %04x", mem[off+i]);
 		printf("\n");
 	}
-}
-
-static void audio_store(u16 val, u32 addr)
-{
-	mem[addr] = val;
-
-	if (addr < 0x3200) {		// XXX
-		return;
-	} else if (addr < 0x3400) {	// XXX
-		return;
-	} else {			// XXX
-		return;
-	}
-
-	printf("AUDIO STORE %04x to %04x\n", val, addr);
 }
 
 static void io_store(u16 val, u32 addr)
