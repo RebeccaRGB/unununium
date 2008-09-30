@@ -2,19 +2,11 @@
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-#ifndef _EMU_H
-#define _EMU_H
+#ifndef _IO_H
+#define _IO_H
 
 #include "types.h"
 
-#define N_MEM 0x400000
-
-extern u16 all_the_mem[4*N_MEM];
-extern u16 mem[N_MEM];
-
-void switch_bank(u32 bank);
-
-void emu(void);
-void set_ds(u32 ds);
+void io_store(u16 val, u32 addr);
 
 #endif
