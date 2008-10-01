@@ -8,5 +8,6 @@
 #include "types.h"
 
 void audio_store(u16 val, u32 addr);
+u16 audio_load(u32 addr);
 
 #endif

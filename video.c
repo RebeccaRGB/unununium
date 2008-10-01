@@ -65,6 +65,11 @@ void video_store(u16 val, u32 addr)
 	mem[addr] = val;
 }
 
+u16 video_load(u32 addr)
+{
+	return mem[addr];
+}
+
 
 static void blit(s32 xoff, s32 yoff, u32 flags, u16 *bitmap, u16 tile)
 {

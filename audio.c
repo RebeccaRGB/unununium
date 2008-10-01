@@ -23,3 +23,24 @@ void audio_store(u16 val, u32 addr)
 
 	printf("AUDIO STORE %04x to %04x\n", val, addr);
 }
+
+u16 audio_load(u32 addr)
+{
+	u16 val = mem[addr];
+
+	if (addr >= 0x3000 && addr < 0x3200) {		// audio something
+		//printf("LOAD %04x from %04x\n", val, addr);
+		return val;
+	}
+	if (addr >= 0x3200 && addr < 0x3300) {		// audio something
+		//printf("LOAD %04x from %04x\n", val, addr);
+		return val;
+	}
+	if (addr >= 0x3400 && addr < 0x3500) {		// audio something
+		//printf("LOAD %04x from %04x\n", val, addr);
+		return val;
+	}
+
+	printf("UNKNOWN AUDIO LOAD from %04x\n", addr);
+	return val;
+}

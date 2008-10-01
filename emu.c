@@ -110,70 +110,6 @@ static void store(u16 val, u32 addr)
 	printf("ROM STORE %04x to %04x\n", val, addr);
 }
 
-static u16 io_load(u32 addr)
-{
-	u16 val = mem[addr];
-
-	if (addr >= 0x2800 && addr < 0x2900) {		// video regs
-//		if (addr == 0x2863) {
-//			u16 val = 1 << (random() % 3);
-//			printf("(random 1, 2, 4) LOAD %04x from %04x\n", val, addr);
-//			return val;
-//		}
-		//printf("LOAD %04x from %04x\n", val, addr);
-		return val;
-	}
-	if (addr >= 0x2b00 && addr < 0x2c00) {		// palette
-		//printf("LOAD %04x from %04x\n", val, addr);
-		return val;
-	}
-	if (addr >= 0x2c00 && addr < 0x3000) {		// sprite regs
-		//printf("LOAD %04x from %04x\n", val, addr);
-		return val;
-	}
-	if (addr >= 0x3000 && addr < 0x3200) {		// audio something
-		//printf("LOAD %04x from %04x\n", val, addr);
-		return val;
-	}
-	if (addr >= 0x3200 && addr < 0x3300) {		// audio something
-		//printf("LOAD %04x from %04x\n", val, addr);
-		return val;
-	}
-	if (addr >= 0x3400 && addr < 0x3600) {		// audio something
-		//printf("LOAD %04x from %04x\n", val, addr);
-		return val;
-	}
-	if (addr >= 0x3d00 && addr < 0x3e00) {		// I/O
-		if (addr >= 0x3d01 && addr <= 0x3d0f)	// GPIO
-			return val;
-
-		if (addr == 0x3d22)	// IRQ
-			return mem[0x3d21];
-
-		if (addr == 0x3d2c || addr == 0x3d2d)
-			return random();
-
-		if (addr == 0x3d31) {
-			val = 3;
-			//printf("(hard 3) LOAD %04x from %04x\n", val, addr);
-			return val;
-		}
-
-		if (addr == 0x3d36) {
-			static int count = 0;
-			val = controller_input[count];
-			count = (count + 1) % 8;
-			return val;
-		}
-
-		printf("LOAD %04x from %04x\n", val, addr);
-		return val;
-	}
-
-	printf("UNKNOWN LOAD %04x from %04x\n", val, addr);
-	return mem[addr];
-}
-
 static inline u16 load(u32 addr)
 {
 	u16 val = mem[addr];
@@ -184,7 +120,17 @@ static inline u16 load(u32 addr)
 	if (addr >= 0x4000)	// ROM
 		return val;
 
-	return io_load(addr);
+	if (addr < 0x3000)
+		return video_load(addr);
+
+	if (addr < 0x3500)
+		return audio_load(addr);
+
+	if (addr >= 0x3d00 && addr < 0x3e00)
+		return io_load(addr);
+
+	printf("BAD LOAD from %04x\n", addr);
+	return val;
 }
 
 static inline u32 cs_pc(void)

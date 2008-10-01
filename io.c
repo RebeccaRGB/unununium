@@ -3,10 +3,15 @@
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "types.h"
 #include "emu.h"
+#include "platform.h"
 #include "io.h"
+
+
+static int uart_in_count = 0;
 
 
 void io_store(u16 val, u32 addr)
@@ -89,4 +94,33 @@ void io_store(u16 val, u32 addr)
 	}
 
 	mem[addr] = val;
+}
+
+u16 io_load(u32 addr)
+{
+	u16 val = mem[addr];
+
+	switch (addr) {
+	case 0x3d01 ... 0x3d0f:		// GPIO
+		break;
+
+	case 0x3d22:			// IRQ status
+		return mem[0x3d21];
+
+	case 0x3d2c: case 0x3d2d:	// timers?
+		return random();
+
+	case 0x3d31:			// UART (status?)
+		return 3;
+
+	case 0x3d36:			// UART data in
+		val = controller_input[uart_in_count];
+		uart_in_count = (uart_in_count + 1) % 8;
+		return val;
+
+	default:
+		printf("IO LOAD %04x from %04x\n", val, addr);
+	}
+
+	return val;
 }
