@@ -156,13 +156,10 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 				palette >>= 8;
 			palette &= 0x0f;
 
-			// XXX: there probably is a register bit to enable this
-			flags |= (palette << 8);
-
 			u32 yy = ((16*y0 - yscroll + 0x10) & 0xff) - 0x10;
 			u32 xx = ((16*x0 - xscroll + 0x10) & 0x1ff) - 0x10;
 
-			blit(xx, yy, (flags2 << 16) | flags, mem + bitmap, tile);
+			blit(xx, yy, (flags2 << 16) | (palette << 8) | flags, mem + bitmap, tile);
 		}
 }
 
