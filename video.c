@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "types.h"
 #include "emu.h"
@@ -12,6 +13,10 @@
 
 
 u8 screen[320*240];
+
+int hide_page_0;
+int hide_page_1;
+int hide_sprites;
 
 
 static const u8 sizes[] = { 8, 16, 32, 64 };
@@ -230,11 +235,16 @@ void blit_screen(void)
 	printf("\n");
 #endif
 
+	if (hide_page_0)
+		memset(screen, 0, sizeof screen);
 
 	u32 depth;
 	for (depth = 0; depth < 4; depth++) {
-		blit_page(depth, 0x40*mem[0x2820], mem + 0x2810);
-		blit_page(depth, 0x40*mem[0x2821], mem + 0x2816);
-		blit_sprites(depth);
+		if (!hide_page_0)
+			blit_page(depth, 0x40*mem[0x2820], mem + 0x2810);
+		if (!hide_page_1)
+			blit_page(depth, 0x40*mem[0x2821], mem + 0x2816);
+		if (!hide_sprites)
+			blit_sprites(depth);
 	}
 }

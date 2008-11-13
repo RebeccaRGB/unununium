@@ -668,6 +668,22 @@ static void do_controller(void)
 			dump(0x2800, 0x80);
 			break;
 
+		case 'c':
+			dump(0x2900, 0x300);
+			break;
+
+		case 'a':
+			hide_page_0 ^= 1;
+			break;
+
+		case 's':
+			hide_page_1 ^= 1;
+			break;
+
+		case 'd':
+			hide_sprites ^= 1;
+			break;
+
 		case 'x':
 			dump(0, 0x4000);
 			break;

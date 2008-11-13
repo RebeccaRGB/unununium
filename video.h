@@ -9,6 +9,10 @@
 
 extern u8 screen[320*240];
 
+extern int hide_page_0;
+extern int hide_page_1;
+extern int hide_sprites;
+
 void video_store(u16 val, u32 addr);
 u16 video_load(u32 addr);
 
