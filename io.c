@@ -75,8 +75,9 @@ void io_store(u16 val, u32 addr)
 		break;
 
 	case 0x3d58:		// IIC command
+		mem[addr] = val;
 		do_i2c();
-		break;
+		return;
 
 	case 0x3d59:		// IIC status/ack
 		mem[addr] &= ~val;
