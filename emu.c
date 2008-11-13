@@ -57,6 +57,10 @@ void switch_bank(u32 bank)
 		if (trainer)
 			mem[0x38ecf] = 0;	// no life lost in LP
 	}
+	if (mem[0x3ecb9] == 0x4311 && mem[0x3ecbb] == 0x4e43) {	// VC2
+		idle_pc = 0x3ecb9;
+		controller_should_be_rotated = 1;
+	}
 }
 
 void set_ds(u32 ds)
