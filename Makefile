@@ -18,6 +18,15 @@ uuu-$(PLATFORM): uuu-%: uuu-%.o platform-%.o emu.o video.o audio.o io.o disas.o
 platform-sdl.o uuu-sdl.o: CFLAGS += $(shell sdl-config --cflags)
 uuu-sdl: LDFLAGS += $(shell sdl-config --libs)
 
+# Nice application bundle for MacOSX
+ifeq ($(PLATFORM),sdl)
+all: bundle
+
+bundle: uuu-sdl
+	-mkdir -p Unununium.app/Contents/MacOS
+	cp uuu-sdl Unununium.app/Contents/MacOS/
+endif
+
 # Laziness rules, and lazy rules rule most of all.
 *.o: *.h
 
