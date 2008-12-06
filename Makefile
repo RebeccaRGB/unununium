@@ -30,6 +30,7 @@ uuu-sdl: dialog-cocoa.o
 all: bundle
 
 bundle: uuu-sdl
+	-mkdir -p Unununium.app/Contents/Resources/ROMs
 	-mkdir -p Unununium.app/Contents/MacOS
 	cp uuu-sdl Unununium.app/Contents/MacOS/
 endif
