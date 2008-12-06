@@ -12,6 +12,7 @@
 #include "types.h"
 #include "platform.h"
 #include "emu.h"
+#include "dialog.h"
 
 
 #ifdef __APPLE__
@@ -27,6 +28,14 @@ int main(int argc, char *argv[])
 {
 	FILE *in;
 	u32 i, n;
+
+#ifdef __APPLE__
+	if (argc == 1) {
+		argv[1] = dialog_rom_file();
+		if (argv[1])
+			argc = 2;
+	}
+#endif
 
 	if (argc != 2) {
 		fprintf(stderr, "usage: %s <rom-file>\n", argv[0]);

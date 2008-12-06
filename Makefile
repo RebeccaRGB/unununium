@@ -18,8 +18,15 @@ uuu-$(PLATFORM): uuu-%: uuu-%.o platform-%.o emu.o video.o audio.o io.o disas.o
 platform-sdl.o uuu-sdl.o: CFLAGS += $(shell sdl-config --cflags)
 uuu-sdl: LDFLAGS += $(shell sdl-config --libs)
 
-# Nice application bundle for MacOSX
-ifeq ($(PLATFORM),sdl)
+# Is this compiler targetting MacOSX?
+is-osx = $(shell set -e; \
+        if ($(CC) -E -dM - | grep __APPLE__) </dev/null >/dev/null 2>&1; \
+        then echo "yes" ; fi; )
+
+# If MacOSX, use Cocoa dialogs, and create an application bundle.
+ifeq ($(is-osx),yes)
+uuu-sdl: dialog-cocoa.o
+
 all: bundle
 
 bundle: uuu-sdl
@@ -33,4 +40,4 @@ endif
 # Clean up.
 clean:
 	rm -f un-disas un-disas.o disas.o emu.o video.o audio.o io.o
-	rm -f uuu-sdl uuu-sdl.o platform-sdl.o
+	rm -f uuu-sdl uuu-sdl.o platform-sdl.o dialog-cocoa.o
