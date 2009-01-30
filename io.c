@@ -53,7 +53,7 @@ void io_store(u16 val, u32 addr)
 		mem[addr] &= ~val;
 		return;
 
-	case 0x3d24:		// XXX
+	case 0x3d24:		// watchdog
 		if (val != 0x55aa)
 			printf("IO STORE %04x to %04x\n", val, addr);
 		break;
