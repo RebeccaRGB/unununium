@@ -32,8 +32,7 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x281c:		// XXX
-			if (val != 0x0020)
-				printf("VIDEO STORE %04x to %04x\n", val, addr);
+			printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2820 ... 0x2822:	// bitmap offsets
@@ -46,8 +45,7 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x2842:		// XXX
-			if (val != 0x0001)
-				printf("VIDEO STORE %04x to %04x\n", val, addr);
+			printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2862:		// video IRQ enable
@@ -72,7 +70,23 @@ void video_store(u16 val, u32 addr)
 
 u16 video_load(u32 addr)
 {
-	return mem[addr];
+	u16 val = mem[addr];
+
+	if (addr < 0x2900) {
+		switch (addr) {
+		case 0x2810 ... 0x2815:	// page 0 regs
+		case 0x2816 ... 0x281b:	// page 1 regs
+			break;
+
+		case 0x2863:		// video IRQ status
+			break;
+
+		default:
+			printf("VIDEO LOAD %04x from %04x\n", val, addr);
+		}
+	}
+
+	return val;
 }
 
 
