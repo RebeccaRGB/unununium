@@ -139,11 +139,6 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 	if ((flags & 0x3000) >> 12 != depth)
 		return;
 
-	if ((flags & 0xf0) != 0x50) {
-		printf("Background page flags %04x unhandled, trying to fix up\n", flags);
-		//flags = (flags & ~0xf0) | 0x50;
-	}
-
 	u32 h = sizes[(flags & 0x00c0) >> 6];
 	u32 w = sizes[(flags & 0x0030) >> 4];
 
