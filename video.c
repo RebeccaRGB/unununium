@@ -140,24 +140,30 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 		return;
 
 	if ((flags & 0xf0) != 0x50) {
-		printf("Background page flags %04x unhandled, QUIT\n", flags);
-		exit(1);
+		printf("Background page flags %04x unhandled, trying to fix up\n", flags);
+		//flags = (flags & ~0xf0) | 0x50;
 	}
 
-	for (y0 = 0; y0 < 16; y0++)
-		for (x0 = 0; x0 < 32; x0++) {
-			u16 tile = mem[tilemap + x0 + 32*y0];
+	u32 h = sizes[(flags & 0x00c0) >> 6];
+	u32 w = sizes[(flags & 0x0030) >> 4];
+
+	u32 hn = 256/h;
+	u32 wn = 512/h;
+
+	for (y0 = 0; y0 < hn; y0++)
+		for (x0 = 0; x0 < wn; x0++) {
+			u16 tile = mem[tilemap + x0 + wn*y0];
 
 			if (tile == 0)
 				continue;
 
-			u16 palette = mem[palette_map + (x0 + 32*y0)/2];
+			u16 palette = mem[palette_map + (x0 + wn*y0)/2];
 			if (x0 & 1)
 				palette >>= 8;
 			palette &= 0x0f;
 
-			u32 yy = ((16*y0 - yscroll + 0x10) & 0xff) - 0x10;
-			u32 xx = ((16*x0 - xscroll + 0x10) & 0x1ff) - 0x10;
+			u32 yy = ((h*y0 - yscroll + 0x10) & 0xff) - 0x10;
+			u32 xx = ((w*x0 - xscroll + 0x10) & 0x1ff) - 0x10;
 
 			blit(xx, yy, (flags2 << 16) | (palette << 8) | flags, mem + bitmap, tile);
 		}
