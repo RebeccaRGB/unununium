@@ -351,6 +351,9 @@ u32 disas(const u16 *mem, u32 offset)
 		case 0x0e:
 			printf("fiq on\n");
 			return 1;
+		case 0x25:
+			printf("nop\n");
+			return 1;
 		default:
 			goto dunno;
 		}

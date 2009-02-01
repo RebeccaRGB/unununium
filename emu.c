@@ -326,7 +326,7 @@ static void step(void)
 				return;
 			} else
 				goto bad;
-		case 5:		// IRQ/FIQ ON/OFF
+		case 5:		// VARIOUS
 			switch (opimm) {
 			case 8:
 				irq &= ~1;
@@ -343,6 +343,8 @@ static void step(void)
 			case 14:
 				fiq |= 1;
 				printf("FIQ ON\n");
+				return;
+			case 0x25:	// NOP
 				return;
 			default:
 				goto bad;
