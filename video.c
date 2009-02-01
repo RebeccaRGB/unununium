@@ -81,6 +81,9 @@ u16 video_load(u32 addr)
 		case 0x2863:		// video IRQ status
 			break;
 
+		case 0x2872:		// XXX: current vertical line?
+			return 0;
+
 		default:
 			printf("VIDEO LOAD %04x from %04x\n", val, addr);
 		}
