@@ -121,11 +121,11 @@ u16 io_load(u32 addr)
 	case 0x3d22:			// IRQ status
 		return mem[0x3d21];
 
-	case 0x3d2f:			// DS
-		return get_ds();
-
 	case 0x3d2c: case 0x3d2d:	// timers?
 		return random();
+
+	case 0x3d2f:			// DS
+		return get_ds();
 
 	case 0x3d31:			// UART (status?)
 		return 3;
