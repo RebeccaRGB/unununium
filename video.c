@@ -233,8 +233,8 @@ void blit_screen(void)
 	printf("\n");
 #endif
 
-	if (hide_page_0)
-		memset(screen, 0, sizeof screen);
+	// Could optimise this, skip if any full page shown
+	memset(screen, 0, sizeof screen);
 
 	u32 depth;
 	for (depth = 0; depth < 4; depth++) {
