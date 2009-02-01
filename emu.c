@@ -63,6 +63,11 @@ void switch_bank(u32 bank)
 	}
 }
 
+u32 get_ds(void)
+{
+	return reg[6] >> 10;
+}
+
 void set_ds(u32 ds)
 {
 	reg[6] = (reg[6] & 0x03ff) | (ds << 10);
