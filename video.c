@@ -23,6 +23,18 @@ static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 
+static void do_dma(u32 len)
+{
+	u32 src = mem[0x2870];
+	u32 dst = mem[0x2871] + 0x2c00;
+	u32 j;
+
+	for (j = 0; j < len; j++)
+		mem[dst+j] = mem[src+j];
+
+	mem[0x2872] = 0;
+}
+
 void video_store(u16 val, u32 addr)
 {
 	if (addr < 0x2900) {		// video regs
@@ -57,6 +69,14 @@ void video_store(u16 val, u32 addr)
 				update_screen();
 			return;
 
+		case 0x2870:		// video DMA src
+		case 0x2871:		// video DMA dst
+			break;
+
+		case 0x2872:		// video DMA len
+			do_dma(val);
+			return;
+
 		default:
 			printf("VIDEO STORE %04x to %04x\n", val, addr);
 		}
@@ -81,8 +101,9 @@ u16 video_load(u32 addr)
 		case 0x2863:		// video IRQ status
 			break;
 
-		case 0x2872:		// XXX: current vertical line?
-			return 0;
+		case 0x2872:		// DMA len
+//			return 0;
+			break;
 
 		default:
 			printf("VIDEO LOAD %04x from %04x\n", val, addr);
