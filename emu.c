@@ -336,6 +336,26 @@ static void step(void)
 				goto bad;
 		case 5:		// VARIOUS
 			switch (opimm) {
+			case 0:
+				irq &= ~1;
+				fiq &= ~1;
+				printf("INT OFF\n");
+				return;
+			case 1:
+				irq |= 1;
+				fiq &= ~1;
+				printf("INT IRQ\n");
+				return;
+			case 2:
+				irq &= ~1;
+				fiq |= 1;
+				printf("INT FIQ\n");
+				return;
+			case 3:
+				irq |= 1;
+				fiq |= 1;
+				printf("INT FIQ,IRQ\n");
+				return;
 			case 8:
 				irq &= ~1;
 				printf("IRQ OFF\n");

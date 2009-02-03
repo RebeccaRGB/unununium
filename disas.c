@@ -339,6 +339,18 @@ u32 disas(const u16 *mem, u32 offset)
 		if (opA != 0)
 			goto dunno;
 		switch (opimm) {
+		case 0x00:
+			printf("int off\n");
+			return 1;
+		case 0x01:
+			printf("int irq\n");
+			return 1;
+		case 0x02:
+			printf("int fiq\n");
+			return 1;
+		case 0x03:
+			printf("int fiq,irq\n");
+			return 1;
 		case 0x08:
 			printf("irq off\n");
 			return 1;
