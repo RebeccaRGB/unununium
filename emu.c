@@ -61,6 +61,9 @@ void switch_bank(u32 bank)
 		idle_pc = 0x3ecb9;
 		controller_should_be_rotated = 1;
 	}
+	if (mem[0xb1c6] == 0x9311 && mem[0xb1c8] == 0x4501 &&
+	    mem[0xb1c9] == 0x5e44)	// WAL
+		idle_pc = 0xb1c6;
 }
 
 u32 get_ds(void)
