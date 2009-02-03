@@ -207,11 +207,10 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	u16 tile, flags;
 	s16 x, y;
 	u32 bitmap = 0x40*mem[0x2822];
-	u32 w, h;
 
 	tile = *sprite++;
-	x = 160 + *sprite++;
-	y = 120 - *sprite++;
+	x = *sprite++;
+	y = *sprite++;
 	flags = *sprite++;
 
 //if (flags & 0x8000) return;	// dunno
@@ -220,11 +219,16 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	if ((u32)(flags & 0x3000) >> 12 != depth)
 		return;
 
-	h = sizes[(flags & 0x00c0) >> 6];
-	w = sizes[(flags & 0x0030) >> 4];
+#if 0	// XXX: Vii needs it.  Some register bit?
+	x = 160 + x;
+	y = 120 - y;
+
+	u32 h = sizes[(flags & 0x00c0) >> 6];
+	u32 w = sizes[(flags & 0x0030) >> 4];
 
 	x -= (w/2);
 	y -= (h/2) - 8;
+#endif
 
 	blit(x, y, flags, mem + bitmap, tile);
 }
