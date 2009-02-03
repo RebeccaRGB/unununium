@@ -195,7 +195,7 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 				palette >>= 8;
 			palette &= 0x0f;
 
-			u32 yy = ((h*y0 - yscroll + 0x10) & 0x1ff) - 0x10;
+			u32 yy = ((h*y0 - yscroll + 0x10) & 0xff) - 0x10;
 			u32 xx = ((w*x0 - xscroll + 0x10) & 0x1ff) - 0x10;
 
 			blit(xx, yy, (flags2 << 16) | (palette << 8) | flags, mem + bitmap, tile);
