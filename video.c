@@ -216,7 +216,7 @@ static void blit_sprite(u32 depth, u16 *sprite)
 //if (flags & 0x8000) return;	// dunno
 //if (flags & 0x4000) return;	// dunno
 
-	if ((u32)(flags & 0x3000) >> 12 != depth)
+	if ((u32)(flags & 0xf000) >> 12 != depth)
 		return;
 
 #if 0	// XXX: Vii needs it.  Some register bit?
@@ -241,9 +241,9 @@ static void blit_sprites(u32 depth)
 	u32 n;
 	for (n = 0; n < 256; n++)
 		if (mem[0x2c00 + 4*n]) {
-			if (mem[0x2c00 + 4*n] & 0xc000)
-				printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
-				       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
+//			if (mem[0x2c00 + 4*n] & 0xc000)
+//				printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
+//				       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
 			blit_sprite(depth, mem + 0x2c00 + 4*n);
 		}
 }
@@ -287,6 +287,10 @@ void blit_screen(void)
 			blit_page(depth, 0x40*mem[0x2820], mem + 0x2810);
 		if (!hide_page_1)
 			blit_page(depth, 0x40*mem[0x2821], mem + 0x2816);
+		if (!hide_sprites)
+			blit_sprites(depth);
+	}
+	for ( ; depth < 16; depth++) {
 		if (!hide_sprites)
 			blit_sprites(depth);
 	}
