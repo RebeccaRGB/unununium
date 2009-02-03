@@ -118,8 +118,31 @@ static char handle_debug_key(int key)
 static void handle_controller_key(int key, int down)
 {
 	u8 bit;
+	u16 wot = 0;
 
 	switch (key) {
+	case 'j':
+		wot = 0x8000;	// up
+		break;
+	case 'm':
+		wot = 0x4000;	// down
+		break;
+	case 'n':
+		wot = 0x2000;	// left
+		break;
+	case ',':
+		wot = 0x1000;	// right
+		break;
+	case 'h':
+		wot = 0x0800;	// A
+		break;
+	case 'k':
+		wot = 0x0400;	// B
+		break;
+	case 'l':
+		wot = 0x0020;	// menu
+		break;
+
 	case SDLK_UP:
 		bit = controller_should_be_rotated ? 0x08 : 0x01;
 		break;
@@ -145,6 +168,14 @@ static void handle_controller_key(int key, int down)
 		bit = 0x80;
 		break;
 	default:
+		return;
+	}
+
+	if (wot) {
+		if (down)
+			mem[0x3d01] |= wot;
+		else
+			mem[0x3d01] &= ~wot;
 		return;
 	}
 
