@@ -6,6 +6,7 @@ LDFLAGS := -g
 PLATFORM := sdl
 
 # Default targets.
+.PHONY: all
 all: un-disas uuu-$(PLATFORM)
 
 # The disassembler.
@@ -27,18 +28,21 @@ is-osx = $(shell set -e; \
 ifeq ($(is-osx),yes)
 uuu-sdl: dialog-cocoa.o
 
-all: bundle
+all: .stamp-bundle
 
-bundle: uuu-sdl
+.PHONY: .stamp-bundle
+.stamp-bundle: uuu-sdl
 	-mkdir -p Unununium.app/Contents/Resources/ROMs
 	-mkdir -p Unununium.app/Contents/MacOS
 	cp uuu-sdl Unununium.app/Contents/MacOS/
+	touch $@
 endif
 
 # Laziness rules, and lazy rules rule most of all.
 *.o: *.h
 
 # Clean up.
+.PHONY: clean
 clean:
 	rm -f un-disas un-disas.o disas.o emu.o video.o audio.o io.o
 	rm -f uuu-sdl uuu-sdl.o platform-sdl.o dialog-cocoa.o
