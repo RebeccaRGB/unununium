@@ -11,7 +11,10 @@ const char *dialog_rom_file(void)
 	NSString *dir = [[NSBundle mainBundle] resourcePath];
 	dir = [dir stringByAppendingPathComponent:@"ROMs"];
 
-	int result = [panel runModalForDirectory:dir file:nil types:nil];
+	NSArray *types = nil;//[NSArray arrayWithObject:@"uuu"];
+	//[panel setAllowsOtherFileTypes:YES];
+
+	int result = [panel runModalForDirectory:dir file:nil types:types];
 
 	if (result != NSOKButton)
 		return 0;
