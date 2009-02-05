@@ -766,19 +766,6 @@ static void run(void)
 				;
 		}
 	}
-
-	// flip some I/O reg bits
-//	if (1 || (insn_count & 0x0fff) == 0) {
-//		u16 addr = 0x3d00 + (random() % 0x100);
-//		u16 val = random();
-//		//printf("MAKE A MESS: %04x to %04x (was %04x)\n", val, addr, mem[addr]);
-//		mem[addr] = val;
-//	}
-
-
-//	// progress report
-//	if ((insn_count & 0x000fffff) == 0)
-//		print_state();
 }
 
 void emu(void)
