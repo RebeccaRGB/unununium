@@ -95,32 +95,16 @@ static void store(u16 val, u32 addr)
 	if (store_trace)
 		printf("WRITE %04x TO %04x (was %04x)\n", val, addr, mem[addr]);
 
-	if (addr < 0x2800) {	// RAM
+	if (addr < 0x2800)	// RAM
 		mem[addr] = val;
-		return;
-	}
-
-	if (addr < 0x3000) {
+	else if (addr < 0x3000)
 		video_store(val, addr);
-		return;
-	}
-
-	if (addr < 0x3500) {
+	else if (addr < 0x3800)
 		audio_store(val, addr);
-		return;
-	}
-
-	if (addr >= 0x3d00 && addr < 0x3e00) {
+	else if (addr < 0x4000)
 		io_store(val, addr);
-		return;
-	}
-
-	if (addr < 0x4000) {
-		printf("BAD STORE %04x to %04x\n", val, addr);
-		return;
-	}
-
-	printf("ROM STORE %04x to %04x\n", val, addr);
+	else
+		printf("ROM STORE %04x to %04x\n", val, addr);
 }
 
 static inline u16 load(u32 addr)
