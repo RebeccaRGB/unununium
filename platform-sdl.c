@@ -102,7 +102,7 @@ static char handle_debug_key(int key)
 	switch (key) {
 	case SDLK_ESCAPE:
 		return 0x1b;
-	case '1' ... '7':
+	case '0' ... '8':
 	case 't':
 	case 'y':
 	case 'u':
@@ -160,12 +160,6 @@ static void handle_controller_key(int key, int down)
 		break;
 	case 'b':		// "B" button
 		bit = 0x20;
-		break;
-	case SDLK_0:
-		bit = 0x40;
-		break;
-	case '8':
-		bit = 0x80;
 		break;
 	default:
 		return;

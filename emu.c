@@ -677,7 +677,7 @@ static void do_controller(void)
 			printf("Goodbye.\n");
 			exit(0);
 
-		case '1' ... '7':
+		case '0' ... '8':
 			printf("*** doing IRQ %c\n", key);
 			do_irq(key - '0');
 			break;
