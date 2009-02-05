@@ -8,6 +8,8 @@
 #include "types.h"
 #include "emu.h"
 #include "platform.h"
+#include "board.h"
+
 #include "io.h"
 
 
