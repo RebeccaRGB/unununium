@@ -9,7 +9,7 @@ const char *dialog_rom_file(void)
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 
 	NSString *dir = [[NSBundle mainBundle] resourcePath];
-	dir = [dir stringByAppendingPathComponent:@"Roms"];
+	dir = [dir stringByAppendingPathComponent:@"ROMs"];
 
 	int result = [panel runModalForDirectory:dir file:nil types:nil];
 
