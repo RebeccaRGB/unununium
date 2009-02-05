@@ -115,7 +115,10 @@ u16 io_load(u32 addr)
 	u16 val = mem[addr];
 
 	switch (addr) {
-	case 0x3d01 ... 0x3d0f:		// GPIO
+	case 0x3d01:
+		return (mem[0x3d01] & ~0xfc20) | controller_port_A;
+
+	case 0x3d02 ... 0x3d0f:		// GPIO
 		break;
 
 	case 0x3d22:			// IRQ status

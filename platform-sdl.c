@@ -95,6 +95,7 @@ void update_screen(void)
 u8 controller_input[8];
 u8 controller_output[7];
 int controller_should_be_rotated;
+u16 controller_port_A;
 
 
 static char handle_debug_key(int key)
@@ -167,9 +168,9 @@ static void handle_controller_key(int key, int down)
 
 	if (wot) {
 		if (down)
-			mem[0x3d01] |= wot;
+			controller_port_A |= wot;
 		else
-			mem[0x3d01] &= ~wot;
+			controller_port_A &= ~wot;
 		return;
 	}
 
