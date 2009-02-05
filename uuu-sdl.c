@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
 #ifdef __APPLE__
 	if (argc == 1) {
-		argv[1] = dialog_rom_file();
+		argv[1] = (char *)dialog_rom_file();
 		if (argv[1])
 			argc = 2;
 	}
