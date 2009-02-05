@@ -48,15 +48,32 @@ void io_store(u16 val, u32 addr)
 	case 0x3d01 ... 0x3d06:
 	case 0x3d08 ... 0x3d0f:	// ports A..C
 		break;
+// 3d01 3d06 3d0b	data
+// 3d02 3d07 3d0c	buffer
+// 3d03 3d08 3d0d	dir
+// 3d04 3d09 3d0e	attrib
+// 3d05 3d0a 3d0f	irq?
+
+	// case 0x3d10:
+	// case 0x3d11:
+	// case 0x3d14:
+	// case 0x3d15:
+	// case 0x3d18:
+	// case 0x3d19:
+	// case 0x3d21:
 
 	case 0x3d22:		// IRQ ack
 		mem[addr] &= ~val;
 		return;
 
+	// case 0x3d23:
+
 	case 0x3d24:		// watchdog
 		if (val != 0x55aa)
 			printf("IO STORE %04x to %04x\n", val, addr);
 		break;
+
+	// case 0x3d2b:
 
 	case 0x3d2f:		// DS
 		set_ds(val);

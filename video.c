@@ -98,6 +98,9 @@ u16 video_load(u32 addr)
 		case 0x2816 ... 0x281b:	// page 1 regs
 			break;
 
+		case 0x2838:		// XXX: dunno
+			break;
+
 		case 0x2863:		// video IRQ status
 			break;
 
@@ -258,7 +261,7 @@ void blit_screen(void)
 	printf("  x off  = %04x\n", mem[0x2810]);
 	printf("  y off  = %04x\n", mem[0x2811]);
 	printf("  flags  = %04x\n", mem[0x2812]);
-	printf("  flags2 = %04x\n", mem[0x2813]);
+	printf("  flags2 = %04x\n", mem[0x2813]);	// 0x81: non-palette
 	printf("  tiles  = %04x\n", mem[0x2814]);
 	printf("  dunno5 = %04x\n", mem[0x2815]);
 	printf("  bitmap = %04x\n", mem[0x2820]);
