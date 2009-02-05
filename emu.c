@@ -109,25 +109,16 @@ static void store(u16 val, u32 addr)
 
 static inline u16 load(u32 addr)
 {
-	u16 val = mem[addr];
-
-	if (addr < 0x2800)	// RAM
-		return val;
-
-	if (addr >= 0x4000)	// ROM
-		return val;
+	if (addr < 0x2800 || addr >= 0x4000)	// RAM / ROM
+		return mem[addr];
 
 	if (addr < 0x3000)
 		return video_load(addr);
 
-	if (addr < 0x3500)
+	if (addr < 0x3800)
 		return audio_load(addr);
 
-	if (addr >= 0x3d00 && addr < 0x3e00)
-		return io_load(addr);
-
-	printf("BAD LOAD from %04x\n", addr);
-	return val;
+	return io_load(addr);
 }
 
 static inline u32 cs_pc(void)
