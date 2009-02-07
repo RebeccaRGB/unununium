@@ -13,7 +13,8 @@ all: un-disas uuu-$(PLATFORM)
 un-disas: un-disas.o disas.o
 
 # The emulator.
-uuu-$(PLATFORM): uuu-%: uuu-%.o platform-%.o emu.o video.o audio.o io.o disas.o
+uuu-$(PLATFORM): uuu-%: uuu-%.o platform-%.o \
+                 emu.o video.o audio.o io.o board.o disas.o
 
 # SDL needs special compiler flags and some libraries.
 platform-sdl.o uuu-sdl.o: CFLAGS += $(shell sdl-config --cflags)
@@ -44,5 +45,5 @@ endif
 # Clean up.
 .PHONY: clean
 clean:
-	rm -f un-disas un-disas.o disas.o emu.o video.o audio.o io.o
+	rm -f un-disas un-disas.o disas.o emu.o video.o audio.o io.o board.o
 	rm -f uuu-sdl uuu-sdl.o platform-sdl.o dialog-cocoa.o
