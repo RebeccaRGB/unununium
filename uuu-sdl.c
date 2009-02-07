@@ -27,7 +27,6 @@ void CGSReleaseObj(int);
 int main(int argc, char *argv[])
 {
 	FILE *in;
-	u32 i, n;
 
 #ifdef __APPLE__
 	if (argc == 1) {
@@ -47,17 +46,9 @@ int main(int argc, char *argv[])
 		perror("Cannot read ROM file");
 		exit(1);
 	}
+	rom_file = in;
 
-	n = fread(all_the_mem, 2, 4*N_MEM, in);
-
-	fclose(in);
-
-// gross, but whatever.  one day i'll fix this, but not today
-#ifdef _BIG_ENDIAN
-	for (i = 0; i < n; i++)
-		all_the_mem[i] = (all_the_mem[i] << 8) | (all_the_mem[i] >> 8);
-#endif
-
+	read_rom(0);
 	platform_init();
 
 #ifdef __APPLE__

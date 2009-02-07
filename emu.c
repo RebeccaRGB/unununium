@@ -22,7 +22,6 @@
 #define PERIOD (500000/FREQ)
 
 
-u16 all_the_mem[4*N_MEM];
 u16 mem[N_MEM];
 
 static int trainer = 0;
@@ -44,7 +43,7 @@ static u32 idle_pc;
 
 void switch_bank(u32 bank)
 {
-	memcpy(mem + 0x4000, all_the_mem + (bank << 22) + 0x4000, 2*(N_MEM - 0x4000));
+	read_rom(N_MEM*bank);
 	memset(ever_ran_this, 0, N_MEM);
 
 	idle_pc = 0;

@@ -13,6 +13,10 @@ extern int controller_should_be_rotated;
 extern u16 controller_port_A;
 
 void platform_init(void);
+
+extern void *rom_file;
+void read_rom(u32 offset);
+
 void update_screen(void);
 char update_controller(void);
 

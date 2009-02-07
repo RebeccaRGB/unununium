@@ -13,6 +13,23 @@
 #include "platform.h"
 
 
+void *rom_file;
+
+void read_rom(u32 offset)
+{
+	u32 n;
+
+	fseek(rom_file, 2*(offset + 0x4000), SEEK_SET);
+	n = fread(mem + 0x4000, 2, N_MEM - 0x4000, rom_file);
+
+// gross, but whatever.  one day i'll fix this, but not today
+#ifdef _BIG_ENDIAN
+	for (u32 i = 0x4000; i < n; i++)
+		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
+#endif
+}
+
+
 static SDL_Surface *sdl_surface;
 static u32 palette[256];
 
