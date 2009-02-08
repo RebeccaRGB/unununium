@@ -9,6 +9,7 @@
 #include "types.h"
 #include "emu.h"
 #include "platform.h"
+#include "board.h"
 
 #include "video.h"
 
@@ -223,16 +224,16 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	if ((u32)(flags & 0xf000) >> 12 != depth)
 		return;
 
-#if 0	// XXX: Vii needs it.  Some register bit?
-	x = 160 + x;
-	y = 120 - y;
+	if (board->use_centered_coors) {
+		x = 160 + x;
+		y = 120 - y;
 
-	u32 h = sizes[(flags & 0x00c0) >> 6];
-	u32 w = sizes[(flags & 0x0030) >> 4];
+		u32 h = sizes[(flags & 0x00c0) >> 6];
+		u32 w = sizes[(flags & 0x0030) >> 4];
 
-	x -= (w/2);
-	y -= (h/2) - 8;
-#endif
+		x -= (w/2);
+		y -= (h/2) - 8;
+	}
 
 	x = ((x + 0x10) & 0x1ff) - 0x10;
 	y = ((y + 0x10) & 0x1ff) - 0x10;

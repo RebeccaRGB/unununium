@@ -8,6 +8,7 @@
 #include "types.h"
 
 struct board {
+	int use_centered_coors;	// this is some reg actually, FIXME
 	void (*init)(void);
 };
 

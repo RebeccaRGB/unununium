@@ -3,9 +3,8 @@
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 #include "types.h"
-
 #include "board.h"
 
 struct board board_VII = {
-	.init = 0
+	.use_centered_coors = 1
 };
