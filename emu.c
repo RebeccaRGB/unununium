@@ -311,38 +311,38 @@ static void step(void)
 			case 0:
 				irq &= ~1;
 				fiq &= ~1;
-				printf("INT OFF\n");
+				//printf("INT OFF\n");
 				return;
 			case 1:
 				irq |= 1;
 				fiq &= ~1;
-				printf("INT IRQ\n");
+				//printf("INT IRQ\n");
 				return;
 			case 2:
 				irq &= ~1;
 				fiq |= 1;
-				printf("INT FIQ\n");
+				//printf("INT FIQ\n");
 				return;
 			case 3:
 				irq |= 1;
 				fiq |= 1;
-				printf("INT FIQ,IRQ\n");
+				//printf("INT FIQ,IRQ\n");
 				return;
 			case 8:
 				irq &= ~1;
-				printf("IRQ OFF\n");
+				//printf("IRQ OFF\n");
 				return;
 			case 9:
 				irq |= 1;
-				printf("IRQ ON\n");
+				//printf("IRQ ON\n");
 				return;
 			case 12:
 				fiq &= ~1;
-				printf("FIQ OFF\n");
+				//printf("FIQ OFF\n");
 				return;
 			case 14:
 				fiq |= 1;
-				printf("FIQ ON\n");
+				//printf("FIQ ON\n");
 				return;
 			case 0x25:	// NOP
 				return;
