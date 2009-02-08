@@ -745,6 +745,8 @@ static void run(void)
 
 void emu(void)
 {
+	platform_init();
+	read_rom(0);
 	switch_bank(0);
 
 	memset(reg, 0, sizeof reg);

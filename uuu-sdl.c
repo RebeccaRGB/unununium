@@ -48,9 +48,6 @@ int main(int argc, char *argv[])
 	}
 	rom_file = in;
 
-	read_rom(0);
-	platform_init();
-
 #ifdef __APPLE__
 	// Hack to speed up display refresh
 	int propertyString = CGSCreateCString("DisableDeferredUpdates");
