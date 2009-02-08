@@ -5,6 +5,12 @@
 #include "types.h"
 #include "board.h"
 
+static void board_VII_init(void)
+{
+	switch_bank(0);
+}
+
 struct board board_VII = {
-	.use_centered_coors = 1
+	.use_centered_coors = 1,
+	.init = board_VII_init
 };

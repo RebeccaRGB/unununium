@@ -6,5 +6,5 @@
 #include "board.h"
 
 struct board board_WAL = {
-	.init = 0
+	.idle_pc = 0xb1c6
 };

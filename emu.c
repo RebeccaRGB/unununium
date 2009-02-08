@@ -39,32 +39,28 @@ static u8 irq, fiq;
 
 static u64 insn_count;
 
-static u32 idle_pc;
 
-
+// FIXME: Move this to board-VII.c
 void switch_bank(u32 bank)
 {
 	read_rom(N_MEM*bank);
 	memset(ever_ran_this, 0, N_MEM);
 
-	idle_pc = 0;
+	board->idle_pc = 0;
 	if (mem[0x19792] == 0x4311 && mem[0x19794] == 0x4e43)	// VII bank 0
-		idle_pc = 0x19792;
+		board->idle_pc = 0x19792;
 	if (mem[0x21653] == 0x4311 && mem[0x21655] == 0x4e43)	// VII bank 2
-		idle_pc = 0x21653;
+		board->idle_pc = 0x21653;
 	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43) {	// VC1
-		idle_pc = 0x42daa;
+		board->idle_pc = 0x42daa;
 		controller_should_be_rotated = 1;
 		if (trainer)
 			mem[0x38ecf] = 0;	// no life lost in LP
 	}
 	if (mem[0x3ecb9] == 0x4311 && mem[0x3ecbb] == 0x4e43) {	// VC2
-		idle_pc = 0x3ecb9;
+		board->idle_pc = 0x3ecb9;
 		controller_should_be_rotated = 1;
 	}
-	if (mem[0xb1c6] == 0x9311 && mem[0xb1c8] == 0x4501 &&
-	    mem[0xb1c9] == 0x5e44)	// WAL
-		idle_pc = 0xb1c6;
 }
 
 u32 get_ds(void)
@@ -624,7 +620,7 @@ static void run_main(void)
 			print_state();
 		}
 
-		if (cs_pc() == idle_pc) {
+		if (cs_pc() == board->idle_pc) {
 			idle++;
 			if (idle == 2)
 				done = 1;
@@ -747,7 +743,6 @@ void emu(void)
 	platform_init();
 	read_rom(0);
 	board_init();
-	switch_bank(0);
 
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector

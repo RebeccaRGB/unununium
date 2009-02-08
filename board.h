@@ -8,7 +8,9 @@
 #include "types.h"
 
 struct board {
-	int use_centered_coors;	// this is some reg actually, FIXME
+	u32 idle_pc;		// Address of code that waits for (retrace) IRQ
+	int use_centered_coors;	// This is some video reg actually, FIXME
+
 	void (*init)(void);
 };
 
