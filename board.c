@@ -31,4 +31,7 @@ void board_init(void)
 	board = board_detect();
 	if (board == 0)
 		fatal("couldn't detect board\n");
+
+	if (board->init)
+		board->init();
 }
