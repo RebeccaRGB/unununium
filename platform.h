@@ -20,4 +20,6 @@ void read_rom(u32 offset);
 void update_screen(void);
 char update_controller(void);
 
+void fatal(const char *format, ...);
+
 #endif

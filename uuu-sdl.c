@@ -36,16 +36,12 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	if (argc != 2) {
-		fprintf(stderr, "usage: %s <rom-file>\n", argv[0]);
-		exit(1);
-	}
+	if (argc != 2)
+		fatal("usage: %s <rom-file>\n", argv[0]);
 
 	in = fopen(argv[1], "rb");
-	if (!in) {
-		perror("Cannot read ROM file");
-		exit(1);
-	}
+	if (!in)
+		fatal("Cannot read ROM file %s\n", argv[1]);
 	rom_file = in;
 
 #ifdef __APPLE__

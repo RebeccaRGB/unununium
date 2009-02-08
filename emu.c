@@ -536,9 +536,7 @@ static void step(void)
 bad:
 	reg[7] = old_cs_pc;
 	print_state();
-	printf("! UNIMPLEMENTED\n");
-
-	exit(1);
+	fatal("! UNIMPLEMENTED\n");
 }
 
 static u32 last_retrace_time = 0;

@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <SDL.h>
 
 #include "types.h"
@@ -59,10 +60,8 @@ void update_screen(void)
 	set_palette();
 
 	if (SDL_MUSTLOCK(sdl_surface))
-		if (SDL_LockSurface(sdl_surface) < 0) {
-			printf("oh crap.\n");
-			exit(1);
-		}
+		if (SDL_LockSurface(sdl_surface) < 0)
+			fatal("oh crap\n");
 
 	u32 x, y;
 	for (y = 0; y < 240; y++) {
@@ -253,19 +252,23 @@ char update_controller(void)
 	return 0;
 }
 
+void fatal(const char *format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	exit(1);
+}
+
 void platform_init(void)
 {
-	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO) < 0) {
-		fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
-		exit(1);
-	}
+	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO) < 0)
+		fatal("Unable to init SDL: %s\n", SDL_GetError());
 	atexit(SDL_Quit);
 
 	SDL_WM_SetCaption("Unununium", 0);
 
 	sdl_surface = SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
-	if (!sdl_surface) {
-		fprintf(stderr, "Unable to set 320x240 video: %s\n", SDL_GetError());
-		exit(1);
-	}
+	if (!sdl_surface)
+		fatal("Unable to initialise video: %s\n", SDL_GetError());
 }
