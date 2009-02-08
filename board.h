@@ -11,6 +11,7 @@ struct board {
 	//
 };
 
+extern struct board board_VII, board_WAL;
 extern struct board *board;
 
 void board_init(void);
