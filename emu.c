@@ -14,6 +14,7 @@
 #include "audio.h"
 #include "io.h"
 #include "platform.h"
+#include "board.h"
 
 #include "emu.h"
 
@@ -747,6 +748,7 @@ void emu(void)
 {
 	platform_init();
 	read_rom(0);
+	board_init();
 	switch_bank(0);
 
 	memset(reg, 0, sizeof reg);

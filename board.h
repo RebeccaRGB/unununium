@@ -13,5 +13,6 @@ struct board {
 
 extern struct board *board;
 
-#endif
+void board_init(void);
 
+#endif

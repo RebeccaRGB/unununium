@@ -10,3 +10,7 @@ struct board board_VII = { };
 struct board board_WAL = { };
 
 struct board *board;
+
+void board_init(void)
+{
+}
