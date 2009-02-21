@@ -32,7 +32,6 @@ uuu-sdl: dialog-cocoa.o
 
 all: .stamp-bundle
 
-.PHONY: .stamp-bundle
 .stamp-bundle: uuu-sdl
 	-mkdir -p Unununium.app/Contents/Resources/ROMs
 	-mkdir -p Unununium.app/Contents/MacOS
