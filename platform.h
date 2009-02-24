@@ -10,7 +10,14 @@
 extern u8 controller_input[8];
 extern u8 controller_output[7];
 extern int controller_should_be_rotated;
-extern u16 controller_port_A;
+
+extern u8 button_up;
+extern u8 button_down;
+extern u8 button_left;
+extern u8 button_right;
+extern u8 button_A;
+extern u8 button_B;
+extern u8 button_menu;
 
 void platform_init(void);
 

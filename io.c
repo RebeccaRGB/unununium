@@ -33,6 +33,20 @@ static void do_i2c(void)
 	mem[0x3d59] |= 1;
 }
 
+static void do_gpio(u32 addr)
+{
+	u32 n = (addr - 0x3d01) / 5;
+	u16 buffer = mem[0x3d02 + 5*n];
+	u16 dir    = mem[0x3d03 + 5*n];
+	u16 attr   = mem[0x3d04 + 5*n];
+
+	u16 push = dir;
+	u16 pull = (~dir) & (~attr);
+	u16 what = (buffer & (push | pull)) ^ (dir & ~attr);
+
+	mem[0x3d01 + 5*n] = board->do_gpio(n, what, push, pull);
+}
+
 void io_store(u16 val, u32 addr)
 {
 	switch (addr) {
@@ -40,21 +54,30 @@ void io_store(u16 val, u32 addr)
 		printf("IO STORE %04x to %04x\n", val, addr);
 		break;
 
-	case 0x3d07:		// port B data write
-		printf("STORE %04x to %04x (port B)\n", val, addr);
-		u32 bank = ((val & 0x80) >> 7) | ((val & 0x20) >> 4);
-		switch_bank(bank);
-		printf("switched to bank %x\n", bank);
-		break;
-
-	case 0x3d01 ... 0x3d06:
-	case 0x3d08 ... 0x3d0f:	// ports A..C
-		break;
 // 3d01 3d06 3d0b	data
 // 3d02 3d07 3d0c	buffer
 // 3d03 3d08 3d0d	dir
 // 3d04 3d09 3d0e	attrib
-// 3d05 3d0a 3d0f	irq?
+// 3d05 3d0a 3d0f	irq? latch?
+
+	case 0x3d01:
+	case 0x3d06:
+	case 0x3d0b:		// port A, B, C data
+		addr++;
+		// fallthrough: write to buffer instead
+
+	case 0x3d02 ... 0x3d05:	// port A
+	case 0x3d07 ... 0x3d0a:	// port B
+	case 0x3d0c ... 0x3d0f:	// port C
+//		if (addr == 0x3d07) {		// port B buffer
+//			printf("STORE %04x to %04x (port B)\n", val, addr);
+//			u32 bank = ((val & 0x80) >> 7) | ((val & 0x20) >> 4);
+//			switch_bank(bank);
+//			printf("switched to bank %x\n", bank);
+//		}
+		mem[addr] = val;
+		do_gpio(addr);
+		return;
 
 	// case 0x3d10:
 	// case 0x3d11:
@@ -135,9 +158,14 @@ u16 io_load(u32 addr)
 
 	switch (addr) {
 	case 0x3d01:
-		return (mem[0x3d01] & ~0xfc20) | controller_port_A;
+	case 0x3d06:
+	case 0x3d0b:			// GPIO
+		do_gpio(addr);
+		return mem[addr];
 
-	case 0x3d02 ... 0x3d0f:		// GPIO
+	case 0x3d02 ... 0x3d05:
+	case 0x3d07 ... 0x3d0a:
+	case 0x3d0c ... 0x3d0f:		// GPIO
 		break;
 
 	case 0x3d22:			// IRQ status
