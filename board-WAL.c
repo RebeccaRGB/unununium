@@ -4,9 +4,12 @@
 
 #include "types.h"
 #include "platform.h"
+#include "i2c.h"
+	#include <stdio.h>
 
 #include "board.h"
-//	#include <stdio.h>
+
+static struct i2c_bus *i2c_bus;
 
 static u16 board_WAL_gpio(u32 n, u16 what, u16 push, u16 pull)
 {
@@ -30,11 +33,26 @@ static u16 board_WAL_gpio(u32 n, u16 what, u16 push, u16 pull)
 			what |= 0x0020;
 	}
 
+	if (n == 2) {
+		int sda = what & 1;
+		int scl = (what >> 1) & 1;
+//fprintf(stderr, "SDA=%d SCL=%d\n", sda, scl);
+		sda = i2c_bitbang(i2c_bus, sda, scl);
+		what = (what & ~1) | sda;
+	}
+
 	return what;
+}
+
+static void init(void)
+{
+	i2c_bus = i2c_bitbang_bus_create();
+	i2c_eeprom_create(i2c_bus, 0x200, 0xa0);
 }
 
 struct board board_WAL = {
 	.idle_pc = 0xb1c6,
 
+	.init = init,
 	.do_gpio = board_WAL_gpio
 };

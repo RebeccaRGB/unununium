@@ -14,8 +14,9 @@ un-disas: un-disas.o disas.o
 
 # The emulator.
 uuu-$(PLATFORM): uuu-%: uuu-%.o platform-%.o \
-                 disas.o emu.o video.o audio.o io.o board.o \
-                 board-VII.o board-WAL.o
+                 disas.o emu.o video.o audio.o io.o \
+                 i2c-bus.o i2c-eeprom.o \
+                 board.o board-VII.o board-WAL.o
 
 # SDL needs special compiler flags and some libraries.
 platform-sdl.o uuu-sdl.o: CFLAGS += $(shell sdl-config --cflags)
@@ -45,6 +46,7 @@ endif
 # Clean up.
 .PHONY: clean
 clean:
-	rm -f un-disas un-disas.o disas.o emu.o video.o audio.o io.o board.o
-	rm -f board-VII.o board-WAL.o
+	rm -f un-disas un-disas.o disas.o emu.o video.o audio.o io.o
+	rm -f i2c-bus.o i2c-eeprom.o
+	rm -f board.o board-VII.o board-WAL.o
 	rm -f uuu-sdl uuu-sdl.o platform-sdl.o dialog-cocoa.o
