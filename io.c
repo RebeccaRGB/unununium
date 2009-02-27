@@ -44,7 +44,10 @@ static void do_gpio(u32 addr)
 	u16 pull = (~dir) & (~attr);
 	u16 what = (buffer & (push | pull)) ^ (dir & ~attr);
 
-	mem[0x3d01 + 5*n] = board->do_gpio(n, what, push, pull);
+	if (board->do_gpio)
+		what = board->do_gpio(n, what, push, pull);
+
+	mem[0x3d01 + 5*n] = what;
 }
 
 void io_store(u16 val, u32 addr)
