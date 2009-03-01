@@ -46,7 +46,7 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x281c:		// XXX
-			printf("VIDEO STORE %04x to %04x\n", val, addr);
+			//printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2820 ... 0x2822:	// bitmap offsets
@@ -59,7 +59,7 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x2842:		// XXX
-			printf("VIDEO STORE %04x to %04x\n", val, addr);
+			//printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2862:		// video IRQ enable
