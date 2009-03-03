@@ -119,7 +119,7 @@ u16 video_load(u32 addr)
 }
 
 
-static void blit(s32 xoff, s32 yoff, u32 flags, u16 *bitmap, u16 tile)
+static void blit(u32 xoff, u32 yoff, u32 flags, u16 *bitmap, u16 tile)
 {
 	u32 h = sizes[(flags & 0x00c0) >> 6];
 	u32 w = sizes[(flags & 0x0030) >> 4];
@@ -136,10 +136,10 @@ static void blit(s32 xoff, s32 yoff, u32 flags, u16 *bitmap, u16 tile)
 	u32 nbits = 0;
 
 	for (u32 y = 0; y < h; y++) {
-		u32 yy = yoff + (y ^ yflipmask);
+		u32 yy = (yoff + (y ^ yflipmask)) & 0xff;
 
 		for (u32 x = 0; x < w; x++) {
-			u32 xx = xoff + (x ^ xflipmask);
+			u32 xx = (xoff + (x ^ xflipmask)) & 0x1ff;
 
 			bits <<= nc;
 			if (nbits < nc) {
@@ -154,10 +154,10 @@ static void blit(s32 xoff, s32 yoff, u32 flags, u16 *bitmap, u16 tile)
 			bits &= 0xffff;
 
 			if ((flags & 0x00100000) && yy < 240)
-				xx = ((xx - mem[0x2900 + yy] + 0x10) & 0x01ff) - 0x10;
+				xx = (xx - mem[0x2900 + yy]) & 0x01ff;
 
 			//if ((flags & 0x00200000) && yy < 240)
-			//	xx = ((xx - mem[0x2a00 + yy] + 0x10) & 0x01ff) - 0x10;
+			//	xx = (xx - mem[0x2a00 + yy]) & 0x01ff;
 
 			if (xx < 320 && yy < 240)
 				if ((mem[0x2b00 + pal] & 0x8000) == 0)
@@ -200,8 +200,8 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 				palette >>= 8;
 			palette &= 0x0f;
 
-			u32 yy = ((h*y0 - yscroll + 0x10) & 0xff) - 0x10;
-			u32 xx = ((w*x0 - xscroll + 0x10) & 0x1ff) - 0x10;
+			u32 yy = (h*y0 - yscroll) & 0xff;
+			u32 xx = (w*x0 - xscroll) & 0x1ff;
 
 			blit(xx, yy, (flags2 << 16) | (palette << 8) | flags, mem + bitmap, tile);
 		}
@@ -235,8 +235,8 @@ static void blit_sprite(u32 depth, u16 *sprite)
 		y -= (h/2) - 8;
 	}
 
-	x = ((x + 0x10) & 0x1ff) - 0x10;
-	y = ((y + 0x10) & 0x1ff) - 0x10;
+	x = x & 0x1ff;
+	y = y & 0x1ff;
 
 	blit(x, y, flags, mem + bitmap, tile);
 }
