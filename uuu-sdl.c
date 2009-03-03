@@ -26,23 +26,23 @@ void CGSReleaseObj(int);
 
 int main(int argc, char *argv[])
 {
-	FILE *in;
-
 #ifdef __APPLE__
 	if (argc == 1) {
-		argv[1] = (char *)dialog_rom_file();
-		if (argv[1])
-			argc = 2;
+		const char *path = dialog_rom_file();
+		if (!path)
+			return 0;
+		open_rom(path);
 	}
+#else
+	if (0)
+		;
 #endif
+	else {
+		if (argc != 2)
+			fatal("usage: %s <rom-file>\n", argv[0]);
 
-	if (argc != 2)
-		fatal("usage: %s <rom-file>\n", argv[0]);
-
-	in = fopen(argv[1], "rb");
-	if (!in)
-		fatal("Cannot read ROM file %s\n", argv[1]);
-	rom_file = in;
+		open_rom(argv[1]);
+	}
 
 #ifdef __APPLE__
 	// Hack to speed up display refresh

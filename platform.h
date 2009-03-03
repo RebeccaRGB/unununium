@@ -21,7 +21,7 @@ extern u8 button_menu;
 
 void platform_init(void);
 
-extern void *rom_file;
+void open_rom(const char *path);
 void read_rom(u32 offset);
 
 void update_screen(void);

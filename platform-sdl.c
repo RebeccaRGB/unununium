@@ -14,7 +14,14 @@
 #include "platform.h"
 
 
-void *rom_file;
+static void *rom_file;
+
+void open_rom(const char *path)
+{
+	rom_file = fopen(path, "rb");
+	if (!rom_file)
+		fatal("Cannot read ROM file `%s'\n", path);
+}
 
 void read_rom(u32 offset)
 {
