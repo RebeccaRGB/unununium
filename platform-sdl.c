@@ -83,32 +83,10 @@ void save_eeprom(void *cookie, u8 *data, u32 len)
 
 
 static SDL_Surface *sdl_surface;
-static u32 palette[256];
-
-
-static u8 x58(u32 x)
-{
-	x &= 31;
-	return (x << 3) | (x >> 2);
-}
-
-static void set_palette(void)
-{
-	u32 n;
-	for (n = 0; n < 256; n++) {
-		u32 c = mem[0x2b00 + n];
-		if (c & 0x8000)
-			c = -1;
-		else
-			c = SDL_MapRGB(sdl_surface->format, x58(c >> 10), x58(c >> 5), x58(c));
-		palette[n] = c;
-	}
-}
 
 void update_screen(void)
 {
 	blit_screen();
-	set_palette();
 
 	if (SDL_MUSTLOCK(sdl_surface))
 		if (SDL_LockSurface(sdl_surface) < 0)
@@ -120,60 +98,27 @@ void update_screen(void)
 		u32 *p = sdl_surface->pixels + 3*y*sdl_surface->pitch;
 		u32 *p2 = sdl_surface->pixels + (3*y+1)*sdl_surface->pitch;
 		u32 *p3 = sdl_surface->pixels + (3*y+2)*sdl_surface->pitch;
-		u8 *s = screen + 320*y;
+		u8 *s_r = screen_r + 320*y;
+		u8 *s_g = screen_g + 320*y;
+		u8 *s_b = screen_b + 320*y;
 
-		for (x = 0; x < 320; x += 4) {
-			u32 c0 = s[0];
-			u32 c1 = s[1];
-			u32 c2 = s[2];
-			u32 c3 = s[3];
-			c0 = palette[c0];
-			c1 = palette[c1];
-			c2 = palette[c2];
-			c3 = palette[c3];
-			s += 4;
+		for (x = 0; x < 320; x++) {
+			u32 c = SDL_MapRGB(sdl_surface->format, *s_r++, *s_g++, *s_b++);
 
-			p[0] = c0;
-			p[1] = c0;
-			p[2] = c0;
-			p[3] = c1;
-			p[4] = c1;
-			p[5] = c1;
-			p[6] = c2;
-			p[7] = c2;
-			p[8] = c2;
-			p[9] = c3;
-			p[10] = c3;
-			p[11] = c3;
-			p += 12;
+			p[0] = c;
+			p[1] = c;
+			p[2] = c;
+			p += 3;
 
-			p2[0] = c0;
-			p2[1] = c0;
-			p2[2] = c0;
-			p2[3] = c1;
-			p2[4] = c1;
-			p2[5] = c1;
-			p2[6] = c2;
-			p2[7] = c2;
-			p2[8] = c2;
-			p2[9] = c3;
-			p2[10] = c3;
-			p2[11] = c3;
-			p2 += 12;
+			p2[0] = c;
+			p2[1] = c;
+			p2[2] = c;
+			p2 += 3;
 
-			p3[0] = c0;
-			p3[1] = c0;
-			p3[2] = c0;
-			p3[3] = c1;
-			p3[4] = c1;
-			p3[5] = c1;
-			p3[6] = c2;
-			p3[7] = c2;
-			p3[8] = c2;
-			p3[9] = c3;
-			p3[10] = c3;
-			p3[11] = c3;
-			p3 += 12;
+			p3[0] = c;
+			p3[1] = c;
+			p3[2] = c;
+			p3 += 3;
 		}
 #else
 		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;

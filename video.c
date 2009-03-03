@@ -14,7 +14,9 @@
 #include "video.h"
 
 
-u8 screen[320*240];
+u8 screen_r[320*240];
+u8 screen_g[320*240];
+u8 screen_b[320*240];
 
 int hide_page_0;
 int hide_page_1;
@@ -122,6 +124,12 @@ u16 video_load(u32 addr)
 }
 
 
+static u8 x58(u32 x)
+{
+	x &= 31;
+	return (x << 3) | (x >> 2);
+}
+
 static void blit(u32 xoff, u32 yoff, u32 flags, u16 *bitmap, u16 tile)
 {
 	u32 h = sizes[(flags & 0x00c0) >> 6];
@@ -162,9 +170,14 @@ static void blit(u32 xoff, u32 yoff, u32 flags, u16 *bitmap, u16 tile)
 			//if ((flags & 0x00200000) && yy < 240)
 			//	xx = (xx - mem[0x2a00 + yy]) & 0x01ff;
 
-			if (xx < 320 && yy < 240)
-				if ((mem[0x2b00 + pal] & 0x8000) == 0)
-					screen[xx + 320*yy] = pal;
+			if (xx < 320 && yy < 240) {
+				u16 rgb = mem[0x2b00 + pal];
+				if ((rgb & 0x8000) == 0) {
+					screen_r[xx + 320*yy] = x58(rgb >> 10);
+					screen_g[xx + 320*yy] = x58(rgb >> 5);
+					screen_b[xx + 320*yy] = x58(rgb);
+				}
+			}
 		}
 	}
 }
@@ -287,7 +300,9 @@ void blit_screen(void)
 #endif
 
 	// Could optimise this, skip if any full page shown
-	memset(screen, 0, sizeof screen);
+	memset(screen_r, 0, sizeof screen_r);
+	memset(screen_g, 0, sizeof screen_g);
+	memset(screen_b, 0, sizeof screen_b);
 
 	u32 depth;
 	for (depth = 0; depth < 4; depth++) {

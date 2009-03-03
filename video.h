@@ -7,7 +7,9 @@
 
 #include "types.h"
 
-extern u8 screen[320*240];
+extern u8 screen_r[320*240];
+extern u8 screen_g[320*240];
+extern u8 screen_b[320*240];
 
 extern int hide_page_0;
 extern int hide_page_1;
