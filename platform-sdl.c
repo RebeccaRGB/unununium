@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <sys/stat.h>
 #include <SDL.h>
 
 #include "types.h"
@@ -20,7 +21,7 @@ void open_rom(const char *path)
 {
 	rom_file = fopen(path, "rb");
 	if (!rom_file)
-		fatal("Cannot read ROM file `%s'\n", path);
+		fatal("Cannot read ROM file %s\n", path);
 }
 
 void read_rom(u32 offset)
@@ -35,6 +36,46 @@ void read_rom(u32 offset)
 	for (u32 i = 0x4000; i < n; i++)
 		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
 #endif
+}
+
+
+void *open_eeprom(const char *name, u8 *data, u32 len)
+{
+	char path[256];
+	char *home;
+	FILE *fp;
+
+	memset(data, 0, len);
+
+	home = getenv("HOME");
+	if (!home)
+		fatal("cannot find HOME\n");
+	snprintf(path, sizeof path, "%s/.unununium", home);
+	mkdir(path, 0777);
+	snprintf(path, sizeof path, "%s/.unununium/%s.eeprom", home, name);
+
+	fp = fopen(path, "rb");
+	if (fp) {
+		fread(data, 1, len, fp);
+		if (ferror(fp))
+			fatal("error reading EEPROM file %s\n", path);
+		fclose(fp);
+	}
+
+	fp = fopen(path, "wb");
+	if (!fp)
+		fatal("cannot open EEPROM file %s\n", path);
+
+	return fp;
+}
+
+void save_eeprom(void *cookie, u8 *data, u32 len)
+{
+	FILE *fp = cookie;
+
+	rewind(fp);
+
+	fwrite(data, 1, len, fp);
 }
 
 

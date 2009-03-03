@@ -24,6 +24,9 @@ void platform_init(void);
 void open_rom(const char *path);
 void read_rom(u32 offset);
 
+void *open_eeprom(const char *name, u8 *data, u32 len);
+void save_eeprom(void *cookie, u8 *data, u32 len);
+
 void update_screen(void);
 char update_controller(void);
 

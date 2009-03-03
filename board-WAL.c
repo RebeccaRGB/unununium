@@ -47,7 +47,7 @@ static u16 board_WAL_gpio(u32 n, u16 what, u16 push, u16 pull)
 static void init(void)
 {
 	i2c_bus = i2c_bitbang_bus_create();
-	i2c_eeprom_create(i2c_bus, 0x200, 0xa0);
+	i2c_eeprom_create(i2c_bus, 0x200, 0xa0, "WAL");
 }
 
 struct board board_WAL = {

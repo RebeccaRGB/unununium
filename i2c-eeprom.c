@@ -3,6 +3,7 @@
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 #include "types.h"
+#include "platform.h"
 #include <stdlib.h>
 
 #include "i2c.h"
@@ -11,8 +12,10 @@
 struct i2c_eeprom {
 	struct i2c_device dev;
 
-	u32 size;	// in bytes
 	u8 *data;
+	u32 size;	// in bytes
+
+	void *file_cookie;
 
 	u8 address;	// i2c bus address
 	u32 current;	// data pointer
@@ -46,6 +49,7 @@ static int i2c_eeprom_write(struct i2c_device *dev, u8 data)
 		eeprom->current = (eeprom->current << 8) | data;
 	} else {
 		eeprom->data[eeprom->current] = data;
+		save_eeprom(eeprom->file_cookie, eeprom->data, eeprom->size);
 		// XXX: for 24c04 only
 		eeprom->current = (eeprom->current & ~0x0f) |
 		                  ((eeprom->current + 1) & 0x0f);
@@ -64,7 +68,8 @@ static u8 i2c_eeprom_read(struct i2c_device *dev)
 	return data;
 }
 
-void i2c_eeprom_create(struct i2c_bus *bus, u32 size, u8 address)
+void i2c_eeprom_create(struct i2c_bus *bus, u32 size, u8 address,
+                       const char *file_name)
 {
 	struct i2c_eeprom *eeprom = malloc(sizeof *eeprom);
 	eeprom->dev.next = bus->devices;
@@ -75,8 +80,10 @@ void i2c_eeprom_create(struct i2c_bus *bus, u32 size, u8 address)
 	eeprom->dev.read     = i2c_eeprom_read;
 	eeprom->dev.read_ack = 0;
 
-//	eeprom->size = size;
 	eeprom->data = calloc(size, 1);
+	eeprom->size = size;
+
+	eeprom->file_cookie = open_eeprom(file_name, eeprom->data, size);
 
 	eeprom->address = address;
 	eeprom->current = 0;

@@ -30,7 +30,8 @@ struct i2c_bus {
 
 // EEPROM device.
 
-void i2c_eeprom_create(struct i2c_bus *bus, u32 size, u8 address);
+void i2c_eeprom_create(struct i2c_bus *bus, u32 size, u8 address,
+                       const char *file_name);
 
 
 // Bitbang bus.
