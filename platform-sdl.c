@@ -15,6 +15,9 @@
 #include "platform.h"
 
 
+#define SIZE_3X3
+
+
 static void *rom_file;
 
 void open_rom(const char *path)
@@ -113,6 +116,66 @@ void update_screen(void)
 
 	u32 x, y;
 	for (y = 0; y < 240; y++) {
+#ifdef SIZE_3X3
+		u32 *p = sdl_surface->pixels + 3*y*sdl_surface->pitch;
+		u32 *p2 = sdl_surface->pixels + (3*y+1)*sdl_surface->pitch;
+		u32 *p3 = sdl_surface->pixels + (3*y+2)*sdl_surface->pitch;
+		u8 *s = screen + 320*y;
+
+		for (x = 0; x < 320; x += 4) {
+			u32 c0 = s[0];
+			u32 c1 = s[1];
+			u32 c2 = s[2];
+			u32 c3 = s[3];
+			c0 = palette[c0];
+			c1 = palette[c1];
+			c2 = palette[c2];
+			c3 = palette[c3];
+			s += 4;
+
+			p[0] = c0;
+			p[1] = c0;
+			p[2] = c0;
+			p[3] = c1;
+			p[4] = c1;
+			p[5] = c1;
+			p[6] = c2;
+			p[7] = c2;
+			p[8] = c2;
+			p[9] = c3;
+			p[10] = c3;
+			p[11] = c3;
+			p += 12;
+
+			p2[0] = c0;
+			p2[1] = c0;
+			p2[2] = c0;
+			p2[3] = c1;
+			p2[4] = c1;
+			p2[5] = c1;
+			p2[6] = c2;
+			p2[7] = c2;
+			p2[8] = c2;
+			p2[9] = c3;
+			p2[10] = c3;
+			p2[11] = c3;
+			p2 += 12;
+
+			p3[0] = c0;
+			p3[1] = c0;
+			p3[2] = c0;
+			p3[3] = c1;
+			p3[4] = c1;
+			p3[5] = c1;
+			p3[6] = c2;
+			p3[7] = c2;
+			p3[8] = c2;
+			p3[9] = c3;
+			p3[10] = c3;
+			p3[11] = c3;
+			p3 += 12;
+		}
+#else
 		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;
 		u32 *p2 = sdl_surface->pixels + (2*y+1)*sdl_surface->pitch;
 		u8 *s = screen + 320*y;
@@ -148,6 +211,7 @@ void update_screen(void)
 			p2[7] = c3;
 			p2 += 8;
 		}
+#endif
 	}
 
 	if (SDL_MUSTLOCK(sdl_surface))
@@ -313,7 +377,11 @@ void platform_init(void)
 
 	SDL_WM_SetCaption("Unununium", 0);
 
+#ifdef SIZE_3X3
+	sdl_surface = SDL_SetVideoMode(960, 720, 32, SDL_SWSURFACE);
+#else
 	sdl_surface = SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
+#endif
 	if (!sdl_surface)
 		fatal("Unable to initialise video: %s\n", SDL_GetError());
 
