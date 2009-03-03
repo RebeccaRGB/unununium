@@ -52,6 +52,9 @@ void video_store(u16 val, u32 addr)
 		case 0x2820 ... 0x2822:	// bitmap offsets
 			break;
 
+		case 0x282a:		// blend level: 0=opaque, 3f=transp
+			break;
+
 		case 0x2836:
 		case 0x2837:		// XXX
 			if (val != 0xffff)
