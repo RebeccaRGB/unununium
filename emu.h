@@ -11,8 +11,6 @@
 
 extern u16 mem[N_MEM];
 
-void switch_bank(u32 bank);
-
 void emu(void);
 u32 get_ds(void);
 void set_ds(u32 ds);

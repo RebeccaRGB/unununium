@@ -11,7 +11,7 @@
 
 static struct i2c_bus *i2c_bus;
 
-static u16 board_WAL_gpio(u32 n, u16 what, u16 push, u16 pull)
+static u16 gpio(u32 n, u16 what, u16 push, u16 pull)
 {
 //	fprintf(stderr, "--->  PORT %c  what=%04x push=%04x pull=%04x\n",
 //	        'A' + n, what, push, pull);
@@ -54,5 +54,5 @@ struct board board_WAL = {
 	.idle_pc = 0xb1c6,
 
 	.init = init,
-	.do_gpio = board_WAL_gpio
+	.gpio = gpio
 };

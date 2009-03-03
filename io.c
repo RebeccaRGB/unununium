@@ -44,8 +44,8 @@ static void do_gpio(u32 addr)
 	u16 pull = (~dir) & (~attr);
 	u16 what = (buffer & (push | pull)) ^ (dir & ~attr);
 
-	if (board->do_gpio)
-		what = board->do_gpio(n, what, push, pull);
+	if (board->gpio)
+		what = board->gpio(n, what, push, pull);
 
 	mem[0x3d01 + 5*n] = what;
 }
@@ -72,12 +72,6 @@ void io_store(u16 val, u32 addr)
 	case 0x3d02 ... 0x3d05:	// port A
 	case 0x3d07 ... 0x3d0a:	// port B
 	case 0x3d0c ... 0x3d0f:	// port C
-//		if (addr == 0x3d07) {		// port B buffer
-//			printf("STORE %04x to %04x (port B)\n", val, addr);
-//			u32 bank = ((val & 0x80) >> 7) | ((val & 0x20) >> 4);
-//			switch_bank(bank);
-//			printf("switched to bank %x\n", bank);
-//		}
 		mem[addr] = val;
 		do_gpio(addr);
 		return;
