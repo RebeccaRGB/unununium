@@ -268,4 +268,7 @@ void platform_init(void)
 	sdl_surface = SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
 	if (!sdl_surface)
 		fatal("Unable to initialise video: %s\n", SDL_GetError());
+
+	// First SDL input does a lot of init, do it now.
+	update_controller();
 }
