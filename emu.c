@@ -19,7 +19,7 @@
 #include "emu.h"
 
 
-#define FREQ 60
+#define FREQ 50
 #define PERIOD (500000/FREQ)
 
 
