@@ -48,24 +48,19 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x281c:		// blend level: 0=opaque, 40=transp
-			printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2820 ... 0x2822:	// bitmap offsets
 			break;
 
 		case 0x282a:		// XXX
-			printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2836:
 		case 0x2837:		// XXX
-			//if (val != 0xffff)
-				printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2842:		// XXX
-			printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2862:		// video IRQ enable
@@ -106,14 +101,19 @@ u16 video_load(u32 addr)
 		case 0x2816 ... 0x281b:	// page 1 regs
 			break;
 
-		//case 0x2838:		// XXX: dunno
-		//	break;
+		case 0x282a:		// XXX
+			break;
+
+		case 0x2842:		// XXX
+			break;
+
+		case 0x2862:		// video IRQ enable
+			break;
 
 		case 0x2863:		// video IRQ status
 			break;
 
 		case 0x2872:		// DMA len
-//			return 0;
 			break;
 
 		default:
