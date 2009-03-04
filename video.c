@@ -220,6 +220,9 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 	if ((flags & 0x3000) >> 12 != depth)
 		return;
 
+	//if ((flags & 0x8000) | (flags2 & 0xfff7))
+	//	printf("flags: %04x, flags2: %04x\n", flags, flags2);
+
 	u32 h = sizes[(flags & 0x00c0) >> 6];
 	u32 w = sizes[(flags & 0x0030) >> 4];
 
