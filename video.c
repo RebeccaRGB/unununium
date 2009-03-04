@@ -47,24 +47,25 @@ void video_store(u16 val, u32 addr)
 		case 0x2816 ... 0x281b:	// page 1 regs
 			break;
 
-		case 0x281c:		// XXX
-			//printf("VIDEO STORE %04x to %04x\n", val, addr);
+		case 0x281c:		// blend level: 0=opaque, 40=transp
+			printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2820 ... 0x2822:	// bitmap offsets
 			break;
 
-		case 0x282a:		// blend level: 0=opaque, 3f=transp
+		case 0x282a:		// XXX
+			printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2836:
 		case 0x2837:		// XXX
-			if (val != 0xffff)
+			//if (val != 0xffff)
 				printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2842:		// XXX
-			//printf("VIDEO STORE %04x to %04x\n", val, addr);
+			printf("VIDEO STORE %04x to %04x\n", val, addr);
 			break;
 
 		case 0x2862:		// video IRQ enable
@@ -105,8 +106,8 @@ u16 video_load(u32 addr)
 		case 0x2816 ... 0x281b:	// page 1 regs
 			break;
 
-		case 0x2838:		// XXX: dunno
-			break;
+		//case 0x2838:		// XXX: dunno
+		//	break;
 
 		case 0x2863:		// video IRQ status
 			break;
@@ -128,6 +129,26 @@ static u8 x58(u32 x)
 {
 	x &= 31;
 	return (x << 3) | (x >> 2);
+}
+
+static void set_pixel(u32 offset, u16 rgb)
+{
+	screen_r[offset] = x58(rgb >> 10);
+	screen_g[offset] = x58(rgb >> 5);
+	screen_b[offset] = x58(rgb);
+}
+
+static u8 mix_channel(u8 old, u8 new)
+{
+	u8 alpha = mem[0x281c];
+	return ((64 - alpha)*old + alpha*new) / 64;
+}
+
+static void mix_pixel(u32 offset, u16 rgb)
+{
+	screen_r[offset] = mix_channel(screen_r[offset], x58(rgb >> 10));
+	screen_g[offset] = mix_channel(screen_g[offset], x58(rgb >> 5));
+	screen_b[offset] = mix_channel(screen_b[offset], x58(rgb));
 }
 
 static void blit(u32 xoff, u32 yoff, u32 flags, u16 *bitmap, u16 tile)
@@ -173,9 +194,10 @@ static void blit(u32 xoff, u32 yoff, u32 flags, u16 *bitmap, u16 tile)
 			if (xx < 320 && yy < 240) {
 				u16 rgb = mem[0x2b00 + pal];
 				if ((rgb & 0x8000) == 0) {
-					screen_r[xx + 320*yy] = x58(rgb >> 10);
-					screen_g[xx + 320*yy] = x58(rgb >> 5);
-					screen_b[xx + 320*yy] = x58(rgb);
+					if (flags & 0x4000)
+						mix_pixel(xx + 320*yy, rgb);
+					else
+						set_pixel(xx + 320*yy, rgb);
 				}
 			}
 		}
@@ -234,10 +256,7 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	y = *sprite++;
 	flags = *sprite++;
 
-//if (flags & 0x8000) return;	// dunno
-//if (flags & 0x4000) return;	// dunno
-
-	if ((u32)(flags & 0xf000) >> 12 != depth)
+	if ((u32)(flags & 0x3000) >> 12 != depth)
 		return;
 
 	if (board->use_centered_coors) {
@@ -310,10 +329,6 @@ void blit_screen(void)
 			blit_page(depth, 0x40*mem[0x2820], mem + 0x2810);
 		if (!hide_page_1)
 			blit_page(depth, 0x40*mem[0x2821], mem + 0x2816);
-		if (!hide_sprites)
-			blit_sprites(depth);
-	}
-	for ( ; depth < 16; depth++) {
 		if (!hide_sprites)
 			blit_sprites(depth);
 	}
