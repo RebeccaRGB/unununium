@@ -151,7 +151,7 @@ static void mix_pixel(u32 offset, u16 rgb)
 	screen_b[offset] = mix_channel(screen_b[offset], x58(rgb));
 }
 
-static void blit(u32 xoff, u32 yoff, u32 flags, u16 *bitmap, u16 tile)
+static void blit(u32 xoff, u32 yoff, u32 flags, u32 bitmap, u16 tile)
 {
 	u32 h = sizes[(flags & 0x00c0) >> 6];
 	u32 w = sizes[(flags & 0x0030) >> 4];
@@ -163,7 +163,7 @@ static void blit(u32 xoff, u32 yoff, u32 flags, u16 *bitmap, u16 tile)
 
 	u32 palette_offset = (flags & 0x0f00) >> 4;
 
-	u16 *m = bitmap + nc*w*h/16*tile;
+	u32 m = bitmap + nc*w*h/16*tile;
 	u32 bits = 0;
 	u32 nbits = 0;
 
@@ -175,7 +175,7 @@ static void blit(u32 xoff, u32 yoff, u32 flags, u16 *bitmap, u16 tile)
 
 			bits <<= nc;
 			if (nbits < nc) {
-				u16 b = *m++;
+				u16 b = mem[m++ & 0x3fffff];
 				b = (b << 8) | (b >> 8);
 				bits |= b << (nc - nbits);
 				nbits += 16;
@@ -244,7 +244,7 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 			u32 yy = ((h*y0 - yscroll + 0x10) & 0xff) - 0x10;
 			u32 xx = (w*x0 - xscroll) & 0x1ff;
 
-			blit(xx, yy, (flags2 << 16) | (palette << 8) | flags, mem + bitmap, tile);
+			blit(xx, yy, (flags2 << 16) | (palette << 8) | flags, bitmap, tile);
 		}
 }
 
@@ -276,7 +276,7 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	x = x & 0x1ff;
 	y = y & 0x1ff;
 
-	blit(x, y, flags, mem + bitmap, tile);
+	blit(x, y, flags, bitmap, tile);
 }
 
 static void blit_sprites(u32 depth)
