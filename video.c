@@ -254,10 +254,10 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	s16 x, y;
 	u32 bitmap = 0x40*mem[0x2822];
 
-	tile = *sprite++;
-	x = *sprite++;
-	y = *sprite++;
-	flags = *sprite++;
+	tile = sprite[0];
+	x = sprite[1];
+	y = sprite[2];
+	flags = sprite[3];
 
 	if ((u32)(flags & 0x3000) >> 12 != depth)
 		return;
