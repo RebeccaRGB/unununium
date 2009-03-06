@@ -7,10 +7,12 @@
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <SDL.h>
+	#include <math.h>
 
 #include "types.h"
 #include "emu.h"
 #include "video.h"
+#include "audio.h"
 
 #include "platform.h"
 
@@ -188,6 +190,7 @@ static char handle_debug_key(int key)
 	case 'y':
 	case 'u':
 	case 'x':
+	case 'q':
 	case 'a': case 's': case 'd':
 	case 'v': case 'c':
 		return (key);
@@ -314,6 +317,23 @@ void fatal(const char *format, ...)
 	exit(1);
 }
 
+#define FREQ 220
+static void mix(void *cookie, u8 *data, int n)
+{
+	if (mute_audio) {
+		memset(data, 0, n);
+		return;
+	}
+
+	s16 *x = (s16 *)data;
+
+	static int xxx = 0;
+	int i;
+	for (i = 0; i < n/2; i++)
+		x[i] = 4000*sin(2*M_PI*(xxx+i)*FREQ/44100);
+	xxx = (xxx + n/2) % 44100;
+}
+
 void platform_init(void)
 {
 	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO) < 0)
@@ -329,6 +349,19 @@ void platform_init(void)
 #endif
 	if (!sdl_surface)
 		fatal("Unable to initialise video: %s\n", SDL_GetError());
+
+	SDL_AudioSpec spec = {
+		.freq = 44100,
+		.format = AUDIO_S16SYS,
+		.channels = 1,
+		.samples = 1024,
+		.callback = mix,
+		.userdata = 0
+	}, actual;
+	int ret = SDL_OpenAudio(&spec, &actual);
+	printf("ret: %d (%s)\n", ret, SDL_GetError());
+printf("--> fr=%d ch=%d sam=%d size=%d sil=x'%04x\n", actual.freq, actual.channels, actual.samples, actual.size, actual.silence);
+	SDL_PauseAudio(0);
 
 	// First SDL input does a lot of init, do it now.
 	update_controller();

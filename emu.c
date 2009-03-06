@@ -647,6 +647,10 @@ static void do_controller(void)
 			dump(0x2900, 0x300);
 			break;
 
+		case 'q':
+			mute_audio ^= 1;
+			break;
+
 		case 'a':
 			hide_page_0 ^= 1;
 			break;
@@ -718,6 +722,7 @@ void emu(void)
 	platform_init();
 	read_rom(0);
 	board_init();
+	audio_init();
 
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector

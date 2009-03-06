@@ -7,7 +7,13 @@
 
 #include "types.h"
 
+
+extern int mute_audio;
+
+
 void audio_store(u16 val, u32 addr);
 u16 audio_load(u32 addr);
+
+void audio_init(void);
 
 #endif

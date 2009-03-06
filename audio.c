@@ -10,6 +10,9 @@
 #include "audio.h"
 
 
+int mute_audio;
+
+
 void audio_store(u16 val, u32 addr)
 {
 	mem[addr] = val;
@@ -44,4 +47,8 @@ u16 audio_load(u32 addr)
 
 	printf("UNKNOWN AUDIO LOAD from %04x\n", addr);
 	return val;
+}
+
+void audio_init(void)
+{
 }
