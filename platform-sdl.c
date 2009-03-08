@@ -317,7 +317,6 @@ void fatal(const char *format, ...)
 	exit(1);
 }
 
-#define FREQ 220
 static void mix(void *cookie, u8 *data, int n)
 {
 	if (mute_audio) {
@@ -325,13 +324,7 @@ static void mix(void *cookie, u8 *data, int n)
 		return;
 	}
 
-	s16 *x = (s16 *)data;
-
-	static int xxx = 0;
-	int i;
-	for (i = 0; i < n/2; i++)
-		x[i] = 4000*sin(2*M_PI*(xxx+i)*FREQ/44100);
-	xxx = (xxx + n/2) % 44100;
+	audio_render((s16 *)data, n/2);
 }
 
 void platform_init(void)

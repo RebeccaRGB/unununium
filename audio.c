@@ -3,6 +3,7 @@
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 #include <stdio.h>
+	#include <math.h>
 
 #include "types.h"
 #include "emu.h"
@@ -47,6 +48,16 @@ u16 audio_load(u32 addr)
 
 	printf("UNKNOWN AUDIO LOAD from %04x\n", addr);
 	return val;
+}
+
+#define FREQ 440
+void audio_render(s16 *data, u32 n)
+{
+	static u32 xxx = 0;
+	u32 i;
+	for (i = 0; i < n; i++)
+		data[i] = 4000*sin(2*M_PI*(xxx+i)*FREQ/44100);
+	xxx = (xxx + n) % 44100;
 }
 
 void audio_init(void)
