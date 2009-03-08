@@ -51,13 +51,21 @@ u16 audio_load(u32 addr)
 }
 
 #define FREQ 440
-void audio_render(s16 *data, u32 n)
+static s16 next_host_sample(void)
 {
 	static u32 xxx = 0;
+	s16 sample = 4000*sin(2*M_PI*xxx*FREQ/44100);
+	xxx++;
+	if (xxx == 44100)
+		xxx = 0;
+	return sample;
+}
+
+void audio_render(s16 *data, u32 n)
+{
 	u32 i;
 	for (i = 0; i < n; i++)
-		data[i] = 4000*sin(2*M_PI*(xxx+i)*FREQ/44100);
-	xxx = (xxx + n) % 44100;
+		data[i] = next_host_sample();
 }
 
 void audio_init(void)
