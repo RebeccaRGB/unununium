@@ -7,7 +7,6 @@
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <SDL.h>
-	#include <math.h>
 
 #include "types.h"
 #include "emu.h"
