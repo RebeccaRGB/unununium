@@ -16,7 +16,10 @@ int mute_audio;
 
 void audio_store(u16 val, u32 addr)
 {
-	mem[addr] = val;
+	if (addr == 0x340b)
+		mem[addr] &= ~val;
+	else
+		mem[addr] = val;
 
 	if (addr < 0x3200) {		// XXX
 		return;
