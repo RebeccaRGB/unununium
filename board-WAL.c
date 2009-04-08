@@ -9,6 +9,7 @@
 
 #include "board.h"
 
+
 static struct i2c_bus *i2c_bus;
 
 static u16 gpio(u32 n, u16 what, u16 push, u16 pull)

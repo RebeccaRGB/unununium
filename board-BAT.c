@@ -11,10 +11,12 @@
 #include "board.h"
 
 
+static struct i2c_bus *i2c_bus;
+
 static u16 gpio(u32 n, u16 what, u16 push, u16 pull)
 {
-	fprintf(stderr, "--->  PORT %c  what=%04x push=%04x pull=%04x\n",
-	        'A' + n, what, push, pull);
+//	fprintf(stderr, "--->  PORT %c  what=%04x push=%04x pull=%04x\n",
+//	        'A' + n, what, push, pull);
 
 	if (n == 0) {
 		if (button_up)
@@ -35,21 +37,27 @@ static u16 gpio(u32 n, u16 what, u16 push, u16 pull)
 			what |= 0x0100;
 	}
 
-//	if (n == 2) {
-//		int sda = what & 1;
-//		int scl = (what >> 1) & 1;
-////fprintf(stderr, "SDA=%d SCL=%d\n", sda, scl);
-//		sda = i2c_bitbang(i2c_bus, sda, scl);
-//		what = (what & ~1) | sda;
-//	}
+	if (n == 2) {
+		int sda = what & 1;
+		int scl = (what >> 1) & 1;
+//fprintf(stderr, "SDA=%d SCL=%d\n", sda, scl);
+		sda = i2c_bitbang(i2c_bus, sda, scl);
+		what = (what & ~1) | sda;
+	}
 
 	return what;
+}
+
+static void init(void)
+{
+	i2c_bus = i2c_bitbang_bus_create();
+	i2c_eeprom_create(i2c_bus, 0x200, 0xa0, "BAT");
 }
 
 struct board board_BAT = {
 	.idle_pc = 0x5ce1,
 	.use_centered_coors = 1,
 
-//	.init = init,
+	.init = init,
 	.gpio = gpio
 };
