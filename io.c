@@ -165,6 +165,11 @@ u16 io_load(u32 addr)
 	case 0x3d0c ... 0x3d0f:		// GPIO
 		break;
 
+	case 0x3d1c:
+		val = random() & 0x3f;
+		printf("IO LOAD %04x from %04x FAKED\n", val, addr);
+		break;
+
 	case 0x3d22:			// IRQ status
 		return mem[0x3d21];
 
