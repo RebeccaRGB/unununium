@@ -17,6 +17,7 @@ extern u8 button_left;
 extern u8 button_right;
 extern u8 button_A;
 extern u8 button_B;
+extern u8 button_C;
 extern u8 button_menu;
 
 void platform_init(void);

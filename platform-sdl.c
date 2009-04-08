@@ -177,6 +177,7 @@ u8 button_left;
 u8 button_right;
 u8 button_A;
 u8 button_B;
+u8 button_C;
 u8 button_menu;
 
 static char handle_debug_key(int key)
@@ -220,6 +221,9 @@ static void handle_controller_key(int key, int down)
 		break;
 	case 'k':
 		button_B = down;
+		break;
+	case 'g':
+		button_C = down;
 		break;
 	case 'l':
 		button_menu = down;
