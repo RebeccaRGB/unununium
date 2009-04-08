@@ -308,6 +308,13 @@ char update_controller(void)
 	return 0;
 }
 
+void warn(const char *format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+}
+
 void fatal(const char *format, ...)
 {
 	va_list ap;

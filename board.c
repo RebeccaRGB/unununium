@@ -23,14 +23,19 @@ static struct board *board_detect(void)
 	    mem[0xb1c9] == 0x5e44)
 		return &board_WAL;
 
+	if (mem[0x5ce1] == 0x42c2 && mem[0x5ce2] == 0x5e42)
+		return &board_BAT;
+
 	return 0;
 }
 
 void board_init(void)
 {
 	board = board_detect();
-	if (board == 0)
-		fatal("couldn't detect board\n");
+	if (board == 0) {
+		warn("couldn't detect board\n");
+		board = &board_dummy;
+	}
 
 	if (board->init)
 		board->init();
