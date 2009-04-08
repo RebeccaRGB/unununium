@@ -48,6 +48,7 @@ static u16 gpio(u32 n, u16 what, u16 push, u16 pull)
 
 struct board board_BAT = {
 	.idle_pc = 0x5ce1,
+	.use_centered_coors = 1,
 
 //	.init = init,
 	.gpio = gpio
