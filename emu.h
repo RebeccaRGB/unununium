@@ -14,5 +14,6 @@ extern u16 mem[N_MEM];
 void emu(void);
 u32 get_ds(void);
 void set_ds(u32 ds);
+u16 get_video_line(void);
 
 #endif

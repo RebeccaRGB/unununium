@@ -104,6 +104,9 @@ u16 video_load(u32 addr)
 		case 0x282a:		// XXX
 			break;
 
+		case 0x2838:		// current line
+			return get_video_line();
+
 		case 0x2842:		// XXX
 			break;
 

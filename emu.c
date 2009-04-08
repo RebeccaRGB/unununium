@@ -527,6 +527,16 @@ static void do_idle(void)
 	}
 }
 
+u16 get_video_line(void)
+{
+	u32 now;
+	struct timeval tv;
+
+	gettimeofday(&tv, 0);
+	now = 1000000*tv.tv_sec + tv.tv_usec;
+	return (now - last_retrace_time) * 625 * FREQ / 2 / 1000000;	// 525 for NTSC
+}
+
 static void do_irq(int irqno)
 {
 	u16 vec;
