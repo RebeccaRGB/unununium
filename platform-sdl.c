@@ -70,6 +70,8 @@ void *open_eeprom(const char *name, u8 *data, u32 len)
 	if (!fp)
 		fatal("cannot open EEPROM file %s\n", path);
 
+	fwrite(data, 1, len, fp);
+
 	return fp;
 }
 
