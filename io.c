@@ -166,8 +166,8 @@ u16 io_load(u32 addr)
 		break;
 
 	case 0x3d1c:
-		val = random() & 0x3f;
-		printf("IO LOAD %04x from %04x FAKED\n", val, addr);
+		val = random() & 0xff;
+//		printf("IO LOAD %04x from %04x FAKED\n", val, addr);
 		break;
 
 	case 0x3d22:			// IRQ status
