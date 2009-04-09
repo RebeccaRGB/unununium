@@ -242,12 +242,16 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 			u16 palette = mem[palette_map + (x0 + wn*y0)/2];
 			if (x0 & 1)
 				palette >>= 8;
-			palette &= 0x0f;
+
+			u32 tileflags = 0;
+			if (palette & 0x10)
+				tileflags |= 4;		// X flip
+			tileflags |= (palette & 0x0f) << 8;
 
 			u32 yy = ((h*y0 - yscroll + 0x10) & 0xff) - 0x10;
 			u32 xx = (w*x0 - xscroll) & 0x1ff;
 
-			blit(xx, yy, (flags2 << 16) | (palette << 8) | flags, bitmap, tile);
+			blit(xx, yy, (flags2 << 16) | flags | tileflags, bitmap, tile);
 		}
 }
 
