@@ -56,8 +56,14 @@ void video_store(u16 val, u32 addr)
 		case 0x282a:		// XXX
 			break;
 
+		case 0x2830:		// XXX
+			break;
+
 		case 0x2836:
 		case 0x2837:		// XXX
+			break;
+
+		case 0x283c:		// XXX
 			break;
 
 		case 0x2842:		// XXX
@@ -265,6 +271,8 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	x = sprite[1];
 	y = sprite[2];
 	flags = sprite[3];
+if (tile >= 0x8000)
+	printf("UH-OH: %04x %04x %04x %04x\n", tile, x, y, flags);
 
 	if ((u32)(flags & 0x3000) >> 12 != depth)
 		return;
