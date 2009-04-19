@@ -131,6 +131,11 @@ static void step(void)
 	u32 old_cs_pc = cs_pc();
 	u32 x, d = 0xff0000;
 
+//if (mem[0x3400]) {
+//	dump(0x3000, 0x800);
+//	exit(1);
+//}
+
 	op = mem[cs_pc()];
 	reg[7]++;
 
@@ -716,7 +721,12 @@ static void run(void)
 			do_irq(3);
 
 		// sound
-		//do_irq(4);	// XXX: gate me
+		static int tttt;
+		tttt++;
+		if (tttt == 20) {
+			tttt = 0;
+			do_irq(4);	// XXX: gate me
+		}
 
 		if (pause_after_every_frame) {
 			printf("*** paused, press a key to continue\n");

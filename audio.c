@@ -11,7 +11,7 @@
 #include "audio.h"
 
 
-int mute_audio;
+int mute_audio = 1;
 
 
 void audio_store(u16 val, u32 addr)
@@ -26,6 +26,8 @@ void audio_store(u16 val, u32 addr)
 	} else if (addr < 0x3400) {	// XXX
 		return;
 	} else {			// XXX
+//		if (addr == 0x3400)
+//			printf("CHANNELS: %04x\n", val);
 		return;
 	}
 
@@ -45,6 +47,8 @@ u16 audio_load(u32 addr)
 		return val;
 	}
 	if (addr >= 0x3400 && addr < 0x3500) {		// audio something
+//		if ((addr & 0x0f) == 0x0f)	// channel status
+//			return mem[addr - 0x0f];
 		//printf("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
@@ -63,6 +67,59 @@ static u32 get_channel_bit(u32 ch, u32 reg)
 	return (mem[reg] >> ch) & 1;
 }
 
+static void set_channel_bit(u32 ch, u32 reg, u32 val)
+{
+	reg += 0x3400;
+	if (ch >= 16) {
+		reg += 0x0100;
+		ch -= 16;
+	}
+	u16 mask = 1 << ch;
+	mem[reg] = (mem[reg] & ~mask) | (val << ch);
+}
+
+static const s32 adpcm_index[] = {
+	-1, -1, -1, -1, 2, 4, 6, 8,
+	-1, -1, -1, -1, 2, 4, 6, 8
+};
+static const u16 adpcm_step[] = {
+	7, 8, 9, 10, 11, 12, 13, 14,
+	16, 17, 19, 21, 23, 25, 28, 31,
+	34, 37, 41, 45, 50, 55, 60, 66,
+	73, 80, 88, 97, 107, 118, 130, 143,
+	157, 173, 190, 209, 230, 253, 279, 307,
+	337, 371, 408, 449, 494, 544, 598, 658,
+	724, 796, 876, 963, 1060, 1166, 1282, 1411,
+	1552, 1707, 1878, 2066, 2272, 2499, 2749, 3024,
+	3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484,
+	7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899,
+	15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794,
+	32767
+};
+static u32 adpcm_si[24];
+static void do_adpcm(u32 ch, u32 nybble)
+{
+	s32 si = adpcm_si[ch];
+	u32 step = adpcm_step[si];
+
+	si += adpcm_index[nybble];
+	if (si < 0)
+		si = 0;
+	if (si > 88)
+		si = 88;
+	adpcm_si[ch] = si;
+
+	s32 what = mem[0x300b + 16*ch];
+	what += (2 * (nybble & 7) + 1) * step / 8;
+	if (nybble & 8)
+		what -= step;
+	if (what < 0)
+		what = 0;
+	if (what > 0xffff)
+		what = 0xffff;
+	mem[0x300b + 16*ch] = what;
+}
+
 static u32 n_left[24];
 static u16 bits_left[24];
 static void do_next_sample(u32 ch)
@@ -70,12 +127,32 @@ static void do_next_sample(u32 ch)
 loop:
 	if (n_left[ch] == 0) {
 		u32 addr = ((mem[0x3001 + 16*ch] & 0x3f) << 16) | mem[0x3000 + 16*ch];
+		if (addr == 0) {
+			printf("uh-oh, looping where i shouldn't: mode=%04x\n", mem[0x3001 + 16*ch] & 0xf000);
+			mem[0x300b + 16*ch] = 0x8000;
+			return;
+		}
 		bits_left[ch] = mem[addr];
 		if (bits_left[ch] == 0xffff) {
-			mem[0x3000 + 16*ch] = mem[0x3002 + 16*ch];
-			mem[0x3001 + 16*ch] &= 0xffc0;
-			mem[0x3001 + 16*ch] |= (mem[0x3001 + 16*ch] >> 6) & 0x3f;
-			goto loop;
+			switch (mem[0x3001 + 16*ch] >> 14) {
+			case 0:
+				mem[0x3000 + 16*ch] = mem[0x3002 + 16*ch];
+				mem[0x3001 + 16*ch] &= 0xffc0;
+				mem[0x3001 + 16*ch] |= (mem[0x3001 + 16*ch] >> 6) & 0x3f;
+				goto loop;
+
+			case 3:
+case 1: case 2:
+				set_channel_bit(ch, 0xd, 1);
+				mem[0x300b + 16*ch] = 0x8000;
+				return;
+
+			default:
+				printf("sound: unhandled mode: %04x\n", mem[0x3001 + 16*ch] & 0xf000);
+				set_channel_bit(ch, 0xd, 1);
+				mem[0x300b + 16*ch] = 0x8000;
+				return;
+			}
 		}
 		n_left[ch] = 2;
 		mem[0x3000 + 16*ch]++;
@@ -84,15 +161,29 @@ loop:
 //printf("--> addr = %06x\n", addr);
 	}
 
-	mem[0x300b + 16*ch] = bits_left[ch] << 8;
-	bits_left[ch] >>= 8;
-	n_left[ch]--;
+	switch ((mem[0x3001 + 16*ch] & 0x3000) >> 12) {
+	case 1:		// ADPCM
+		do_adpcm(ch, bits_left[ch] & 0xf);
+		bits_left[ch] >>= 4;
+		n_left[ch]--;
+		break;
+
+	case 2:		// U8
+		mem[0x300b + 16*ch] = bits_left[ch] << 8;
+		bits_left[ch] >>= 8;
+		n_left[ch]--;
+		break;
+
+	default:
+		printf("sound: unhandled mode: %04x\n", mem[0x3001 + 16*ch] & 0xf000);
+		mem[0x300b + 16*ch] = 0x8000;
+	}
 }
 
 #define FREQ 440
 static u16 next_channel_sample(u32 ch)
 {
-//	if (ch)
+//	if (ch != 1)
 //		return 0x8000;
 
 //	static u32 xxx[24] = {0};
@@ -120,7 +211,7 @@ static u16 next_sample(void)
 {
 	static u32 ch = 0;
 	u16 sample;
-	if (get_channel_bit(ch, 0))
+	if (get_channel_bit(ch, 0) && !get_channel_bit(ch, 0xb))
 		sample = next_channel_sample(ch);
 	else
 		sample = 0x8000;
@@ -132,11 +223,23 @@ static u16 next_sample(void)
 
 static s16 next_host_sample(void)
 {
-	u32 acc = 0;
+	static s16 old[153];
+	static double coss[153];
+	static int kk = 0;
+	if (kk == 0) {
+		kk = 1;
+		for (int j = 0; j < 153; j++)
+			coss[j] = 0.5 - 0.5*cos(M_PI*j/153);
+	}
+	double acc = 0;
 	u32 i;
 	for (i = 0; i < 153; i++)
-		acc += next_sample();
-	return (acc / 153) - 0x8000;
+		acc += coss[i] * old[i];
+	for (i = 0; i < 153; i++)
+		old[i] = next_sample() - 0x8000;
+	for (i = 0; i < 153; i++)
+		acc += (1.0 - coss[i]) * old[i];
+	return acc / 153;
 }
 
 void audio_render(s16 *data, u32 n)
