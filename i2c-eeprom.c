@@ -2,11 +2,13 @@
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-#include "types.h"
-#include "platform.h"
 #include <stdlib.h>
 
+#include "types.h"
+#include "platform.h"
+
 #include "i2c.h"
+	#include <stdio.h>
 
 
 struct i2c_eeprom {
@@ -49,6 +51,7 @@ static int i2c_eeprom_write(struct i2c_device *dev, u8 data)
 		eeprom->current = (eeprom->current << 8) | data;
 	} else {
 		eeprom->data[eeprom->current] = data;
+//fprintf(stderr, "EEPROM: wrote %02x @ %02x, writing to file\n", data, eeprom->current);
 		save_eeprom(eeprom->file_cookie, eeprom->data, eeprom->size);
 		// XXX: for 24c04 only
 		eeprom->current = (eeprom->current & ~0x0f) |

@@ -71,6 +71,7 @@ void *open_eeprom(const char *name, u8 *data, u32 len)
 		fatal("cannot open EEPROM file %s\n", path);
 
 	fwrite(data, 1, len, fp);
+	fflush(fp);
 
 	return fp;
 }
@@ -82,6 +83,7 @@ void save_eeprom(void *cookie, u8 *data, u32 len)
 	rewind(fp);
 
 	fwrite(data, 1, len, fp);
+	fflush(fp);
 }
 
 
