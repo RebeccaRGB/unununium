@@ -2,6 +2,8 @@
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+// Currently supports u'nSP v1.1, e.g. SPCE1600 or SPG220.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

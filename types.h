@@ -13,7 +13,12 @@ typedef unsigned long long u64;
 typedef signed short s16;
 typedef signed int s32;
 
+#if 0
 #define subtype(_type, _base, _field) \
 	(void *)((u8 *)(_base) - __builtin_offsetof(_type, _field))
+#else
+#define subtype(_type, _base, _field) \
+	(void *)((u8 *)(_base) - ((u8 *)&(((_type *)0)->_field) - 0))
+#endif
 
 #endif

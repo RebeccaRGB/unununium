@@ -31,6 +31,8 @@ is-osx = $(shell set -e; \
 ifeq ($(is-osx),yes)
 uuu-sdl: dialog-cocoa.o
 
+dialog-cocoa.o: dialog-cocoa.m
+	$(CC) $(CFLAGS) -o $@ -c $<
 all: .stamp-bundle
 
 .stamp-bundle: uuu-sdl

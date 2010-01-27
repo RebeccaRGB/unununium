@@ -163,9 +163,9 @@ case 1: case 2:
 
 	switch ((mem[0x3001 + 16*ch] & 0x3000) >> 12) {
 	case 1:		// ADPCM
-		do_adpcm(ch, bits_left[ch] & 0xf);
-		bits_left[ch] >>= 4;
-		n_left[ch]--;
+//		do_adpcm(ch, bits_left[ch] & 0xf);
+//		bits_left[ch] >>= 4;
+//		n_left[ch]--;
 		break;
 
 	case 2:		// U8
@@ -223,6 +223,7 @@ static u16 next_sample(void)
 
 static s16 next_host_sample(void)
 {
+return 0;
 	static s16 old[153];
 	static double coss[153];
 	static int kk = 0;
@@ -239,7 +240,12 @@ static s16 next_host_sample(void)
 		old[i] = next_sample() - 0x8000;
 	for (i = 0; i < 153; i++)
 		acc += (1.0 - coss[i]) * old[i];
-	return acc / 153;
+	int clip = acc / 153;
+	if (clip > 32767)
+		clip = 32767;
+	if (clip < -32769)
+		clip = -32768;
+	return clip;
 }
 
 void audio_render(s16 *data, u32 n)

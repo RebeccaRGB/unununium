@@ -47,27 +47,27 @@ void video_store(u16 val, u32 addr)
 		case 0x2816 ... 0x281b:	// page 1 regs
 			break;
 
-		case 0x281c:		// blend level: 0=opaque, 40=transp
-			break;
+//		case 0x281c:		// blend level: 0=opaque, 40=transp
+//			break;
 
 		case 0x2820 ... 0x2822:	// bitmap offsets
 			break;
 
-		case 0x282a:		// XXX
-			break;
+//		case 0x282a:		// XXX
+//			break;
 
-		case 0x2830:		// XXX
-			break;
+//		case 0x2830:		// XXX
+//			break;
 
-		case 0x2836:
-		case 0x2837:		// XXX
-			break;
+//		case 0x2836:
+//		case 0x2837:		// XXX
+//			break;
 
-		case 0x283c:		// XXX
-			break;
+//		case 0x283c:		// XXX
+//			break;
 
-		case 0x2842:		// XXX
-			break;
+//		case 0x2842:		// XXX
+//			break;
 
 		case 0x2862:		// video IRQ enable
 			break;

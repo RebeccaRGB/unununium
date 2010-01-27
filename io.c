@@ -101,12 +101,13 @@ void io_store(u16 val, u32 addr)
 		set_ds(val);
 		break;
 
-	case 0x3d31:		// XXX UART
+	case 0x3d31:		// UART status
 		if (val != 0x0003)
 			printf("IO STORE %04x to %04x\n", val, addr);
 		break;
 
 	case 0x3d33:		// UART baud rate
+				// XXX: and 3d34
 		printf("SET UART BAUD RATE to %d\n", 27000000 / (0x10000 - val));
 		break;
 
@@ -173,13 +174,13 @@ u16 io_load(u32 addr)
 	case 0x3d22:			// IRQ status
 		return mem[0x3d21];
 
-	case 0x3d2c: case 0x3d2d:	// timers?
+	case 0x3d2c: case 0x3d2d:	// Random generator
 		return random();
 
 	case 0x3d2f:			// DS
 		return get_ds();
 
-	case 0x3d31:			// UART (status?)
+	case 0x3d31:			// UART status
 		return 3;
 
 	case 0x3d36:			// UART data in
