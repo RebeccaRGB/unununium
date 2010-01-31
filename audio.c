@@ -25,7 +25,7 @@ void audio_store(u16 val, u32 addr)
 		return;
 	} else if (addr < 0x3400) {	// XXX
 		return;
-	} else {			// XXX
+	} else {			// XXX control regs
 		return;
 	}
 
@@ -132,6 +132,7 @@ static u16 next_sample(void)
 
 static s16 next_host_sample(void)
 {
+return 0;
 	u32 acc = 0;
 	u32 i;
 	for (i = 0; i < 153; i++)
