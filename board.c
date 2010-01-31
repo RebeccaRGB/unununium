@@ -26,6 +26,12 @@ static struct board *board_detect(void)
 	if (mem[0x5ce1] == 0x42c2 && mem[0x5ce2] == 0x5e42)
 		return &board_BAT;
 
+	if (mem[0x5675c] == 0x9311 && mem[0x5675e] == 0x4240 &&	// Winnie
+	    mem[0x5675f] == 0x4e44)
+		return &board_V_X;
+
+return &board_V_X;
+
 	return 0;
 }
 
