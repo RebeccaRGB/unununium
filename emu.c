@@ -29,6 +29,8 @@ static int trace = 0;
 static int trace_new = 0;
 static int store_trace = 0;
 static int pause_after_every_frame = 0;
+//static u8 trace_irq[9] = { 0, 1, 1, 1, 1, 1, 1, 1, 1 };
+static u8 trace_irq[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 static u8 ever_ran_this[N_MEM];
 
 static u16 reg[8];
@@ -560,7 +562,8 @@ static void do_irq(int irqno)
 			return;
 		fiq |= 2;
 		vec = 0xfff6;
-		printf("### FIQ ###\n");
+		if (trace_irq[8])
+			printf("### FIQ ###\n");
 	} else {
 		if (fiq & 2)
 			return;
@@ -568,8 +571,8 @@ static void do_irq(int irqno)
 			return;
 		irq |= 2;
 		vec = 0xfff8 + irqno;
-		//if (irqno)
-		//	printf("### IRQ #%x ###\n", irqno);
+		if (trace_irq[irqno])
+			printf("### IRQ #%x ###\n", irqno);
 	}
 
 	u32 saved_sb = sb;
