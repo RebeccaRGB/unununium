@@ -259,14 +259,6 @@ static void step(void)
 				return;
 			} else
 				goto bad;
-		case 1:		// CALL
-			x1 = mem[cs_pc()];
-			reg[7]++;
-			push(reg[7], 0);
-			push(reg[6], 0);
-			reg[7] = x1;
-			reg[6] = (reg[6] & 0xffc0) | opimm;
-			return;
 		case 4:		// MUL SS
 			if (opN == 1) {
 				if (opA == 7)
@@ -281,6 +273,22 @@ static void step(void)
 				return;
 			} else
 				goto bad;
+		case 1:		// CALL
+			if ((opA & 1) != 0)
+				goto bad;
+			x1 = mem[cs_pc()];
+			reg[7]++;
+			push(reg[7], 0);
+			push(reg[6], 0);
+			reg[7] = x1;
+			reg[6] = (reg[6] & 0xffc0) | opimm;
+			return;
+		case 2:		// JMPF
+			if (opA != 7)
+				goto bad;
+			reg[7] = mem[cs_pc()];
+			reg[6] = (reg[6] & 0xffc0) | opimm;
+			return;
 		case 5:		// VARIOUS
 			switch (opimm) {
 			case 0:
