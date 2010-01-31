@@ -16,7 +16,7 @@
 #include "platform.h"
 
 
-#define SIZE_3X3
+//#define SIZE_3X3
 
 
 static void *rom_file;
@@ -128,38 +128,20 @@ void update_screen(void)
 #else
 		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;
 		u32 *p2 = sdl_surface->pixels + (2*y+1)*sdl_surface->pitch;
-		u8 *s = screen + 320*y;
+		u8 *s_r = screen_r + 320*y;
+		u8 *s_g = screen_g + 320*y;
+		u8 *s_b = screen_b + 320*y;
 
-		for (x = 0; x < 320; x += 4) {
-			u32 c0 = s[0];
-			u32 c1 = s[1];
-			u32 c2 = s[2];
-			u32 c3 = s[3];
-			c0 = palette[c0];
-			c1 = palette[c1];
-			c2 = palette[c2];
-			c3 = palette[c3];
-			s += 4;
+		for (x = 0; x < 320; x++) {
+			u32 c = SDL_MapRGB(sdl_surface->format, *s_r++, *s_g++, *s_b++);
 
-			p[0] = c0;
-			p[1] = c0;
-			p[2] = c1;
-			p[3] = c1;
-			p[4] = c2;
-			p[5] = c2;
-			p[6] = c3;
-			p[7] = c3;
-			p += 8;
+			p[0] = c;
+			p[1] = c;
+			p += 2;
 
-			p2[0] = c0;
-			p2[1] = c0;
-			p2[2] = c1;
-			p2[3] = c1;
-			p2[4] = c2;
-			p2[5] = c2;
-			p2[6] = c3;
-			p2[7] = c3;
-			p2 += 8;
+			p2[0] = c;
+			p2[1] = c;
+			p2 += 2;
 		}
 #endif
 	}
