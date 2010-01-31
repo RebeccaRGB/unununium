@@ -50,6 +50,18 @@ static void do_gpio(u32 addr)
 	mem[0x3d01 + 5*n] = what;
 }
 
+static void do_dma(u32 len)
+{
+	u32 src = ((mem[0x3e01] & 0x3f) << 16) | mem[0x3e00];
+	u32 dst = mem[0x3e03] & 0x3fff;
+	u32 j;
+
+	for (j = 0; j < len; j++)
+		mem[dst+j] = mem[src+j];
+
+	mem[0x3e02] = 0;
+}
+
 void io_store(u16 val, u32 addr)
 {
 	switch (addr) {
@@ -140,6 +152,17 @@ void io_store(u16 val, u32 addr)
 
 	case 0x3d5f:		// IIC controller mode
 		printf("IO STORE %04x to %04x\n", val, addr);
+		break;
+
+	case 0x3e00:		// DMA source addr low
+	case 0x3e01:		// DMA source addr high
+		break;
+
+	case 0x3e02:		// DMA size
+		do_dma(val);
+		return;
+
+	case 0x3e03:		// DMA target addr
 		break;
 
 	default:
