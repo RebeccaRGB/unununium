@@ -313,6 +313,15 @@ u32 disas(const u16 *mem, u32 offset)
 		}
 		goto dunno;
 
+	case 0x2f: case 0x3f: case 0x6f: case 0x7f:
+		if (opA == 7 && op1 == 2) {
+			printf("goto %04x\n", (opimm << 16) | ximm);
+			return 2;
+		}
+		if (opA == 7 && op1 == 3)
+			goto dunno;
+		goto dunno;
+
 
 	case 0x0f:
 		switch (opN) {
@@ -352,6 +361,12 @@ u32 disas(const u16 *mem, u32 offset)
 		case 0x03:
 			printf("int fiq,irq\n");
 			return 1;
+		case 0x04:
+			printf("fir_mov on\n");
+			return 1;
+		case 0x05:
+			printf("fir_mov off\n");
+			return 1;
 		case 0x08:
 			printf("irq off\n");
 			return 1;
@@ -373,7 +388,6 @@ u32 disas(const u16 *mem, u32 offset)
 
 	case 0x0e: case 0x1e: case 0x2e: case 0x3e:
 	case 0x4e: case 0x5e: case 0x6e: case 0x7e:
-	case 0x2f: case 0x3f: case 0x6f: case 0x7f:
 	dunno:
 		printf("<DUNNO>\n");
 		return len;
