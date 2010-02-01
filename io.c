@@ -118,8 +118,14 @@ void io_store(u16 val, u32 addr)
 			printf("IO STORE %04x to %04x\n", val, addr);
 		break;
 
-	case 0x3d33:		// UART baud rate
-		printf("SET UART BAUD RATE to %d\n", 27000000 / (0x10000 - val));
+	// case 0x3d32:		// UART reset
+
+	case 0x3d33:		// UART baud rate low byte
+		printf("SET UART BAUD RATE to %u\n", 27000000 / 16 / (0x10000 - (mem[0x3d34] << 8) - val));
+		break;
+
+	case 0x3d34:		// UART baud rate high byte
+		printf("SET UART BAUD RATE to %u\n", 27000000 / 16 / (0x10000 - (val << 8) - mem[0x3d33]));
 		break;
 
 	case 0x3d35:		// UART TX data
