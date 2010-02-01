@@ -160,17 +160,19 @@ static void mix_pixel(u32 offset, u16 rgb)
 	screen_b[offset] = mix_channel(screen_b[offset], x58(rgb));
 }
 
-static void blit(u32 xoff, u32 yoff, u32 flags, u32 bitmap, u16 tile)
+static void blit(u32 xoff, u32 yoff, u32 attr, u32 ctrl, u32 bitmap, u16 tile)
 {
-	u32 h = sizes[(flags & 0x00c0) >> 6];
-	u32 w = sizes[(flags & 0x0030) >> 4];
+	u32 h = sizes[(attr & 0x00c0) >> 6];
+	u32 w = sizes[(attr & 0x0030) >> 4];
 
-	u32 yflipmask = flags & 0x0008 ? h - 1 : 0;
-	u32 xflipmask = flags & 0x0004 ? w - 1 : 0;
+	u32 yflipmask = attr & 0x0008 ? h - 1 : 0;
+	u32 xflipmask = attr & 0x0004 ? w - 1 : 0;
 
-	u32 nc = colour_sizes[flags & 0x0003];
+	u32 nc = colour_sizes[attr & 0x0003];
 
-	u32 palette_offset = (flags & 0x0f00) >> 4;
+	u32 palette_offset = (attr & 0x0f00) >> 4;
+	palette_offset >>= nc;
+	palette_offset <<= nc;
 
 	u32 m = bitmap + nc*w*h/16*tile;
 	u32 bits = 0;
@@ -191,19 +193,19 @@ static void blit(u32 xoff, u32 yoff, u32 flags, u32 bitmap, u16 tile)
 			}
 			nbits -= nc;
 
-			u32 pal = palette_offset + (bits >> 16);
+			u32 pal = palette_offset | (bits >> 16);
 			bits &= 0xffff;
 
-			if ((flags & 0x00100000) && yy < 240)
+			if ((ctrl & 0x0010) && yy < 240)
 				xx = (xx - mem[0x2900 + yy]) & 0x01ff;
 
-			//if ((flags & 0x00200000) && yy < 240)
-			//	xx = (xx - mem[0x2a00 + yy]) & 0x01ff;
+			//if ((ctrl & 0x0020) && yy < 240)	// hcmp
+			//	xx = (xx - mem[0x2a00 + yy]) & 0x01ff;//WRONG
 
 			if (xx < 320 && yy < 240) {
 				u16 rgb = mem[0x2b00 + pal];
 				if ((rgb & 0x8000) == 0) {
-					if (flags & 0x4000)
+					if (attr & 0x4000)
 						mix_pixel(xx + 320*yy, rgb);
 					else
 						set_pixel(xx + 320*yy, rgb);
@@ -218,22 +220,27 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 	u32 x0, y0;
 	u32 xscroll = regs[0];
 	u32 yscroll = regs[1];
-	u32 flags = regs[2];
-	u32 flags2 = regs[3];
+	u32 attr = regs[2];
+	u32 ctrl = regs[3];
 	u32 tilemap = regs[4];
 	u32 palette_map = regs[5];
 
-	if ((flags2 & 8) == 0)
+	if ((ctrl & 8) == 0)
 		return;
 
-	if ((flags & 0x3000) >> 12 != depth)
+	if ((attr & 0x3000) >> 12 != depth)
 		return;
 
-	//if ((flags & 0x8000) | (flags2 & 0xfff7))
-	//	printf("flags: %04x, flags2: %04x\n", flags, flags2);
+{
+	u16 known[6] = { 0x01ff, 0x00ff, 0x3fff, 0x000a, 0x1fff, 0x1fff };
+	u32 i;
+	for (i = 0; i < 6; i++)
+		if ((regs[i] & ~known[i]))
+			printf("*** UNKNOWN VIDEO PAGE BITS SET: %u -> %04x\n", i, regs[i] & ~known[i]);
+}
 
-	u32 h = sizes[(flags & 0x00c0) >> 6];
-	u32 w = sizes[(flags & 0x0030) >> 4];
+	u32 h = sizes[(attr & 0x00c0) >> 6];
+	u32 w = sizes[(attr & 0x0030) >> 4];
 
 	u32 hn = 256/h;
 	u32 wn = 512/h;
@@ -249,40 +256,61 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 			if (x0 & 1)
 				palette >>= 8;
 
-			u32 tileflags = 0;
-			if (palette & 0x10)
-				tileflags |= 4;		// X flip
-			tileflags |= (palette & 0x0f) << 8;
+			u32 tileattr = attr;
+			u32 tilectrl = ctrl;
+			if ((ctrl & 2) == 0) {
+// -(1) bld(1) flip(2) pal(4)
+				tileattr &= ~0x000c;
+				tileattr |= (palette >> 2) & 0x000c;	// flip
+
+				tileattr &= ~0x0f00;
+				tileattr |= (palette << 8) & 0x0f00;	// palette
+
+				tilectrl &= ~0x0100;
+				tilectrl |= (palette << 2) & 0x0100;	// blend
+			}
 
 			u32 yy = ((h*y0 - yscroll + 0x10) & 0xff) - 0x10;
 			u32 xx = (w*x0 - xscroll) & 0x1ff;
 
-			blit(xx, yy, (flags2 << 16) | flags | tileflags, bitmap, tile);
+			blit(xx, yy, tileattr, tilectrl, bitmap, tile);
 		}
 }
 
 static void blit_sprite(u32 depth, u16 *sprite)
 {
-	u16 tile, flags;
+	u16 tile, attr;
 	s16 x, y;
 	u32 bitmap = 0x40*mem[0x2822];
 
 	tile = sprite[0];
 	x = sprite[1];
 	y = sprite[2];
-	flags = sprite[3];
-if (tile >= 0x8000)
-	printf("UH-OH: %04x %04x %04x %04x\n", tile, x, y, flags);
+	attr = sprite[3];
+//if (tile >= 0x8000)
+//	printf("UH-OH: %04x %04x %04x %04x\n", tile, x, y, attr);
 
-	if ((u32)(flags & 0x3000) >> 12 != depth)
+	if (tile == 0)
 		return;
+
+	if ((u32)(attr & 0x3000) >> 12 != depth)
+		return;
+
+{
+	//u16 known[4] = { 0xffff, 0x01ff, 0x01ff, 0x0000 };
+	u16 known[4] = { 0xffff, 0xffff, 0xffff, 0x3fff };
+	u32 i;
+	for (i = 0; i < 4; i++)
+		if ((sprite[i] & ~known[i]))
+			printf("*** UNKNOWN VIDEO SPRITE BITS SET: %u -> %04x\n", i, sprite[i] & ~known[i]);
+}
 
 	if (board->use_centered_coors) {
 		x = 160 + x;
 		y = 120 - y;
 
-		u32 h = sizes[(flags & 0x00c0) >> 6];
-		u32 w = sizes[(flags & 0x0030) >> 4];
+		u32 h = sizes[(attr & 0x00c0) >> 6];
+		u32 w = sizes[(attr & 0x0030) >> 4];
 
 		x -= (w/2);
 		y -= (h/2) - 8;
@@ -291,19 +319,23 @@ if (tile >= 0x8000)
 	x = x & 0x1ff;
 	y = y & 0x1ff;
 
-	blit(x, y, flags, bitmap, tile);
+	blit(x, y, attr, 0, bitmap, tile);
 }
 
 static void blit_sprites(u32 depth)
 {
 	u32 n;
+
+	if ((mem[0x2842] & 1) == 0)
+		return;
+
 	for (n = 0; n < 256; n++)
-		if (mem[0x2c00 + 4*n]) {
+///		if (mem[0x2c00 + 4*n]) {
 //			if (mem[0x2c00 + 4*n] & 0xc000)
 //				printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
 //				       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
 			blit_sprite(depth, mem + 0x2c00 + 4*n);
-		}
+///		}
 }
 
 void blit_screen(void)
@@ -315,8 +347,8 @@ void blit_screen(void)
 	printf("page 0:\n");
 	printf("  x off  = %04x\n", mem[0x2810]);
 	printf("  y off  = %04x\n", mem[0x2811]);
-	printf("  flags  = %04x\n", mem[0x2812]);
-	printf("  flags2 = %04x\n", mem[0x2813]);	// 0x81: non-palette
+	printf("  attr   = %04x\n", mem[0x2812]);
+	printf("  ctrl   = %04x\n", mem[0x2813]);	// 0x81: non-palette
 	printf("  tiles  = %04x\n", mem[0x2814]);
 	printf("  dunno5 = %04x\n", mem[0x2815]);
 	printf("  bitmap = %04x\n", mem[0x2820]);
@@ -324,8 +356,8 @@ void blit_screen(void)
 	printf("page 1:\n");
 	printf("  x off  = %04x\n", mem[0x2816]);
 	printf("  y off  = %04x\n", mem[0x2817]);
-	printf("  flags  = %04x\n", mem[0x2818]);
-	printf("  flags2 = %04x\n", mem[0x2819]);
+	printf("  attr   = %04x\n", mem[0x2818]);
+	printf("  ctrl   = %04x\n", mem[0x2819]);
 	printf("  tiles  = %04x\n", mem[0x281a]);
 	printf("  dunno5 = %04x\n", mem[0x281b]);
 	printf("  bitmap = %04x\n", mem[0x2821]);
