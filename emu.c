@@ -174,54 +174,56 @@ static void step(void)
 	// jumps
 	if (opA == 7 && op1 < 2) {
 		switch (op0) {
-		case 0:		// JB
+		case 0:		// JCC, JB, JNAE; C == 0
 			if ((reg[6] & 0x40) == 0)
 				goto do_jump;
 			break;
-		case 1:		// JAE
+		case 1:		// JCS, JNB, JAE; C == 1
 			if ((reg[6] & 0x40) == 0x40)
 				goto do_jump;
 			break;
-		case 2:		// JGE
+		case 2:		// JSC, JGE, JNL; S == 0
 			if ((reg[6] & 0x80) == 0)
 				goto do_jump;
 			break;
-		case 3:		// JL
+		case 3:		// JSS, JNGE, JL; S == 1
 			if ((reg[6] & 0x80) == 0x80)
 				goto do_jump;
 			break;
-		case 4:		// JNE
+		case 4:		// JNE, JNZ; Z == 0
 			if ((reg[6] & 0x0100) == 0)
 				goto do_jump;
 			break;
-		case 5:		// JE
+		case 5:		// JE, JZ; Z == 1
 			if ((reg[6] & 0x0100) == 0x0100)
 				goto do_jump;
 			break;
-		case 6:		// JPL
+		case 6:		// JPL; N == 0
 			if ((reg[6] & 0x0200) == 0)
 				goto do_jump;
 			break;
-		case 7:		// JMI
+		case 7:		// JMI; N == 1
 			if ((reg[6] & 0x0200) == 0x0200)
 				goto do_jump;
 			break;
-		case 8:		// JBE
+		case 8:		// JBE, JNA; not (Z == 0 && C == 1)
 			if ((reg[6] & 0x0140) != 0x0040)
 				goto do_jump;
 			break;
-		case 9:		// JA
+		case 9:		// JNBE, JA; (Z == 0 && C == 1)
 			if ((reg[6] & 0x0140) == 0x0040)
 				goto do_jump;
 			break;
-		case 10:	// JLE
+		case 10:	// JLE, JNG; not (Z == 0 && S == 0)
 			if ((reg[6] & 0x0180) != 0)
 				goto do_jump;
 			break;
-		case 11:	// JG
+		case 11:	// JNLE, JG; (Z == 0 && S == 0)
 			if ((reg[6] & 0x0180) == 0)
 				goto do_jump;
 			break;
+				// JVC: N == S
+				// JVS: N != S
 		case 14:	// JMP
 			goto do_jump;
 		default:
