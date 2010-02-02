@@ -43,7 +43,7 @@ static void init(void)
 	switch_bank(0);
 }
 
-static u16 gpio(u32 n, u16 what, u16 push, u16 pull)
+static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 {
 	if (n == 1) {
 		printf("STORE %04x to port B\n", what);

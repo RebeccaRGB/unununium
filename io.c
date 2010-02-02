@@ -36,16 +36,19 @@ static void do_i2c(void)
 static void do_gpio(u32 addr)
 {
 	u32 n = (addr - 0x3d01) / 5;
-	u16 buffer = mem[0x3d02 + 5*n];
-	u16 dir    = mem[0x3d03 + 5*n];
-	u16 attr   = mem[0x3d04 + 5*n];
+	u16 buffer  = mem[0x3d02 + 5*n];
+	u16 dir     = mem[0x3d03 + 5*n];
+	u16 attr    = mem[0x3d04 + 5*n];
+	u16 special = mem[0x3d05 + 5*n];
 
 	u16 push = dir;
 	u16 pull = (~dir) & (~attr);
-	u16 what = (buffer & (push | pull)) ^ (dir & ~attr);
+	u16 what = (buffer & (push | pull));
+	what ^= (dir & ~attr);
+	what &= ~special;
 
 	if (board->gpio)
-		what = board->gpio(n, what, push, pull);
+		what = board->gpio(n, what, push, pull, special);
 
 	mem[0x3d01 + 5*n] = what;
 }

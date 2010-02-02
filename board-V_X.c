@@ -21,7 +21,7 @@ static void init(void)
 		board->idle_pc = 0x4003a;	// studio, FIXME
 }
 
-static u16 gpio(u32 n, u16 what, u16 push, u16 pull)
+static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 {
 	return what;
 }

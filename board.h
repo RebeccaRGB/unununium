@@ -12,7 +12,7 @@ struct board {
 	int use_centered_coors;	// This is some video reg actually, FIXME
 
 	void (*init)(void);
-	u16 (*gpio)(u32 n, u16 what, u16 push, u16 pull);
+	u16 (*gpio)(u32 n, u16 what, u16 push, u16 pull, u16 special);
 };
 
 extern struct board board_VII, board_WAL, board_BAT, board_V_X, board_dummy;
