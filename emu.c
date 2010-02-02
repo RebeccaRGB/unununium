@@ -31,6 +31,7 @@ static int store_trace = 0;
 static int pause_after_every_frame = 0;
 //static u8 trace_irq[9] = { 0, 1, 1, 1, 1, 1, 1, 1, 1 };
 static u8 trace_irq[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+static u8 unsp_version = 11;	// version a.b as 10*a + b
 static u8 ever_ran_this[N_MEM];
 
 static u16 reg[8];
@@ -99,6 +100,20 @@ static inline u32 cs_pc(void)
 	return ((reg[6] & 0x3f) << 16) | reg[7];
 }
 
+static void set_cs_pc(u32 x)
+{
+	reg[7] = x;
+	reg[6] = (reg[6] & ~0x3f) | ((x >> 16) & 0x3f);
+}
+
+static void inc_cs_pc(s16 x)
+{
+	if (unsp_version < 11)
+		reg[7] += x;
+	else
+		set_cs_pc(cs_pc() + x);
+}
+
 static void push(u16 val, u8 b)
 {
 	store(val, reg[b]--);
@@ -134,7 +149,7 @@ static void step(void)
 	u32 x, d = 0xff0000;
 
 	op = mem[cs_pc()];
-	reg[7]++;
+	inc_cs_pc(1);
 
 
 	// the top four bits are the alu op or the branch condition, or E or F
@@ -214,9 +229,9 @@ static void step(void)
 
 		do_jump:
 			if (op1 == 0)
-				reg[7] += opimm;
+				inc_cs_pc(opimm);
 			else
-				reg[7] -= opimm;
+				inc_cs_pc(-opimm);
 		}
 		return;
 	}
@@ -279,17 +294,16 @@ static void step(void)
 			if ((opA & 1) != 0)
 				goto bad;
 			x1 = mem[cs_pc()];
-			reg[7]++;
+			inc_cs_pc(1);
 			push(reg[7], 0);
 			push(reg[6], 0);
-			reg[7] = x1;
-			reg[6] = (reg[6] & 0xffc0) | opimm;
+			set_cs_pc((opimm << 16) | x1);
 			return;
 		case 2:		// JMPF
 			if (opA != 7)
 				goto bad;
-			reg[7] = mem[cs_pc()];
-			reg[6] = (reg[6] & 0xffc0) | opimm;
+			x1 = mem[cs_pc()];
+			set_cs_pc((opimm << 16) | x1);
 			return;
 		case 5:		// VARIOUS
 			switch (opimm) {
@@ -358,7 +372,7 @@ static void step(void)
 		break;
 	case 3:		// [Rb] and friends
 		if ((opN & 3) == 3)
-			reg[opB]++;
+			reg[opB]++;	// FIXME
 		d = reg[opB];
 		if (opN & 4)
 			d |= (reg[6] << 6) & 0x3f0000;
@@ -367,9 +381,9 @@ static void step(void)
 		else
 			x1 = load(d);
 		if ((opN & 3) == 1)
-			reg[opB]--;
+			reg[opB]--;	// FIXME
 		if ((opN & 3) == 2)
-			reg[opB]++;
+			reg[opB]++;	// FIXME
 		break;
 	case 4:
 		switch(opN) {
@@ -379,22 +393,22 @@ static void step(void)
 		case 1:		// imm16
 			x0 = reg[opB];
 			x1 = mem[cs_pc()];
-			reg[7]++;
+			inc_cs_pc(1);
 			break;
 		case 2:		// [imm16]
 			x0 = reg[opB];
 			d = mem[cs_pc()];
+			inc_cs_pc(1);
 			if (op0 == 13)
 				x1 = 0x0bad;
 			else
 				x1 = load(d);
-			reg[7]++;
 			break;
 		case 3:		// [imm16] = ...
 			x0 = reg[opB];
 			x1 = reg[opA];
 			d = mem[cs_pc()];
-			reg[7]++;
+			inc_cs_pc(1);
 			break;
 		default:	// ASR
 			{
@@ -491,7 +505,7 @@ static void step(void)
 
 	// set S and C flags
 	if (op0 < 5) {		// ADD, ADC, SUB, SBC, CMP
-		reg[6] = (reg[6] & ~0x0c0);
+		reg[6] = (reg[6] & ~0x00c0);
 
 		if (x != (u16)x)
 			reg[6] |= 0x40;
@@ -515,7 +529,7 @@ static void step(void)
 
 
 bad:
-	reg[7] = old_cs_pc;
+	set_cs_pc(old_cs_pc);
 	print_state();
 	fatal("! UNIMPLEMENTED\n");
 }
