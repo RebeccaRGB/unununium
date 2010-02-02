@@ -132,6 +132,9 @@ static u16 next_sample(void)
 
 static s16 next_host_sample(void)
 {
+	if (mem[0x3d20] & 0x0002)	// audio DAC disable
+		return 0;
+
 return 0;
 	u32 acc = 0;
 	u32 i;
