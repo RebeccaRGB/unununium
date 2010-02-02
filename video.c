@@ -21,11 +21,70 @@ u8 screen_b[320*240];
 int hide_page_1;
 int hide_page_2;
 int hide_sprites;
+int trace_unknown_video = 1;
 
 
 static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
+static const u16 known_reg_bits[] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 2800..280f
+	0xffff, 0xffff, 0x3fff, 0x010a, 0x1fff, 0x1fff,		// 2810..2815	text page 1
+	0xffff, 0xffff, 0x3fff, 0x010a, 0x1fff, 0x1fff,		// 2816..281b	text page 2
+	0x00ff,							// 281c		vcmp value
+	0, 0, 0,						// 281d..281f
+	0xffff, 0xffff, 0xffff,					// 2820..2822
+	0, 0, 0, 0, 0, 0, 0,					// 2823..2829
+	0x0003,							// 282a		blend level
+	0, 0, 0, 0, 0,						// 282b..282f
+	0x00ff,							// 2830		fade offset
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2831..283b
+	0xffff,							// 283c		TV hue/saturation
+	0, 0, 0,						// 283d..283f
+	0, 0,							// 2840..2841
+	0x0001,							// 2842
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2843..284f
+	0, 0, 0, 0,						// 2850..2853
+	0x0007,							// 2854		LCD control
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2855..285f
+	0, 0,							// 2860//2861
+	0x0001, 0x0007,						// 2862..2863
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2864..286f
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 2870..287f
+};
+
+static const u16 known_sprite_bits[] = {
+	0xffff, 0xffff, 0xffff, 0xffff	// actually only low 9 bits of X/Y, low 15 of attr
+};
+
+static void trace_unknown(u32 addr, u16 val, int is_read)
+{
+	if (addr >= 0x2800 && addr < 0x2800 + ARRAY_SIZE(known_reg_bits)) {
+		if (val & ~known_reg_bits[addr - 0x2800])
+			printf("*** UNKNOWN VIDEO REG BITS %s: %04x bits %04x\n",
+			       is_read ? "READ" : "WRITE", addr,
+			       val & ~known_reg_bits[addr - 0x2800]);
+	} else if (addr >= 0x2900 && addr < 0x2a00) {
+		if (val & ~0x01ff)
+			printf("*** UNKNOWN VIDEO HOFFSET BITS %s: %04x bits %04x\n",
+			       is_read ? "READ" : "WRITE", addr, val & ~0x01ff);
+	} else if (addr >= 0x2a00 && addr < 0x2b00) {
+		if (val & ~0x00ff)
+			printf("*** UNKNOWN VIDEO HCMP BITS %s: %04x bits %04x\n",
+			       is_read ? "READ" : "WRITE", addr, val & ~0x00ff);
+	} else if (addr >= 0x2b00 && addr < 0x2c00) {
+		if (val & ~0xffff)
+			printf("*** UNKNOWN VIDEO PALETTE BITS %s: %04x bits %04x\n",
+			       is_read ? "READ" : "WRITE", addr, val & ~0xffff);
+	} else if (addr >= 0x2c00 && addr < 0x3000) {
+		if (val != 0xffff && val & ~known_sprite_bits[addr & 3])
+			printf("*** UNKNOWN VIDEO SPRITE BITS %s: %04x bits %04x\n",
+			       is_read ? "READ" : "WRITE", addr,
+			       val & ~known_sprite_bits[addr & 3]);
+	} else
+		printf("*** UNKNOWN VIDEO %s: [%04x] = %04x\n",
+		       is_read ? "READ" : "WRITE", addr, val);
+}
 
 static void do_dma(u32 len)
 {
@@ -41,38 +100,75 @@ static void do_dma(u32 len)
 
 void video_store(u16 val, u32 addr)
 {
+	if (trace_unknown_video)
+		trace_unknown(addr, val, 0);
+
 	if (addr < 0x2900) {		// video regs
 		switch (addr) {
-		case 0x2810 ... 0x2815:	// page 0 regs
-		case 0x2816 ... 0x281b:	// page 1 regs
+		case 0x2810: case 0x2816:	// page 1,2 X scroll
+			val &= 0x01ff;
 			break;
 
-		case 0x281c:		// blend level: 0=opaque, 40=transp
+		case 0x2811: case 0x2817:	// page 1,2 Y scroll
+			val &= 0x00ff;
+			break;
+
+		case 0x2812 ... 0x2815:	// page 1 regs
+		case 0x2818 ... 0x281b:	// page 2 regs
+			break;
+
+		case 0x281c:		// vcmp value
 			break;
 
 		case 0x2820 ... 0x2822:	// bitmap offsets
 			break;
 
-		case 0x282a:		// XXX
+		case 0x282a:		// blend level
 			break;
 
-		case 0x2830:		// XXX
+		case 0x2830:		// fade offset
+			if ((mem[addr] & 0x00ff) != (val & 0x00ff))
+				printf("*** TV FADE set to %02x\n", val & 0x00ff);
 			break;
 
-		case 0x2836:
-		case 0x2837:		// XXX
+		case 0x2836:		// XXX IRQ pos V
+		case 0x2837:		// XXX IRQ pos H
 			break;
 
-		case 0x283c:		// XXX
+		case 0x283c:		// TV control 1 (hue/saturation)
+			if ((mem[addr] & 0xff00) != (val & 0xff00))
+				printf("*** TV HUE set to %02x\n", val >> 8);
+			if ((mem[addr] & 0x00ff) != (val & 0x00ff))
+				printf("*** TV SATURATION set to %02x\n", val & 0x00ff);
 			break;
 
-		case 0x2842:		// XXX
+		case 0x283d:		// XXX TV control 2
 			break;
 
-		case 0x2862:		// video IRQ enable
+		case 0x283e:		// XXX lightpen pos V
+		case 0x283f:		// XXX lightpen pos H
 			break;
 
-		case 0x2863:		// video IRQ ACK
+		case 0x2842:		// XXX sprite enable
+			break;
+
+		case 0x2854: {		// LCD control
+			static const char *lcd_colour_mode[4] = {
+				"B/W", "16 grey levels", "4096 colours", "BAD"
+			};
+			if ((mem[addr] & 0x0003) != (val & 0x0003))
+				printf("*** LCD COLOUR MODE set to %s\n",
+				       lcd_colour_mode[val & 0x0003]);
+			if ((mem[addr] & 0x0004) != (val & 0x0004))
+				printf("*** LCD RESOLUTION set to %s\n",
+				       (val & 0x0004) ? "320x240" : "160x100");
+			break;
+		}
+
+		case 0x2862:		// video IRQ control
+			break;
+
+		case 0x2863:		// video IRQ status
 			mem[addr] &= ~val;
 			if (val & 1)
 				update_screen();
@@ -89,7 +185,8 @@ void video_store(u16 val, u32 addr)
 		default:
 			printf("VIDEO STORE %04x to %04x\n", val, addr);
 		}
-	} else if (addr < 0x2b00) {	// scroll per raster line
+	} else if (addr < 0x2a00) {	// scroll per raster line
+	} else if (addr < 0x2b00) {	// horizontal stretch
 	} else if (addr < 0x2c00) {	// palette
 	} else {			// sprites
 	}
@@ -101,13 +198,16 @@ u16 video_load(u32 addr)
 {
 	u16 val = mem[addr];
 
+	if (trace_unknown_video)
+		trace_unknown(addr, val, 1);
+
 	if (addr < 0x2900) {
 		switch (addr) {
 		case 0x2810 ... 0x2815:	// page 1 regs
 		case 0x2816 ... 0x281b:	// page 2 regs
 			break;
 
-		case 0x282a:		// XXX
+		case 0x282a:		// blend level
 			break;
 
 		case 0x2838:		// current line
@@ -149,8 +249,8 @@ static void set_pixel(u32 offset, u16 rgb)
 
 static u8 mix_channel(u8 old, u8 new)
 {
-	u8 alpha = mem[0x281c];
-	return ((64 - alpha)*old + alpha*new) / 64;
+	u8 alpha = mem[0x282a];
+	return ((4 - alpha)*old + alpha*new) / 4;
 }
 
 static void mix_pixel(u32 offset, u16 rgb)
@@ -205,7 +305,7 @@ static void blit(u32 xoff, u32 yoff, u32 attr, u32 ctrl, u32 bitmap, u16 tile)
 			if (xx < 320 && yy < 240) {
 				u16 rgb = mem[0x2b00 + pal];
 				if ((rgb & 0x8000) == 0) {
-					if (attr & 0x4000)
+					if (attr & 0x4000 || ctrl & 0x0100)
 						mix_pixel(xx + 320*yy, rgb);
 					else
 						set_pixel(xx + 320*yy, rgb);
@@ -232,7 +332,7 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 		return;
 
 {
-	u16 known[6] = { 0x01ff, 0x00ff, 0x3fff, 0x000a, 0x1fff, 0x1fff };
+	u16 known[6] = { 0x01ff, 0x00ff, 0x3fff, 0x010a, 0x1fff, 0x1fff };
 	u32 i;
 	for (i = 0; i < 6; i++)
 		if ((regs[i] & ~known[i]))
@@ -368,10 +468,12 @@ void blit_screen(void)
 	printf("\n");
 #endif
 
-	// Could optimise this, skip if any full page shown
 	memset(screen_r, 0, sizeof screen_r);
 	memset(screen_g, 0, sizeof screen_g);
 	memset(screen_b, 0, sizeof screen_b);
+
+	if (mem[0x3d20] & 0x0004)	// video DAC disable
+		return;
 
 	u32 depth;
 	for (depth = 0; depth < 4; depth++) {
