@@ -689,11 +689,11 @@ static void do_controller(void)
 			break;
 
 		case 'a':
-			hide_page_0 ^= 1;
+			hide_page_1 ^= 1;
 			break;
 
 		case 's':
-			hide_page_1 ^= 1;
+			hide_page_2 ^= 1;
 			break;
 
 		case 'd':

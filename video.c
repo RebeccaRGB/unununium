@@ -18,8 +18,8 @@ u8 screen_r[320*240];
 u8 screen_g[320*240];
 u8 screen_b[320*240];
 
-int hide_page_0;
 int hide_page_1;
+int hide_page_2;
 int hide_sprites;
 
 
@@ -103,8 +103,8 @@ u16 video_load(u32 addr)
 
 	if (addr < 0x2900) {
 		switch (addr) {
-		case 0x2810 ... 0x2815:	// page 0 regs
-		case 0x2816 ... 0x281b:	// page 1 regs
+		case 0x2810 ... 0x2815:	// page 1 regs
+		case 0x2816 ... 0x281b:	// page 2 regs
 			break;
 
 		case 0x282a:		// XXX
@@ -344,7 +344,7 @@ void blit_screen(void)
 #if 0
 	printf("-----  VIDEO UPDATE  -----\n");
 
-	printf("page 0:\n");
+	printf("page 1:\n");
 	printf("  x off  = %04x\n", mem[0x2810]);
 	printf("  y off  = %04x\n", mem[0x2811]);
 	printf("  attr   = %04x\n", mem[0x2812]);
@@ -353,7 +353,7 @@ void blit_screen(void)
 	printf("  dunno5 = %04x\n", mem[0x2815]);
 	printf("  bitmap = %04x\n", mem[0x2820]);
 
-	printf("page 1:\n");
+	printf("page 2:\n");
 	printf("  x off  = %04x\n", mem[0x2816]);
 	printf("  y off  = %04x\n", mem[0x2817]);
 	printf("  attr   = %04x\n", mem[0x2818]);
@@ -375,9 +375,9 @@ void blit_screen(void)
 
 	u32 depth;
 	for (depth = 0; depth < 4; depth++) {
-		if (!hide_page_0)
-			blit_page(depth, 0x40*mem[0x2820], mem + 0x2810);
 		if (!hide_page_1)
+			blit_page(depth, 0x40*mem[0x2820], mem + 0x2810);
+		if (!hide_page_2)
 			blit_page(depth, 0x40*mem[0x2821], mem + 0x2816);
 		if (!hide_sprites)
 			blit_sprites(depth);
