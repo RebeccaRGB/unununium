@@ -7,6 +7,7 @@
 #include "types.h"
 #include "emu.h"
 #include "platform.h"
+#include "i2c.h"
 
 #include "board.h"
 
