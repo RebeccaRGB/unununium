@@ -728,7 +728,7 @@ static void run(void)
 		// video
 		static u32 which = 1;
 
-		mem[0x2863] = mem[0x2862] & which;
+		mem[0x2863] |= mem[0x2862] & which;
 		which ^= 3;
 
 		if (mem[0x2863])
