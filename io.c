@@ -22,8 +22,8 @@ static const u16 known_reg_bits[] = {
 	0x000f,							// 3d10		timebase freq
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 3d11..3d1f
 	0x4006,							// 3d20		system control
-	0x0000,							// 3d21		IRQ control
-	0xffff,							// 3d22		IRQ status
+	0x3ffb,							// 3d21		IRQ control
+	0x7fff,							// 3d22		IRQ status
 	0x003e,							// 3d23		memory control
 	0xffff,							// 3d24		watchdog
 	0x2002,							// 3d25		ADC control
@@ -195,9 +195,11 @@ void io_store(u16 val, u32 addr)
 			       (val & 0x4000) ? "en" : "dis");
 		break;
 
-	// case 0x3d21: IRQ control
+	case 0x3d21:		// IRQ control
+		break;
 
 	case 0x3d22:		// IRQ ack
+//printf("######## ACK %04x\n", val);
 		mem[addr] &= ~val;
 		return;
 
