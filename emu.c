@@ -483,9 +483,9 @@ static void step(void)
 			x1 = (shift >> 4) & 0xffff;
 		}
 		break;
-	//case 7:
-	//	x1 = load(opimm);
-	//	break;
+	case 7:
+		x1 = load(opimm);
+		break;
 	default:
 		goto bad;
 	}
