@@ -37,7 +37,7 @@ void read_rom(u32 offset)
 
 // gross, but whatever.  one day i'll fix this, but not today
 #ifdef _BIG_ENDIAN
-	for (u32 i = 0x4000; i < n; i++)
+	for (u32 i = 0x4000; i < n + 0x4000; i++)
 		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
 #endif
 }
