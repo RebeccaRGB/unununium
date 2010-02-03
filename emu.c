@@ -114,6 +114,25 @@ static void inc_cs_pc(s16 x)
 		set_cs_pc(cs_pc() + x);
 }
 
+static u32 ds_reg(u8 r)
+{
+	return (get_ds() << 16) | reg[r];
+}
+
+static void set_ds_reg(u8 r, u32 x)
+{
+	reg[r] = x;
+	set_ds((x & 0x3f0000) >> 16);
+}
+
+static void inc_ds_reg(u8 r, s16 x)
+{
+	if (unsp_version < 11)
+		reg[r] += x;
+	else
+		set_ds_reg(r, ds_reg(r) + x);
+}
+
 static void push(u16 val, u8 b)
 {
 	store(val, reg[b]--);
@@ -373,19 +392,31 @@ static void step(void)
 		x1 = opimm;
 		break;
 	case 3:		// [Rb] and friends
-		if ((opN & 3) == 3)
-			reg[opB]++;	// FIXME
-		d = reg[opB];
-		if (opN & 4)
-			d |= (reg[6] << 6) & 0x3f0000;
-		if (op0 == 13)
-			x1 = 0x0bad;
-		else
-			x1 = load(d);
-		if ((opN & 3) == 1)
-			reg[opB]--;	// FIXME
-		if ((opN & 3) == 2)
-			reg[opB]++;	// FIXME
+		if (opN & 4) {
+			if ((opN & 3) == 3)
+				inc_ds_reg(opB, 1);
+			d = ds_reg(opB);
+			if (op0 == 13)
+				x1 = 0x0bad;
+			else
+				x1 = load(d);
+			if ((opN & 3) == 1)
+				inc_ds_reg(opB, -1);
+			if ((opN & 3) == 2)
+				inc_ds_reg(opB, 1);
+		} else {
+			if ((opN & 3) == 3)
+				reg[opB]++;
+			d = reg[opB];
+			if (op0 == 13)
+				x1 = 0x0bad;
+			else
+				x1 = load(d);
+			if ((opN & 3) == 1)
+				reg[opB]--;
+			if ((opN & 3) == 2)
+				reg[opB]++;
+		}
 		break;
 	case 4:
 		switch(opN) {
