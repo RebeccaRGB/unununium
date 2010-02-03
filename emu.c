@@ -764,24 +764,75 @@ static void run(void)
 
 	if (now - last_retrace_time >= PERIOD) {
 		// video
+		// FIXME: make this better
 		static u32 which = 1;
 
-		mem[0x2863] |= mem[0x2862] & which;
+		mem[0x2863] |= which;
 		which ^= 3;
-
-		if (mem[0x2863])
-			do_irq(0);
 
 		last_retrace_time = now;
 
 		do_controller();
 
-		// controller
-		if (mem[0x3d21])
-			do_irq(3);
+		mem[0x3d22] |= 2;	// TMB2		FIXME: freq
+
+		// controller	FIXME
+mem[0x3d22] |= 0x0100;
+		//if (mem[0x3d21])
+		//	do_irq(3);
 
 		// sound
 		//do_irq(4);	// XXX: gate me
+
+//mem[0x3d22] |= mem[0x3d21] & (1 << (random() % 16));
+//do_irq(random() % 8);
+
+		// XXX: handle FIQ
+
+		for (;;) {
+			// video
+			if (mem[0x2862] & mem[0x2863]) {
+				do_irq(0);
+				continue;
+			}
+
+			// XXX audio, IRQ1
+
+			// timerA, timerB
+			if (mem[0x3d21] & mem[0x3d22] & 0x0c00) {
+				do_irq(2);
+				continue;
+			}
+
+			// UART, ADC		XXX: also SPI
+			if (mem[0x3d21] & mem[0x3d22] & 0x2100) {
+				do_irq(3);
+				continue;
+			}
+
+			// XXX audio, IRQ4
+
+			// extint1, extint2
+			if (mem[0x3d21] & mem[0x3d22] & 0x1200) {
+				do_irq(5);
+				continue;
+			}
+
+			// 1024Hz, 2048HZ, 4096HZ
+			if (mem[0x3d21] & mem[0x3d22] & 0x0070) {	// 1024Hz
+				do_irq(6);
+				continue;
+			}
+
+			// TMB1, TMB2, 4Hz, key change
+			if (mem[0x3d21] & mem[0x3d22] & 0x008b) {
+				do_irq(7);
+				continue;
+			}
+
+			break;
+		}
+
 
 		if (pause_after_every_frame) {
 			printf("*** paused, press a key to continue\n");
