@@ -28,6 +28,7 @@ u16 mem[N_MEM];
 static int trace = 0;
 static int trace_new = 0;
 static int store_trace = 0;
+static int trace_calls = 0;
 static int pause_after_every_frame = 0;
 //static u8 trace_irq[9] = { 0, 1, 1, 1, 1, 1, 1, 1, 1 };
 static u8 trace_irq[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -166,6 +167,12 @@ static void step(void)
 	u16 x0, x1;
 	u32 old_cs_pc = cs_pc();
 	u32 x, d = 0xff0000;
+
+	if (trace_calls) {
+		op = mem[cs_pc()];
+		if ((op & 0xf3c0) == 0xf040 || (op & 0xfff7) == 0x9a90)
+			print_state();
+	}
 
 	op = mem[cs_pc()];
 	inc_cs_pc(1);
