@@ -389,7 +389,7 @@ static void step(void)
 
 	switch (op1) {
 	case 0:		// [BP+imm6]
-		d = reg[5] + opimm;
+		d = (u16)(reg[5] + opimm);
 		if (op0 == 13)
 			x1 = 0x0bad;
 		else
