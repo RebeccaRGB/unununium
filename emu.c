@@ -81,7 +81,7 @@ static void store(u16 val, u32 addr)
 		printf("ROM STORE %04x to %04x\n", val, addr);
 }
 
-static inline u16 load(u32 addr)
+static u16 load(u32 addr)
 {
 	if (addr < 0x2800 || addr >= 0x4000)	// RAM / ROM
 		return mem[addr];
@@ -95,7 +95,7 @@ static inline u16 load(u32 addr)
 	return io_load(addr);
 }
 
-static inline u32 cs_pc(void)
+static u32 cs_pc(void)
 {
 	return ((reg[6] & 0x3f) << 16) | reg[7];
 }
