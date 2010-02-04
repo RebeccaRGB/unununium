@@ -29,8 +29,8 @@ static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 static const u16 known_reg_bits[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 2800..280f
-	0xffff, 0xffff, 0x3fff, 0x010a, 0x1fff, 0x1fff,		// 2810..2815	text page 1
-	0xffff, 0xffff, 0x3fff, 0x010a, 0x1fff, 0x1fff,		// 2816..281b	text page 2
+	0xffff, 0xffff, 0x3fff, 0x010e, 0x1fff, 0x1fff,		// 2810..2815	text page 1
+	0xffff, 0xffff, 0x3fff, 0x010e, 0x1fff, 0x1fff,		// 2816..281b	text page 2
 	0x00ff,							// 281c		vcmp value
 	0, 0, 0,						// 281d..281f
 	0xffff, 0xffff, 0xffff,					// 2820..2822
@@ -347,13 +347,14 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 
 	for (y0 = 0; y0 < hn; y0++)
 		for (x0 = 0; x0 < wn; x0++) {
-			u16 tile = mem[tilemap + x0 + wn*y0];
+			u32 which = (ctrl & 4) ? 0 : x0 + wn*y0;
+			u16 tile = mem[tilemap + which];
 
 			if (tile == 0)
 				continue;
 
-			u16 palette = mem[palette_map + (x0 + wn*y0)/2];
-			if (x0 & 1)
+			u16 palette = mem[palette_map + which/2];
+			if (which & 1)
 				palette >>= 8;
 
 			u32 tileattr = attr;
