@@ -96,6 +96,7 @@ static void do_dma(u32 len)
 		mem[dst+j] = mem[src+j];
 
 	mem[0x2872] = 0;
+	mem[0x2863] |= 0x0004;
 }
 
 void video_store(u16 val, u32 addr)
