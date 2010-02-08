@@ -2,6 +2,7 @@
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "types.h"
@@ -12,6 +13,7 @@
 
 
 static u32 current_bank = -1;
+static int controller_should_be_rotated;
 
 static void switch_bank(u32 bank)
 {
@@ -55,9 +57,76 @@ static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 	return what;
 }
 
+static void uart_send(u8 x)
+{
+printf("--- uart_send(%02x)\n", x);
+}
+
+static u32 controller_in_count;
+static u8 controller_input[8];
+
+static u8 uart_recv(void)
+{
+	if (controller_in_count == 0) {
+		u8 buttons = 0;
+		if (controller_should_be_rotated) {
+			if (button_up)
+				buttons |= 0x08;
+			if (button_down)
+				buttons |= 0x04;
+			if (button_left)
+				buttons |= 0x01;
+			if (button_right)
+				buttons |= 0x02;
+		} else {
+			if (button_up)
+				buttons |= 0x01;
+			if (button_down)
+				buttons |= 0x02;
+			if (button_left)
+				buttons |= 0x04;
+			if (button_right)
+				buttons |= 0x08;
+		}
+		if (button_A)
+			buttons |= 0x10;
+		if (button_B)
+			buttons |= 0x20;
+
+		controller_input[0] = buttons;
+
+		u32 x = random() & 0x3ff;
+		u32 y = random() & 0x3ff;
+		u32 z = random() & 0x3ff;
+
+		controller_input[1] = x;
+		controller_input[2] = y;
+		controller_input[3] = z;
+
+		x >>= 8;
+		y >>= 8;
+		z >>= 8;
+
+		controller_input[4] = 0;
+		controller_input[5] = (z << 4) | (y << 2) | x;
+
+		controller_input[6] = 0xff;
+		controller_input[7] = 0;
+
+		controller_in_count = 8;
+	}
+
+	u8 x = controller_input[8 - controller_in_count];
+	controller_in_count--;
+
+	return x;
+}
+
 struct board board_VII = {
 	.use_centered_coors = 1,
 
 	.init = init,
-	.gpio = gpio
+	.gpio = gpio,
+	.uart_send = uart_send,
+	.uart_recv = uart_recv
 };

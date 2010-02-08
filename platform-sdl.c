@@ -3,7 +3,6 @@
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <SDL.h>
@@ -153,10 +152,6 @@ void update_screen(void)
 }
 
 
-u8 controller_input[8];
-u8 controller_output[7];
-int controller_should_be_rotated;
-
 u8 button_up;
 u8 button_down;
 u8 button_left;
@@ -187,25 +182,23 @@ static char handle_debug_key(int key)
 
 static void handle_controller_key(int key, int down)
 {
-	u8 bit;
-
 	switch (key) {
-	case 'j':
+	case SDLK_UP: case 'j':
 		button_up = down;
 		break;
-	case 'm':
+	case SDLK_DOWN: case 'm':
 		button_down = down;
 		break;
-	case 'n':
+	case SDLK_LEFT: case 'n':
 		button_left = down;
 		break;
-	case ',':
+	case SDLK_RIGHT: case ',':
 		button_right = down;
 		break;
-	case 'h':
+	case SDLK_SPACE: case 'h':
 		button_A = down;
 		break;
-	case 'k':
+	case 'b': case 'k':
 		button_B = down;
 		break;
 	case 'g':
@@ -214,51 +207,7 @@ static void handle_controller_key(int key, int down)
 	case 'l':
 		button_menu = down;
 		break;
-
-	case SDLK_UP:
-		bit = controller_should_be_rotated ? 0x08 : 0x01;
-		break;
-	case SDLK_DOWN:
-		bit = controller_should_be_rotated ? 0x04 : 0x02;
-		break;
-	case SDLK_LEFT:
-		bit = controller_should_be_rotated ? 0x01 : 0x04;
-		break;
-	case SDLK_RIGHT:
-		bit = controller_should_be_rotated ? 0x02 : 0x08;
-		break;
-	case SDLK_SPACE:	// "A" button
-		bit = 0x10;
-		break;
-	case 'b':		// "B" button
-		bit = 0x20;
-		break;
-	default:
-		return;
 	}
-
-	if (down)
-		controller_input[0] |= bit;
-	else
-		controller_input[0] &= ~bit;
-
-	u32 x = random() & 0x3ff;
-	u32 y = random() & 0x3ff;
-	u32 z = random() & 0x3ff;
-
-	controller_input[1] = x;
-	controller_input[2] = y;
-	controller_input[3] = z;
-
-	x >>= 8;
-	y >>= 8;
-	z >>= 8;
-
-	controller_input[5] = (z << 4) | (y << 2) | x;
-
-	controller_input[4] = 0;
-	controller_input[6] = 0xff;
-	controller_input[7] = 0;
 }
 
 char update_controller(void)

@@ -36,9 +36,11 @@ static const u16 known_reg_bits[] = {
 	0x0007,							// 3d2e		FIQ control
 	0x003f,							// 3d2f		DS
 	0x00ef,							// 3d30		UART control
-	0, 0,							// 3d31..3d32
+	0x0003,							// 3d31		UART status
+	0,							// 3d32
 	0x00ff, 0x00ff,						// 3d33..3d34	UART baud rate
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 3d35..3d3f
+	0x00ff,							// 3d35		UART TX
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,				// 3d36..3d3f
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 3d40..3d4f
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 3d50..3d5f
 };
@@ -66,9 +68,6 @@ static void trace_unknown(u32 addr, u16 val, int is_read)
 		printf("*** UNKNOWN IO %s: [%04x] = %04x\n",
 		       is_read ? "READ" : "WRITE", addr, val);
 }
-
-
-static int uart_in_count = 0;
 
 
 static u8 seeprom[0x400];
@@ -280,7 +279,8 @@ void io_store(u16 val, u32 addr)
 	}
 
 	case 0x3d31:		// UART status
-		break;
+		mem[addr] ^= (mem[addr] & 0x0003 & val);
+		return;
 
 	// case 0x3d32:		// UART reset
 
@@ -411,12 +411,16 @@ u16 io_load(u32 addr)
 	case 0x3d2f:			// DS
 		return get_ds();
 
-	case 0x3d31:			// UART status
+	case 0x3d31:			// UART status     FIXME
 		return 3;
 
 	case 0x3d36:			// UART RX data
-		val = controller_input[uart_in_count];
-		uart_in_count = (uart_in_count + 1) % 8;
+		if (board->uart_recv)
+			val = board->uart_recv();
+		else {
+			printf("UART READ (not hooked up)\n");
+			val = 0;
+		}
 		return val;
 
 	case 0x3d59:			// IIC status

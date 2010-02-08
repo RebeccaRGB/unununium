@@ -13,6 +13,8 @@ struct board {
 
 	void (*init)(void);
 	u16 (*gpio)(u32 n, u16 what, u16 push, u16 pull, u16 special);
+	void (*uart_send)(u8 x);
+	u8 (*uart_recv)(void);
 };
 
 extern struct board board_VII, board_WAL, board_BAT, board_V_X, board_dummy;
