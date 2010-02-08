@@ -29,8 +29,8 @@ static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 static const u16 known_reg_bits[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 2800..280f
-	0xffff, 0xffff, 0x3fff, 0x010e, 0x1fff, 0x1fff,		// 2810..2815	text page 1
-	0xffff, 0xffff, 0x3fff, 0x010e, 0x1fff, 0x1fff,		// 2816..281b	text page 2
+	0xffff, 0xffff, 0x3fff, 0x011e, 0x3fff, 0x3fff,		// 2810..2815	text page 1
+	0xffff, 0xffff, 0x3fff, 0x011e, 0x3fff, 0x3fff,		// 2816..281b	text page 2
 	0x00ff,							// 281c		vcmp value
 	0, 0, 0,						// 281d..281f
 	0xffff, 0xffff, 0xffff,					// 2820..2822
@@ -38,7 +38,9 @@ static const u16 known_reg_bits[] = {
 	0x0003,							// 282a		blend level
 	0, 0, 0, 0, 0,						// 282b..282f
 	0x00ff,							// 2830		fade offset
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2831..283b
+	0, 0, 0, 0, 0,						// 2831..2835
+	0xffff, 0xffff,						// 2836..2837   IRQ pos
+	0, 0, 0, 0,						// 2838..283b
 	0xffff,							// 283c		TV hue/saturation
 	0, 0, 0,						// 283d..283f
 	0, 0,							// 2840..2841
@@ -48,7 +50,7 @@ static const u16 known_reg_bits[] = {
 	0x0007,							// 2854		LCD control
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2855..285f
 	0, 0,							// 2860//2861
-	0x0001, 0x0007,						// 2862..2863
+	0x0007, 0x0007,						// 2862..2863
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2864..286f
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 2870..287f
 };
@@ -65,7 +67,7 @@ static void trace_unknown(u32 addr, u16 val, int is_read)
 			       is_read ? "READ" : "WRITE", addr,
 			       val & ~known_reg_bits[addr - 0x2800]);
 	} else if (addr >= 0x2900 && addr < 0x2a00) {
-		if (val & ~0x01ff)
+		if (val & ~0xffff)
 			printf("*** UNKNOWN VIDEO HOFFSET BITS %s: %04x bits %04x\n",
 			       is_read ? "READ" : "WRITE", addr, val & ~0x01ff);
 	} else if (addr >= 0x2a00 && addr < 0x2b00) {
@@ -132,8 +134,9 @@ void video_store(u16 val, u32 addr)
 				printf("*** TV FADE set to %02x\n", val & 0x00ff);
 			break;
 
-		case 0x2836:		// XXX IRQ pos V
-		case 0x2837:		// XXX IRQ pos H
+		case 0x2836:		// IRQ pos V
+		case 0x2837:		// IRQ pos H
+			val &= 0x01ff;
 			break;
 
 		case 0x283c:		// TV control 1 (hue/saturation)
@@ -332,14 +335,6 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 	if ((attr & 0x3000) >> 12 != depth)
 		return;
 
-{
-	u16 known[6] = { 0x01ff, 0x00ff, 0x3fff, 0x010a, 0x1fff, 0x1fff };
-	u32 i;
-	for (i = 0; i < 6; i++)
-		if ((regs[i] & ~known[i]))
-			printf("*** UNKNOWN VIDEO PAGE BITS SET: %u -> %04x\n", i, regs[i] & ~known[i]);
-}
-
 	u32 h = sizes[(attr & 0x00c0) >> 6];
 	u32 w = sizes[(attr & 0x0030) >> 4];
 
@@ -397,15 +392,6 @@ static void blit_sprite(u32 depth, u16 *sprite)
 
 	if ((u32)(attr & 0x3000) >> 12 != depth)
 		return;
-
-{
-	//u16 known[4] = { 0xffff, 0x01ff, 0x01ff, 0x0000 };
-	u16 known[4] = { 0xffff, 0xffff, 0xffff, 0x3fff };
-	u32 i;
-	for (i = 0; i < 4; i++)
-		if ((sprite[i] & ~known[i]))
-			printf("*** UNKNOWN VIDEO SPRITE BITS SET: %u -> %04x\n", i, sprite[i] & ~known[i]);
-}
 
 	if (board->use_centered_coors) {
 		x = 160 + x;
