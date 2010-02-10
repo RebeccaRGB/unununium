@@ -745,6 +745,41 @@ static void do_controller(void)
 	} while (key);
 }
 
+static int get_irq(void)
+{
+	// XXX FIQ
+
+	// video
+	if (mem[0x2862] & mem[0x2863])
+		return 0;
+
+	// XXX audio, IRQ1
+
+	// timerA, timerB
+	if (mem[0x3d21] & mem[0x3d22] & 0x0c00)
+		return 2;
+
+	// UART, ADC		XXX: also SPI
+	if (mem[0x3d21] & mem[0x3d22] & 0x2100)
+		return 3;
+
+	// XXX audio, IRQ4
+
+	// extint1, extint2
+	if (mem[0x3d21] & mem[0x3d22] & 0x1200)
+		return 5;
+
+	// 1024Hz, 2048HZ, 4096HZ
+	if (mem[0x3d21] & mem[0x3d22] & 0x0070)
+		return 6;
+
+	// TMB1, TMB2, 4Hz, key change
+	if (mem[0x3d21] & mem[0x3d22] & 0x008b)
+		return 7;
+
+	return -1;
+}
+
 static void run(void)
 {
 	run_main();
@@ -787,50 +822,16 @@ mem[0x3d22] |= 0x0100;
 //mem[0x3d22] |= mem[0x3d21] & (1 << (random() % 16));
 //do_irq(random() % 8);
 
-		// XXX: handle FIQ
 
 		for (;;) {
-			// video
-			if (mem[0x2862] & mem[0x2863]) {
-				do_irq(0);
-				continue;
-			}
+			int irq = get_irq();
 
-			// XXX audio, IRQ1
+			if (irq < 0)
+				break;
 
-			// timerA, timerB
-			if (mem[0x3d21] & mem[0x3d22] & 0x0c00) {
-				do_irq(2);
-				continue;
-			}
-
-			// UART, ADC		XXX: also SPI
-			if (mem[0x3d21] & mem[0x3d22] & 0x2100) {
-				do_irq(3);
-				continue;
-			}
-
-			// XXX audio, IRQ4
-
-			// extint1, extint2
-			if (mem[0x3d21] & mem[0x3d22] & 0x1200) {
-				do_irq(5);
-				continue;
-			}
-
-			// 1024Hz, 2048HZ, 4096HZ
-			if (mem[0x3d21] & mem[0x3d22] & 0x0070) {	// 1024Hz
-				do_irq(6);
-				continue;
-			}
-
-			// TMB1, TMB2, 4Hz, key change
-			if (mem[0x3d21] & mem[0x3d22] & 0x008b) {
-				do_irq(7);
-				continue;
-			}
-
-			break;
+			do_irq(irq);
+// HACK, FIXME
+if (irq == 7) { do_irq(irq); do_irq(irq); do_irq(irq); do_irq(irq); }
 		}
 
 
