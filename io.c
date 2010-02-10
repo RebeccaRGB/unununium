@@ -293,7 +293,12 @@ void io_store(u16 val, u32 addr)
 		break;
 
 	case 0x3d35:		// UART TX data
-		break;
+		if (board->uart_send)
+			board->uart_send(val);
+		else
+			printf("UART write %02x (not hooked up)\n", val);
+		return;
+
 
 	// case 0x3d36: UART RX data
 	// case 0x3d37:
