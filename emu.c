@@ -38,6 +38,10 @@ static u8 trace_irq[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 static u8 unsp_version = 11;	// version a.b as 10*a + b
 static u8 ever_ran_this[N_MEM];
 
+
+static int do_extint1, do_extint2;
+
+
 static u16 reg[8];
 static u8 sb;
 static u8 irq, fiq;
@@ -725,6 +729,14 @@ static void do_controller(void)
 			mute_audio ^= 1;
 			break;
 
+		case 'w':
+			do_extint1 = 1;
+			break;
+
+		case 'e':
+			do_extint2 = 1;
+			break;
+
 		case 'a':
 			hide_page_1 ^= 1;
 			break;
@@ -809,6 +821,14 @@ static void run(void)
 
 		mem[0x3d22] |= 2;	// TMB2		FIXME: freq
 
+		if (do_extint1) {
+			mem[0x3d22] |= 0x0200;
+			do_extint1 = 0;
+		}
+		if (do_extint2) {
+			mem[0x3d22] |= 0x1000;
+			do_extint2 = 0;
+		}
 
 		// UART		FIXME
 mem[0x3d22] |= 0x0100;

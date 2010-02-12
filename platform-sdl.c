@@ -172,6 +172,7 @@ static char handle_debug_key(int key)
 	case 'u':
 	case 'x':
 	case 'q':
+	case 'w': case 'e':
 	case 'a': case 's': case 'd':
 	case 'v': case 'c':
 		return (key);
