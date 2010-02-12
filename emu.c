@@ -44,7 +44,8 @@ static int do_extint1, do_extint2;
 
 static u16 reg[8];
 static u8 sb;
-static u8 irq, fiq;
+static u8 irq_active, fiq_active;
+static u8 irq_enabled, fiq_enabled;
 
 static u64 insn_count;
 
@@ -163,7 +164,7 @@ static void print_state(void)
 	printf(" %x%x%x%x", (reg[6] >> 9) & 1, (reg[6] >> 8) & 1,
 	                    (reg[6] >> 7) & 1, (reg[6] >> 6) & 1);
 	printf(" %02x", reg[6] >> 10);
-	printf("  %x   %x   %x\n", sb, irq, fiq);
+	printf("  %x   %x   %x\n", sb, irq_enabled, fiq_enabled);
 	disas(mem, cs_pc());
 }
 
@@ -285,10 +286,10 @@ static void step(void)
 		if (opA == 5 && opN == 3 && opB == 0) {
 			reg[6] = pop(0);
 			reg[7] = pop(0);
-			if (fiq & 2)
-				fiq &= 1;
-			else if (irq & 2)
-				irq &= 1;
+			if (fiq_active)
+				fiq_active = 0;
+			else if (irq_active)
+				irq_active = 0;
 			return;
 		}
 		while (opN--)
@@ -343,39 +344,39 @@ static void step(void)
 		case 5:		// VARIOUS
 			switch (opimm) {
 			case 0:
-				irq &= ~1;
-				fiq &= ~1;
+				irq_enabled = 0;
+				fiq_enabled = 0;
 				//printf("INT OFF\n");
 				return;
 			case 1:
-				irq |= 1;
-				fiq &= ~1;
+				irq_enabled = 1;
+				fiq_enabled = 0;
 				//printf("INT IRQ\n");
 				return;
 			case 2:
-				irq &= ~1;
-				fiq |= 1;
+				irq_enabled = 0;
+				fiq_enabled = 1;
 				//printf("INT FIQ\n");
 				return;
 			case 3:
-				irq |= 1;
-				fiq |= 1;
+				irq_enabled = 1;
+				fiq_enabled = 1;
 				//printf("INT FIQ,IRQ\n");
 				return;
 			case 8:
-				irq &= ~1;
+				irq_enabled = 0;
 				//printf("IRQ OFF\n");
 				return;
 			case 9:
-				irq |= 1;
+				irq_enabled = 1;
 				//printf("IRQ ON\n");
 				return;
 			case 12:
-				fiq &= ~1;
+				fiq_enabled = 0;
 				//printf("FIQ OFF\n");
 				return;
 			case 14:
-				fiq |= 1;
+				fiq_enabled = 1;
 				//printf("FIQ ON\n");
 				return;
 			case 0x25:	// NOP
@@ -613,18 +614,18 @@ static void do_irq(int irqno)
 	u16 vec;
 
 	if (irqno == 8) {	// that's how we say "FIQ"
-		if (fiq != 1)
+		if (!fiq_enabled || fiq_active)
 			return;
-		fiq |= 2;
+		fiq_active = 1;
 		vec = 0xfff6;
 		if (trace_irq[8])
 			printf("### FIQ ###\n");
 	} else {
-		if (fiq & 2)
+		if (fiq_active)
 			return;
-		if (irq != 1)
+		if (!irq_enabled || irq_active)
 			return;
-		irq |= 2;
+		irq_active = 1;
 		vec = 0xfff8 + irqno;
 		if (trace_irq[irqno])
 			printf("### IRQ #%x ###\n", irqno);
@@ -760,7 +761,7 @@ static int get_irq(void)
 {
 	// XXX FIQ
 
-	if (irq != 1)
+	if (!irq_enabled || irq_active)
 		return -1;
 
 	// video
@@ -797,9 +798,6 @@ static int get_irq(void)
 static void run(void)
 {
 	run_main();
-
-//	if (irq != 1)
-//		return;
 
 	struct timeval tv;
 	u32 now;
