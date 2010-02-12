@@ -10,6 +10,7 @@
 
 #include "types.h"
 #include "disas.h"
+#include "timer.h"
 #include "video.h"
 #include "audio.h"
 #include "io.h"
@@ -24,6 +25,8 @@
 
 
 u16 mem[N_MEM];
+
+static u32 timer_handled;
 
 static int trace = 0;
 static int trace_new = 0;
@@ -605,12 +608,6 @@ static void do_irq(int irqno)
 {
 	u16 vec;
 
-	// some of these crash (program bug, not emulator bug -- well the
-	// emulator shouldn't fire IRQs that weren't enabled.  until then,
-	// just ignore these IRQs)
-//	if (irqno == 1 || irqno == 2 || irqno == 5 || irqno == 6 || irqno == 7)
-//		return;
-
 	if (irqno == 8) {	// that's how we say "FIQ"
 		if (fiq != 1)
 			return;
@@ -656,12 +653,12 @@ static void do_irq(int irqno)
 
 static void run_main(void)
 {
-	int i, idle, done;
+	int idle = 0;
 
-	idle = 0;
+	for (;;) {
+		if (timer_triggered != timer_handled)
+			break;
 
-//fprintf(stderr, "** RUN MAIN\n");
-	for (i = 0, done = 0; i < 0x1000 && !done; i++) {
 		if (trace)
 			print_state();
 
@@ -673,15 +670,17 @@ static void run_main(void)
 		if (cs_pc() == board->idle_pc) {
 			idle++;
 			if (idle == 2)
-				done = 1;
+				break;
 		}
 
 		step();
 		insn_count++;
 	}
-//fprintf(stderr, "** RUN MAIN DONE\n");
 
-	if (done)
+	if (timer_triggered != timer_handled) {
+		timer_handled++;
+		timer_set();
+	} else
 		do_idle();
 }
 
@@ -749,6 +748,9 @@ static int get_irq(void)
 {
 	// XXX FIQ
 
+	if (irq != 1)
+		return -1;
+
 	// video
 	if (mem[0x2862] & mem[0x2863])
 		return 0;
@@ -784,12 +786,8 @@ static void run(void)
 {
 	run_main();
 
-	if (irq != 1)
-		return;
-
-	// FIXME
-	if (insn_count < 1000000)
-		return;
+//	if (irq != 1)
+//		return;
 
 	struct timeval tv;
 	u32 now;
@@ -811,27 +809,20 @@ static void run(void)
 
 		mem[0x3d22] |= 2;	// TMB2		FIXME: freq
 
-		// controller	FIXME
+
+		// UART		FIXME
 mem[0x3d22] |= 0x0100;
-		//if (mem[0x3d21])
-		//	do_irq(3);
-
-		// sound
-		//do_irq(4);	// XXX: gate me
-
-//mem[0x3d22] |= mem[0x3d21] & (1 << (random() % 16));
-//do_irq(random() % 8);
 
 
 		for (;;) {
-			int irq = get_irq();
+			int irqno = get_irq();
 
-			if (irq < 0)
+			if (irqno < 0)
 				break;
 
-			do_irq(irq);
+			do_irq(irqno);
 // HACK, FIXME
-if (irq == 7) { do_irq(irq); do_irq(irq); do_irq(irq); do_irq(irq); }
+if (irqno == 7) { do_irq(irqno); do_irq(irqno); do_irq(irqno); do_irq(irqno); }
 		}
 
 
@@ -850,6 +841,7 @@ void emu(void)
 	read_rom(0);
 	board_init();
 	audio_init();
+	timer_init();
 
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector
