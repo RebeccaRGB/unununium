@@ -169,14 +169,6 @@ static void print_state(void)
 	disas(mem, cs_pc());
 }
 
-static void __do_irq(u16 vec)
-{
-	push(reg[7], 0);
-	push(reg[6], 0);
-	reg[7] = load(vec);
-	reg[6] = 0;
-}
-
 static void do_irq(int irqno)
 {
 	if (fiq_active || irq_active || !irq_enabled)
@@ -188,9 +180,12 @@ static void do_irq(int irqno)
 	irq_active = 1;
 
 	sb_banked[0] = sb;
+	push(reg[7], 0);
+	push(reg[6], 0);
+
 	sb = sb_banked[1];
-	__do_irq(0xfff8 + irqno);
-	//sb = sb_banked[0];
+	reg[7] = load(0xfff8 + irqno);
+	reg[6] = 0;
 }
 
 static void do_fiq(void)
@@ -204,9 +199,12 @@ static void do_fiq(void)
 	fiq_active = 1;
 
 	sb_banked[irq_active] = sb;
+	push(reg[7], 0);
+	push(reg[6], 0);
+
 	sb = sb_banked[2];
-	__do_irq(0xfff6);
-	//sb = sb_banked[irq_active];
+	reg[7] = load(0xfff6);
+	reg[6] = 0;
 }
 
 static int get_irq(void)
