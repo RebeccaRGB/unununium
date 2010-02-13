@@ -13,6 +13,8 @@
 #include "timer.h"
 
 
+static int trace_timer = 1;
+
 volatile u32 timer_triggered;
 
 static struct timer *timers;
@@ -50,6 +52,9 @@ void timer_debug(void)
 
 void timer_add(struct timer *timer)
 {
+	if (timer->time == 0)
+		timer->time = timer->interval;
+
 	u32 time = timer_now() - timer_time + timer->time;
 	struct timer **p = &timers;
 
@@ -76,7 +81,9 @@ void timer_run(void)
 		timer_time += timer->time;
 		elapsed -= timer->time;
 
-printf("running timer \"%s\" (%u)\n", timer->name, now);
+		if (trace_timer)
+			printf("running timer \"%s\" (%u)\n", timer->name, now);
+
 		if (timer->run)
 			timer->run();
 

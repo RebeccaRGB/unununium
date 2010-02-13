@@ -9,6 +9,7 @@
 #include "emu.h"
 #include "platform.h"
 #include "board.h"
+#include "timer.h"
 
 #include "io.h"
 
@@ -119,6 +120,28 @@ static void do_dma(u32 len)
 	mem[0x3e02] = 0;
 }
 
+static void do_tmb1(void)
+{
+	mem[0x3d22] |= 0x0001;
+}
+
+static void do_tmb2(void)
+{
+	mem[0x3d22] |= 0x0002;
+}
+
+static struct timer timer_tmb1 = {
+	.name = "TMB1",
+	.interval = 1000000/8,
+	.run = do_tmb1
+};
+
+static struct timer timer_tmb2 = {
+	.name = "TMB2",
+	.interval = 1000000/128,
+	.run = do_tmb2
+};
+
 void io_store(u16 val, u32 addr)
 {
 	if (trace_unknown_io)
@@ -164,12 +187,16 @@ void io_store(u16 val, u32 addr)
 		return;
 
 	case 0x3d10:		// timebase control
-		if ((mem[addr] & 0x0003) != (val & 0x0003))
-			printf("*** TMB1 FREQ set to %dHz\n",
-			       8 << (val & 0x0003));
-		if ((mem[addr] & 0x000c) != (val & 0x000c))
-			printf("*** TMB2 FREQ set to %dHz\n",
-			       128 << ((val & 0x000c) >> 2));
+		if ((mem[addr] & 0x0003) != (val & 0x0003)) {
+			u16 hz = 8 << (val & 0x0003);
+			printf("*** TMB1 FREQ set to %dHz\n", hz);
+			timer_tmb1.interval = 1000000 / hz;
+		}
+		if ((mem[addr] & 0x000c) != (val & 0x000c)) {
+			u16 hz = 128 << ((val & 0x000c) >> 2);
+			printf("*** TMB2 FREQ set to %dHz\n", hz);
+			timer_tmb2.interval = 1000000 / hz;
+		}
 		break;
 
 	// case 0x3d11: timebase clear
@@ -439,4 +466,10 @@ u16 io_load(u32 addr)
 	}
 
 	return val;
+}
+
+void io_init(void)
+{
+	timer_add(&timer_tmb1);
+	timer_add(&timer_tmb2);
 }

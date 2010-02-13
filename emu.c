@@ -835,8 +835,6 @@ static void run(void)
 
 		last_retrace_time = now;
 
-		mem[0x3d22] |= 2;	// TMB2		FIXME: freq
-
 		if (do_extint1) {
 			mem[0x3d22] |= 0x0200;
 			do_extint1 = 0;
@@ -868,9 +866,10 @@ void emu(void)
 {
 	platform_init();
 	read_rom(0);
-	board_init();
-	audio_init();
 	timer_init();
+	board_init();
+	io_init();
+	audio_init();
 
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector

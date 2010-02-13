@@ -18,12 +18,14 @@ struct timer {
 };
 
 void timer_debug(void);
-void timer_init(void);
+
+u32 timer_now(void);
 void timer_add(struct timer *timer);
 void timer_run(void);
-u32 timer_now(void);
 
 // XXX: temp
 void timer_set(u32 usecs);
+
+void timer_init(void);
 
 #endif

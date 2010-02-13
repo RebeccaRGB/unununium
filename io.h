@@ -10,4 +10,6 @@
 void io_store(u16 val, u32 addr);
 u16 io_load(u32 addr);
 
+void io_init(void);
+
 #endif
