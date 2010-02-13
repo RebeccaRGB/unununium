@@ -23,6 +23,8 @@ int hide_page_2;
 int hide_sprites;
 int trace_unknown_video = 1;
 
+int screen_needs_update;
+
 
 static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
@@ -174,8 +176,10 @@ void video_store(u16 val, u32 addr)
 
 		case 0x2863:		// video IRQ status
 			mem[addr] &= ~val;
-			if (val & 1)
+			if (val & 1 && screen_needs_update) {
 				update_screen();
+				screen_needs_update = 0;
+			}
 			return;
 
 		case 0x2870:		// video DMA src

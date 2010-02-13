@@ -19,7 +19,7 @@ void timer_set(void)
 	struct itimerval it;
 
 	it.it_value.tv_sec = 0;
-	it.it_value.tv_usec = 1000000/50;
+	it.it_value.tv_usec = 1000000/250;
 	it.it_interval.tv_sec = 0;
 	it.it_interval.tv_usec = 0;
 

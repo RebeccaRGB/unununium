@@ -15,6 +15,8 @@ extern int hide_page_1;
 extern int hide_page_2;
 extern int hide_sprites;
 
+extern int screen_needs_update;
+
 void video_store(u16 val, u32 addr);
 u16 video_load(u32 addr);
 

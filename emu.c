@@ -44,6 +44,7 @@ static int do_extint1, do_extint2;
 
 static u16 reg[8];
 static u8 sb;
+static u8 sb_banked[3];
 static u8 irq_active, fiq_active;
 static u8 irq_enabled, fiq_enabled;
 
@@ -168,6 +169,97 @@ static void print_state(void)
 	disas(mem, cs_pc());
 }
 
+static void __do_irq(u16 vec)
+{
+	push(reg[7], 0);
+	push(reg[6], 0);
+	reg[7] = load(vec);
+	reg[6] = 0;
+}
+
+static void do_irq(int irqno)
+{
+	if (fiq_active || irq_active || !irq_enabled)
+		return;
+
+	if (trace_irq[irqno])
+		printf("### IRQ #%x ###\n", irqno);
+
+	irq_active = 1;
+
+	sb_banked[0] = sb;
+	sb = sb_banked[1];
+	__do_irq(0xfff8 + irqno);
+	//sb = sb_banked[0];
+}
+
+static void do_fiq(void)
+{
+	if (fiq_active || !fiq_enabled)
+		return;
+
+	if (trace_irq[8])
+		printf("### FIQ ###\n");
+
+	fiq_active = 1;
+
+	sb_banked[irq_active] = sb;
+	sb = sb_banked[2];
+	__do_irq(0xfff6);
+	//sb = sb_banked[irq_active];
+}
+
+static int get_irq(void)
+{
+	// XXX FIQ
+
+	if (!irq_enabled || irq_active)
+		return -1;
+
+	// video
+	if (mem[0x2862] & mem[0x2863])
+		return 0;
+
+	// XXX audio, IRQ1
+
+	// timerA, timerB
+	if (mem[0x3d21] & mem[0x3d22] & 0x0c00)
+		return 2;
+
+	// UART, ADC		XXX: also SPI
+	if (mem[0x3d21] & mem[0x3d22] & 0x2100)
+		return 3;
+
+	// XXX audio, IRQ4
+
+	// extint1, extint2
+	if (mem[0x3d21] & mem[0x3d22] & 0x1200)
+		return 5;
+
+	// 1024Hz, 2048HZ, 4096HZ
+	if (mem[0x3d21] & mem[0x3d22] & 0x0070)
+		return 6;
+
+	// TMB1, TMB2, 4Hz, key change
+	if (mem[0x3d21] & mem[0x3d22] & 0x008b)
+		return 7;
+
+	return -1;
+}
+
+static void maybe_enter_irq(void)
+{
+	int irqno = get_irq();
+
+	if (irqno < 0)
+		return;
+
+	if (irqno == 8)
+		do_fiq();
+	else
+		do_irq(irqno);
+}
+
 static void step(void)
 {
 	u16 op;
@@ -286,12 +378,22 @@ static void step(void)
 		if (opA == 5 && opN == 3 && opB == 0) {
 			reg[6] = pop(0);
 			reg[7] = pop(0);
-			if (fiq_active)
+
+			if (fiq_active) {
 				fiq_active = 0;
-			else if (irq_active)
+				sb_banked[2] = sb;
+				sb = sb_banked[irq_active];
+			} else if (irq_active) {
 				irq_active = 0;
+				sb_banked[1] = sb;
+				sb = sb_banked[0];
+			}
+
+			maybe_enter_irq();
+
 			return;
 		}
+
 		while (opN--)
 			reg[++opA] = pop(opB);
 		return;
@@ -609,53 +711,6 @@ u16 get_video_line(void)
 	return (now - last_retrace_time) * 625 * FREQ / 2 / 1000000;	// 525 for NTSC
 }
 
-static void do_irq(int irqno)
-{
-	u16 vec;
-
-	if (irqno == 8) {	// that's how we say "FIQ"
-		if (!fiq_enabled || fiq_active)
-			return;
-		fiq_active = 1;
-		vec = 0xfff6;
-		if (trace_irq[8])
-			printf("### FIQ ###\n");
-	} else {
-		if (fiq_active)
-			return;
-		if (!irq_enabled || irq_active)
-			return;
-		irq_active = 1;
-		vec = 0xfff8 + irqno;
-		if (trace_irq[irqno])
-			printf("### IRQ #%x ###\n", irqno);
-	}
-
-	u32 saved_sb = sb;
-	push(reg[7], 0);
-	push(reg[6], 0);
-	reg[7] = load(vec);
-	reg[6] = 0;
-
-	int done;
-
-//fprintf(stderr, "** RUN IRQ %d\n", irqno);
-	for (done = 0; !done; ) {
-		if (trace)
-			print_state();
-
-		if (mem[cs_pc()] == 0x9a98)	// RETI
-			done = 1;
-
-		step();
-		insn_count++;
-	}
-
-	sb = saved_sb;
-
-//fprintf(stderr, "** RUN IRQ %d DONE\n", irqno);
-}
-
 static void run_main(void)
 {
 	int idle = 0;
@@ -701,9 +756,14 @@ static void do_controller(void)
 			printf("Goodbye.\n");
 			exit(0);
 
-		case '0' ... '8':
+		case '0' ... '7':
 			printf("*** doing IRQ %c\n", key);
 			do_irq(key - '0');
+			break;
+
+		case '8':
+			printf("*** doing FIQ\n");
+			do_fiq();
 			break;
 
 		case 't':
@@ -757,44 +817,6 @@ static void do_controller(void)
 	} while (key);
 }
 
-static int get_irq(void)
-{
-	// XXX FIQ
-
-	if (!irq_enabled || irq_active)
-		return -1;
-
-	// video
-	if (mem[0x2862] & mem[0x2863])
-		return 0;
-
-	// XXX audio, IRQ1
-
-	// timerA, timerB
-	if (mem[0x3d21] & mem[0x3d22] & 0x0c00)
-		return 2;
-
-	// UART, ADC		XXX: also SPI
-	if (mem[0x3d21] & mem[0x3d22] & 0x2100)
-		return 3;
-
-	// XXX audio, IRQ4
-
-	// extint1, extint2
-	if (mem[0x3d21] & mem[0x3d22] & 0x1200)
-		return 5;
-
-	// 1024Hz, 2048HZ, 4096HZ
-	if (mem[0x3d21] & mem[0x3d22] & 0x0070)
-		return 6;
-
-	// TMB1, TMB2, 4Hz, key change
-	if (mem[0x3d21] & mem[0x3d22] & 0x008b)
-		return 7;
-
-	return -1;
-}
-
 static void run(void)
 {
 	run_main();
@@ -806,6 +828,13 @@ static void run(void)
 	now = 1000000*tv.tv_sec + tv.tv_usec;
 
 	if (now - last_retrace_time >= PERIOD) {
+		static int count = 0;
+		count++;
+		if (count == 5) {
+			screen_needs_update = 1;
+			count = 0;
+		}
+
 		// video
 		// FIXME: make this better
 		static u32 which = 1;
@@ -830,27 +859,20 @@ static void run(void)
 
 		// UART		FIXME
 mem[0x3d22] |= 0x0100;
-
-
-		for (;;) {
-			int irqno = get_irq();
-
-			if (irqno < 0)
-				break;
-
-			do_irq(irqno);
-// HACK, FIXME
-if (irqno == 7) { do_irq(irqno); do_irq(irqno); do_irq(irqno); do_irq(irqno); }
-		}
-
-
-		if (pause_after_every_frame) {
-			printf("*** paused, press a key to continue\n");
-
-			while (update_controller() == 0)
-				;
-		}
 	}
+
+	maybe_enter_irq();
+
+
+#if 0
+// XXX: move this elsewhere
+	if (pause_after_every_frame) {
+		printf("*** paused, press a key to continue\n");
+
+		while (update_controller() == 0)
+			;
+	}
+#endif
 }
 
 void emu(void)
