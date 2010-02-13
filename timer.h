@@ -9,7 +9,21 @@
 
 extern volatile u32 timer_triggered;
 
+struct timer {
+	const char *name;
+	u32 time;
+	u32 interval;
+	void (*run)(void);
+	struct timer *next;
+};
+
+void timer_debug(void);
 void timer_init(void);
-void timer_set(void);
+void timer_add(struct timer *timer);
+void timer_run(void);
+u32 timer_now(void);
+
+// XXX: temp
+void timer_set(u32 usecs);
 
 #endif

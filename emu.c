@@ -5,8 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/time.h>
+#include <unistd.h>	// for usleep
 
 #include "types.h"
 #include "disas.h"
@@ -686,13 +685,7 @@ static u32 last_retrace_time = 0;
 
 static void do_idle(void)
 {
-	u32 now;
-	struct timeval tv;
-
-//	printf("### IDLE ###\n");
-
-	gettimeofday(&tv, 0);
-	now = 1000000*tv.tv_sec + tv.tv_usec;
+	u32 now = timer_now();
 	if (now < last_retrace_time + PERIOD) {
 //		printf("  sleeping %dus\n", last_retrace_time + PERIOD - now);
 		usleep(last_retrace_time + PERIOD - now);
@@ -701,11 +694,7 @@ static void do_idle(void)
 
 u16 get_video_line(void)
 {
-	u32 now;
-	struct timeval tv;
-
-	gettimeofday(&tv, 0);
-	now = 1000000*tv.tv_sec + tv.tv_usec;
+	u32 now = timer_now();
 	return (now - last_retrace_time) * 625 * FREQ / 2 / 1000000;	// 525 for NTSC
 }
 
@@ -736,8 +725,9 @@ static void run_main(void)
 	}
 
 	if (timer_triggered != timer_handled) {
+		timer_run();
 		timer_handled++;
-		timer_set();
+		timer_set(1000000/250);
 	} else
 		do_idle();
 }
@@ -815,15 +805,18 @@ static void do_controller(void)
 	} while (key);
 }
 
+struct timer timer_controller = {
+	.name = "controller",
+	.time = 20000,
+	.interval = 20000,
+	.run = do_controller
+};
+
 static void run(void)
 {
 	run_main();
 
-	struct timeval tv;
-	u32 now;
-
-	gettimeofday(&tv, 0);
-	now = 1000000*tv.tv_sec + tv.tv_usec;
+	u32 now = timer_now();
 
 	if (now - last_retrace_time >= PERIOD) {
 		static int count = 0;
@@ -841,8 +834,6 @@ static void run(void)
 		which ^= 3;
 
 		last_retrace_time = now;
-
-		do_controller();
 
 		mem[0x3d22] |= 2;	// TMB2		FIXME: freq
 
@@ -883,6 +874,8 @@ void emu(void)
 
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector
+
+	timer_add(&timer_controller);
 
 	for (;;)
 		run();
