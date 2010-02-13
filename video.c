@@ -242,26 +242,26 @@ u16 video_load(u32 addr)
 }
 
 
-static u8 x58(u32 x)
+static inline u8 x58(u32 x)
 {
 	x &= 31;
 	return (x << 3) | (x >> 2);
 }
 
-static void set_pixel(u32 offset, u16 rgb)
+static inline void set_pixel(u32 offset, u16 rgb)
 {
 	screen_r[offset] = x58(rgb >> 10);
 	screen_g[offset] = x58(rgb >> 5);
 	screen_b[offset] = x58(rgb);
 }
 
-static u8 mix_channel(u8 old, u8 new)
+static inline u8 mix_channel(u8 old, u8 new)
 {
 	u8 alpha = mem[0x282a];
 	return ((4 - alpha)*old + alpha*new) / 4;
 }
 
-static void mix_pixel(u32 offset, u16 rgb)
+static inline void mix_pixel(u32 offset, u16 rgb)
 {
 	screen_r[offset] = mix_channel(screen_r[offset], x58(rgb >> 10));
 	screen_g[offset] = mix_channel(screen_g[offset], x58(rgb >> 5));

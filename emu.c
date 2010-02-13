@@ -105,18 +105,18 @@ static u16 load(u32 addr)
 	return io_load(addr);
 }
 
-static u32 cs_pc(void)
+static inline u32 cs_pc(void)
 {
 	return ((reg[6] & 0x3f) << 16) | reg[7];
 }
 
-static void set_cs_pc(u32 x)
+static inline void set_cs_pc(u32 x)
 {
 	reg[7] = x;
 	reg[6] = (reg[6] & ~0x3f) | ((x >> 16) & 0x3f);
 }
 
-static void inc_cs_pc(s16 x)
+static inline void inc_cs_pc(s16 x)
 {
 	if (unsp_version < 11)
 		reg[7] += x;
