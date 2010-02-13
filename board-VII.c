@@ -59,7 +59,7 @@ static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 
 static void uart_send(u8 x)
 {
-printf("--- uart_send(%02x)\n", x);
+//printf("--- uart_send(%02x)\n", x);
 }
 
 static u32 controller_in_count;
