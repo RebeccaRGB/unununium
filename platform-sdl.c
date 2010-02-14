@@ -15,7 +15,9 @@
 #include "platform.h"
 
 
-//#define SIZE_3X3
+//#define SIZE_1X1
+//#define SIZE_2X2
+#define SIZE_3X3
 
 
 static void *rom_file;
@@ -98,6 +100,34 @@ void update_screen(void)
 
 	u32 x, y;
 	for (y = 0; y < 240; y++) {
+#ifdef SIZE_1X1
+		u32 *p = sdl_surface->pixels + y*sdl_surface->pitch;
+		u8 *s_r = screen_r + 320*y;
+		u8 *s_g = screen_g + 320*y;
+		u8 *s_b = screen_b + 320*y;
+
+		for (x = 0; x < 320; x++)
+			*p++ = SDL_MapRGB(sdl_surface->format, *s_r++, *s_g++, *s_b++);
+#endif
+#ifdef SIZE_2X2
+		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;
+		u32 *p2 = sdl_surface->pixels + (2*y+1)*sdl_surface->pitch;
+		u8 *s_r = screen_r + 320*y;
+		u8 *s_g = screen_g + 320*y;
+		u8 *s_b = screen_b + 320*y;
+
+		for (x = 0; x < 320; x++) {
+			u32 c = SDL_MapRGB(sdl_surface->format, *s_r++, *s_g++, *s_b++);
+
+			p[0] = c;
+			p[1] = c;
+			p += 2;
+
+			p2[0] = c;
+			p2[1] = c;
+			p2 += 2;
+		}
+#endif
 #ifdef SIZE_3X3
 		u32 *p = sdl_surface->pixels + 3*y*sdl_surface->pitch;
 		u32 *p2 = sdl_surface->pixels + (3*y+1)*sdl_surface->pitch;
@@ -123,24 +153,6 @@ void update_screen(void)
 			p3[1] = c;
 			p3[2] = c;
 			p3 += 3;
-		}
-#else
-		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;
-		u32 *p2 = sdl_surface->pixels + (2*y+1)*sdl_surface->pitch;
-		u8 *s_r = screen_r + 320*y;
-		u8 *s_g = screen_g + 320*y;
-		u8 *s_b = screen_b + 320*y;
-
-		for (x = 0; x < 320; x++) {
-			u32 c = SDL_MapRGB(sdl_surface->format, *s_r++, *s_g++, *s_b++);
-
-			p[0] = c;
-			p[1] = c;
-			p += 2;
-
-			p2[0] = c;
-			p2[1] = c;
-			p2 += 2;
 		}
 #endif
 	}
@@ -281,10 +293,14 @@ void platform_init(void)
 
 	SDL_WM_SetCaption("Unununium", 0);
 
+#ifdef SIZE_1X1
+	sdl_surface = SDL_SetVideoMode(320, 240, 32, SDL_SWSURFACE);
+#endif
+#ifdef SIZE_2X2
+	sdl_surface = SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
+#endif
 #ifdef SIZE_3X3
 	sdl_surface = SDL_SetVideoMode(960, 720, 32, SDL_SWSURFACE);
-#else
-	sdl_surface = SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
 #endif
 	if (!sdl_surface)
 		fatal("Unable to initialise video: %s\n", SDL_GetError());
