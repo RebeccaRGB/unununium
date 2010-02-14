@@ -22,8 +22,8 @@
 // IOC5   test point
 // IOC6   amp power
 // IOC7   system reset
-// IOC8   controller pin 8
-// IOC9   controller pin 5
+// IOC8   controller pin 8    controller select, high active
+// IOC9   controller pin 5     " "
 // IOC10  controller pin 9 (also extint1)
 // IOC11  N/C?
 // IOC12  controller pin 6 (also extint2)
@@ -60,18 +60,49 @@
 #include "board.h"
 
 
+static int trace_gpio = 0;
+
 static void init(void)
 {
 	if (mem[0x5675c] == 0x9311 && mem[0x5675e] == 0x4240 &&	// Winnie
 	    mem[0x5675f] == 0x4e44)
 		board->idle_pc = 0x5675c;
 
-	else
-		board->idle_pc = 0x4003a;	// studio, FIXME
+//	else
+//		board->idle_pc = 0x4003a;	// studio, FIXME
+}
+
+static u32 bit(u16 x, u32 n)
+{
+	return (x >> n) & 1;
 }
 
 static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 {
+//if (n == 2) what &= ~0x1400;
+//if (n == 2) what |= 0x1400;
+
+	if (trace_gpio) {
+		static u16 old[3][4];
+
+		u32 i;
+		for (i = 0; i < (n == 1 ? 8 : 16); i++)
+			if (bit(what, i) != bit(old[n][0], i)
+			   || bit(push, i) != bit(old[n][1], i)
+			   || bit(pull, i) != bit(old[n][2], i)
+			   || bit(special, i) != bit(old[n][3], i))
+				printf("IO%c%d data=%x push=%x pull=%x special=%x\n",
+				       'A' + n, i, bit(what, i), bit(push, i), bit(pull, i), bit(special, i));
+
+		old[n][0] = what;
+		old[n][1] = push;
+		old[n][2] = pull;
+		old[n][3] = special;
+	}
+
+//	printf("IO%c data=%04x push=%04x pull=%04x special=%04x\n",
+//	       'A' + n, what, push, pull, special);
+
 	return what;
 }
 
