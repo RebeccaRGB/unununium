@@ -48,6 +48,7 @@ static u8 irq_active, fiq_active;
 static u8 irq_enabled, fiq_enabled;
 
 static u64 insn_count;
+static u32 cycle_count;  // 1728 cycles/line for PAL, 1716 for NTSC
 
 
 u32 get_ds(void)
@@ -296,6 +297,8 @@ static void step(void)
 
 	// jumps
 	if (opA == 7 && op1 < 2) {
+		cycle_count += 2;
+
 		switch (op0) {
 		case 0:		// JCC, JB, JNAE; C == 0
 			if ((reg[6] & 0x40) == 0)
@@ -353,6 +356,8 @@ static void step(void)
 			goto bad;
 
 		do_jump:
+			cycle_count += 2;
+
 			if (op1 == 0)
 				inc_cs_pc(opimm);
 			else
@@ -364,6 +369,8 @@ static void step(void)
 
 	// PUSH
 	if (op1 == 2 && op0 == 13) {
+		cycle_count += 4 + 2*opN;
+
 		while (opN--)
 			push(reg[opA--], opB);
 		return;
@@ -373,6 +380,8 @@ static void step(void)
 	if (op1 == 2 && op0 == 9) {
 		// special case for RETI
 		if (opA == 5 && opN == 3 && opB == 0) {
+			cycle_count += 8;
+
 			reg[6] = pop(0);
 			reg[7] = pop(0);
 
@@ -391,6 +400,8 @@ static void step(void)
 			return;
 		}
 
+		cycle_count += 4 + 2*opN;
+
 		while (opN--)
 			reg[++opA] = pop(opB);
 		return;
@@ -403,6 +414,9 @@ static void step(void)
 			if (opN == 1) {
 				if (opA == 7)
 					goto bad;
+
+				cycle_count += 12;
+
 				x = reg[opA]*reg[opB];
 				if (reg[opB] & 0x8000)
 					x -= reg[opA] << 16;
@@ -411,10 +425,14 @@ static void step(void)
 				return;
 			} else
 				goto bad;
+
 		case 4:		// MUL SS
 			if (opN == 1) {
 				if (opA == 7)
 					goto bad;
+
+				cycle_count += 12;
+
 				x = reg[opA]*reg[opB];
 				if (reg[opB] & 0x8000)
 					x -= reg[opA] << 16;
@@ -425,22 +443,33 @@ static void step(void)
 				return;
 			} else
 				goto bad;
+
 		case 1:		// CALL
 			if ((opA & 1) != 0)
 				goto bad;
+
+			cycle_count += 9;
+
 			x1 = mem[cs_pc()];
 			inc_cs_pc(1);
 			push(reg[7], 0);
 			push(reg[6], 0);
 			set_cs_pc((opimm << 16) | x1);
 			return;
+
 		case 2:		// JMPF
 			if (opA != 7)
 				goto bad;
+
+			cycle_count += 5;
+
 			x1 = mem[cs_pc()];
 			set_cs_pc((opimm << 16) | x1);
 			return;
+
 		case 5:		// VARIOUS
+			cycle_count += 2;
+
 			switch (opimm) {
 			case 0:
 				irq_enabled = 0;
@@ -483,6 +512,7 @@ static void step(void)
 			default:
 				goto bad;
 			}
+
 		default:
 			goto bad;
 		}
@@ -496,16 +526,26 @@ static void step(void)
 
 	switch (op1) {
 	case 0:		// [BP+imm6]
+		cycle_count += 6;
+
 		d = (u16)(reg[5] + opimm);
 		if (op0 == 13)
 			x1 = 0x0bad;
 		else
 			x1 = load(d);
 		break;
+
 	case 1:		// imm6
+		cycle_count += 2;
+
 		x1 = opimm;
 		break;
+
 	case 3:		// [Rb] and friends
+		cycle_count += 6;
+		if (opA == 7)
+			cycle_count++;
+
 		if (opN & 4) {
 			if ((opN & 3) == 3)
 				inc_ds_reg(opB, 1);
@@ -532,17 +572,32 @@ static void step(void)
 				reg[opB]++;
 		}
 		break;
+
 	case 4:
 		switch(opN) {
 		case 0:		// Rb
+			cycle_count += 3;
+			if (opA == 7)
+				cycle_count += 2;
+
 			x1 = reg[opB];
 			break;
+
 		case 1:		// imm16
+			cycle_count += 4;
+			if (opA == 7)
+				cycle_count++;
+
 			x0 = reg[opB];
 			x1 = mem[cs_pc()];
 			inc_cs_pc(1);
 			break;
+
 		case 2:		// [imm16]
+			cycle_count += 7;
+			if (opA == 7)
+				cycle_count++;
+
 			x0 = reg[opB];
 			d = mem[cs_pc()];
 			inc_cs_pc(1);
@@ -551,14 +606,24 @@ static void step(void)
 			else
 				x1 = load(d);
 			break;
+
 		case 3:		// [imm16] = ...
+			cycle_count += 7;
+			if (opA == 7)
+				cycle_count++;
+
 			x0 = reg[opB];
 			x1 = reg[opA];
 			d = mem[cs_pc()];
 			inc_cs_pc(1);
 			break;
+
 		default:	// ASR
 			{
+				cycle_count += 3;
+				if (opA == 7)
+					cycle_count += 2;
+
 				u32 shift = (reg[opB] << 4) | sb;
 				if (shift & 0x80000)
 					shift |= 0xf00000;
@@ -568,7 +633,12 @@ static void step(void)
 			}
 		}
 		break;
+
 	case 5:
+		cycle_count += 3;
+		if (opA == 7)
+			cycle_count += 2;
+
 		if (opN < 4) {	// LSL
 			u32 shift = ((sb << 16) | reg[opB]) << (opN + 1);
 			sb = (shift >> 16) & 0xf;
@@ -579,7 +649,12 @@ static void step(void)
 			x1 = (shift >> 4) & 0xffff;
 		}
 		break;
+
 	case 6:
+		cycle_count += 3;
+		if (opA == 7)
+			cycle_count += 2;
+
 		if (opN < 4) {	// ROL
 			u32 shift = ((((sb << 16) | reg[opB]) << 4) | sb) << (opN + 1);
 			sb = (shift >> 20) & 0x0f;
@@ -590,9 +665,15 @@ static void step(void)
 			x1 = (shift >> 4) & 0xffff;
 		}
 		break;
+
 	case 7:
+		cycle_count += 5;
+		if (opA == 7)
+			cycle_count++;
+
 		x1 = load(opimm);
 		break;
+
 	default:
 		goto bad;
 	}
@@ -640,7 +721,7 @@ static void step(void)
 	}
 
 	// set N and Z flags
-	if (op0 < 13) {		// not STORE
+	if (op0 < 13 && opA != 7) {	// not STORE
 		reg[6] = (reg[6] & ~0x0300);
 
 		if (x & 0x8000)
@@ -651,7 +732,7 @@ static void step(void)
 	}
 
 	// set S and C flags
-	if (op0 < 5) {		// ADD, ADC, SUB, SBC, CMP
+	if (op0 < 5 && opA != 7) {	// ADD, ADC, SUB, SBC, CMP
 		reg[6] = (reg[6] & ~0x00c0);
 
 		if (x != (u16)x)
