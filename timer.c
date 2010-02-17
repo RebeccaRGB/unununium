@@ -2,52 +2,22 @@
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-#include <sys/time.h>
-#include <signal.h>
-#include <unistd.h>
 #include <stdio.h>
 
 #include "types.h"
-#include "platform.h"
 
 #include "timer.h"
 
 
-static int trace_timer = 1;
-
-volatile u32 timer_triggered;
+static int trace_timer = 0;
 
 static struct timer *timers;
-static u32 timer_time;
-
-u32 timer_now(void)
-{
-	struct timeval tv;
-
-	gettimeofday(&tv, 0);
-	return 1000000*tv.tv_sec + tv.tv_usec;
-}
-
-void timer_set(u32 usecs)
-{
-	struct itimerval it;
-
-	it.it_value.tv_sec = usecs / 1000000;
-	it.it_value.tv_usec = usecs % 1000000;
-	it.it_interval.tv_sec = 0;
-	it.it_interval.tv_usec = 0;
-
-	int err = setitimer(ITIMER_REAL, &it, 0);
-	if (err)
-		fatal("setitimer failed");
-}
 
 void timer_debug(void)
 {
-	printf("timer head = %u, now = %u\n", timer_time, timer_now());
 	struct timer *timer;
 	for (timer = timers; timer; timer = timer->next)
-		printf("timer \"%s\" %dus\n", timer->name, timer->time);
+		printf("timer \"%s\" %u ticks\n", timer->name, timer->time);
 }
 
 void timer_add(struct timer *timer)
@@ -55,7 +25,7 @@ void timer_add(struct timer *timer)
 	if (timer->time == 0)
 		timer->time = timer->interval;
 
-	u32 time = timer_now() - timer_time + timer->time;
+	u32 time = timer->time;
 	struct timer **p = &timers;
 
 	while (*p && (*p)->time <= time) {
@@ -70,19 +40,18 @@ void timer_add(struct timer *timer)
 		timer->next->time -= time;
 }
 
-void timer_run(void)
+void timer_run(u32 ticks)
 {
-	u32 now = timer_now();
-	u32 elapsed = now - timer_time;
+//printf("going to run for %u ticks...\n", ticks);
+//timer_debug();
 
 	struct timer *timer;
-	while ((timer = timers) && timer->time <= elapsed) {
+	while ((timer = timers) && timer->time <= ticks) {
 		timers = timer->next;
-		timer_time += timer->time;
-		elapsed -= timer->time;
+		ticks -= timer->time;
 
 		if (trace_timer)
-			printf("running timer \"%s\" (%u)\n", timer->name, now);
+			printf("running timer \"%s\"\n", timer->name);
 
 		if (timer->run)
 			timer->run();
@@ -94,25 +63,8 @@ void timer_run(void)
 	}
 
 	if (timer)
-		timer->time -= elapsed;
-	timer_time = now;
-}
+		timer->time -= ticks;
 
-static void alarm_handler(int signo, siginfo_t *si, void *uc)
-{
-	timer_triggered++;
-}
-
-void timer_init(void)
-{
-	struct sigaction sa;
-
-	sa.sa_sigaction = alarm_handler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_SIGINFO;
-	sigaction(SIGALRM, &sa, 0);
-
-	timer_time = timer_now();
-
-	timer_set(1);
+//printf("timers done:\n");
+//timer_debug();
 }

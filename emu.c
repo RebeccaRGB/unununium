@@ -20,12 +20,10 @@
 
 
 #define FREQ 50
-#define PERIOD (500000/FREQ)
+#define PERIOD (1000000/FREQ)
 
 
 u16 mem[N_MEM];
-
-static u32 timer_handled;
 
 static int trace = 0;
 static int trace_new = 0;
@@ -48,7 +46,10 @@ static u8 irq_active, fiq_active;
 static u8 irq_enabled, fiq_enabled;
 
 static u64 insn_count;
-static u32 cycle_count;  // 1728 cycles/line for PAL, 1716 for NTSC
+static u32 cycle_count;
+static u32 line_count;
+static const u32 cycles_per_line = 1728;  // 1728 for PAL, 1716 for NTSC
+static const u32 lines_per_field = 312;   // 312 for PAL, 262 for NTSC
 
 
 u32 get_ds(void)
@@ -762,11 +763,11 @@ bad:
 	fatal("! UNIMPLEMENTED\n");
 }
 
-static u32 last_retrace_time = 0;
-
 static void do_idle(void)
 {
-	u32 now = timer_now();
+	static u32 last_retrace_time = 0;
+
+	u32 now = get_realtime();
 	if (now < last_retrace_time + PERIOD) {
 //		printf("  sleeping %dus\n", last_retrace_time + PERIOD - now);
 		usleep(last_retrace_time + PERIOD - now);
@@ -775,17 +776,16 @@ static void do_idle(void)
 
 u16 get_video_line(void)
 {
-	u32 now = timer_now();
-	return (now - last_retrace_time) * 625 * FREQ / 2 / 1000000;	// 525 for NTSC
+	return line_count;
 }
 
-static void run_main(void)
+static void run_line(void)
 {
 	int idle = 0;
 
 	for (;;) {
-		if (timer_triggered != timer_handled)
-			break;
+//		if (timer_triggered != timer_handled)
+//			break;
 
 		if (trace)
 			print_state();
@@ -797,20 +797,20 @@ static void run_main(void)
 
 		if (cs_pc() == board->idle_pc) {
 			idle++;
-			if (idle == 2)
+			if (idle == 2) {
+				cycle_count = 0;
 				break;
+			}
 		}
 
 		step();
 		insn_count++;
+		if (cycle_count >= cycles_per_line) {
+//			printf("PING!\n");
+			cycle_count -= cycles_per_line;
+			break;
+		}
 	}
-
-	if (timer_triggered != timer_handled) {
-		timer_run();
-		timer_handled++;
-		timer_set(1000000/250);
-	} else
-		do_idle();
 }
 
 static void do_controller(void)
@@ -888,66 +888,64 @@ static void do_controller(void)
 
 struct timer timer_controller = {
 	.name = "controller",
-	.time = 20000,
+	.time = 0,
 	.interval = 20000,
 	.run = do_controller
 };
 
 static void run(void)
 {
-	run_main();
+	for (line_count = 0; line_count < lines_per_field; line_count++) {
+		run_line();
 
-	u32 now = timer_now();
+		timer_run(cycles_per_line);
 
-	if (now - last_retrace_time >= PERIOD) {
-		static int count = 0;
-		count++;
-		if (count == 5) {
-			screen_needs_update = 1;
-			count = 0;
-		}
+		if (line_count == 240)
+			mem[0x2863] |= 1;	// trigger vblank IRQ
+		if (line_count == mem[0x2836])
+			mem[0x2863] |= 2;	// trigger vpos IRQ
 
-		// video
-		// FIXME: make this better
-		static u32 which = 1;
-
-		mem[0x2863] |= which;
-		which ^= 3;
-
-		last_retrace_time = now;
-
-		if (do_extint1) {
-			mem[0x3d22] |= 0x0200;
-			do_extint1 = 0;
-		}
-		if (do_extint2) {
-			mem[0x3d22] |= 0x1000;
-			do_extint2 = 0;
-		}
-
-		// UART		FIXME
-mem[0x3d22] |= 0x0100;
+		maybe_enter_irq();
 	}
 
-	maybe_enter_irq();
+//	static u32 last;
+//	u32 now = get_realtime();
+//	printf("-> %uus for this field (cpu)\n", now - last);
+//	last = now;
 
+	update_screen();
 
-#if 0
-// XXX: move this elsewhere
+//	now = get_realtime();
+//	printf("-> %uus for this field (gfx)\n", now - last);
+//	last = now;
+
+	do_controller();
+
+	mem[0x3d22] |= 0x0100; // UART  FIXME
+
+	if (do_extint1) {
+		mem[0x3d22] |= 0x0200;
+		do_extint1 = 0;
+	}
+	if (do_extint2) {
+		mem[0x3d22] |= 0x1000;
+		do_extint2 = 0;
+	}
+
 	if (pause_after_every_frame) {
 		printf("*** paused, press a key to continue\n");
 
 		while (update_controller() == 0)
 			;
 	}
-#endif
+
+	do_idle();
 }
 
 void emu(void)
 {
 	platform_init();
 	read_rom(0);
-	timer_init();
 	board_init();
 	io_init();
 	audio_init();

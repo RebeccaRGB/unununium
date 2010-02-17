@@ -7,8 +7,6 @@
 
 #include "types.h"
 
-extern volatile u32 timer_triggered;
-
 struct timer {
 	const char *name;
 	u32 time;
@@ -19,13 +17,7 @@ struct timer {
 
 void timer_debug(void);
 
-u32 timer_now(void);
 void timer_add(struct timer *timer);
-void timer_run(void);
-
-// XXX: temp
-void timer_set(u32 usecs);
-
-void timer_init(void);
+void timer_run(u32 ticks);
 
 #endif

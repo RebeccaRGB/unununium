@@ -28,6 +28,8 @@ void save_eeprom(void *cookie, u8 *data, u32 len);
 void update_screen(void);
 char update_controller(void);
 
+u32 get_realtime(void);
+
 void fatal(const char *format, ...);
 void warn(const char *format, ...);
 

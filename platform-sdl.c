@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <SDL.h>
 
 #include "types.h"
@@ -260,6 +261,16 @@ char update_controller(void)
 	return 0;
 }
 
+
+u32 get_realtime(void)
+{
+	struct timeval tv;
+
+	gettimeofday(&tv, 0);
+	return 1000000*tv.tv_sec + tv.tv_usec;
+}
+
+
 void warn(const char *format, ...)
 {
 	va_list ap;
@@ -275,6 +286,7 @@ void fatal(const char *format, ...)
 	exit(1);
 }
 
+
 static void mix(void *cookie, u8 *data, int n)
 {
 	if (mute_audio) {
@@ -284,6 +296,7 @@ static void mix(void *cookie, u8 *data, int n)
 
 	audio_render((s16 *)data, n/2);
 }
+
 
 void platform_init(void)
 {

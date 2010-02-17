@@ -132,13 +132,13 @@ static void do_tmb2(void)
 
 static struct timer timer_tmb1 = {
 	.name = "TMB1",
-	.interval = 1000000/8,
+	.interval = 27000000/8,
 	.run = do_tmb1
 };
 
 static struct timer timer_tmb2 = {
 	.name = "TMB2",
-	.interval = 1000000/128,
+	.interval = 27000000/128,
 	.run = do_tmb2
 };
 
@@ -190,12 +190,12 @@ void io_store(u16 val, u32 addr)
 		if ((mem[addr] & 0x0003) != (val & 0x0003)) {
 			u16 hz = 8 << (val & 0x0003);
 			printf("*** TMB1 FREQ set to %dHz\n", hz);
-			timer_tmb1.interval = 1000000 / hz;
+			timer_tmb1.interval = 27000000 / hz;
 		}
 		if ((mem[addr] & 0x000c) != (val & 0x000c)) {
 			u16 hz = 128 << ((val & 0x000c) >> 2);
 			printf("*** TMB2 FREQ set to %dHz\n", hz);
-			timer_tmb2.interval = 1000000 / hz;
+			timer_tmb2.interval = 27000000 / hz;
 		}
 		break;
 
@@ -225,7 +225,6 @@ void io_store(u16 val, u32 addr)
 		break;
 
 	case 0x3d22:		// IRQ ack
-//printf("######## ACK %04x\n", val);
 		mem[addr] &= ~val;
 		return;
 
