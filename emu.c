@@ -32,7 +32,7 @@ static int trace_calls = 0;
 static int pause_after_every_frame = 0;
 //static u8 trace_irq[9] = { 0, 1, 1, 1, 1, 1, 1, 1, 1 };
 static u8 trace_irq[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-static u8 unsp_version = 11;	// version a.b as 10*a + b
+static const u32 unsp_version = 11;	// version a.b as 10*a + b
 static u8 ever_ran_this[N_MEM];
 
 
@@ -117,7 +117,7 @@ static inline void set_cs_pc(u32 x)
 	reg[6] = (reg[6] & ~0x3f) | ((x >> 16) & 0x3f);
 }
 
-static inline void inc_cs_pc(s16 x)
+static inline void inc_cs_pc(int x)
 {
 	if (unsp_version < 11)
 		reg[7] += x;
@@ -259,6 +259,14 @@ static void maybe_enter_irq(void)
 		do_irq(irqno);
 }
 
+static inline u16 fetch(void)
+{
+	u16 x = load(cs_pc());
+	inc_cs_pc(1);
+
+	return x;
+}
+
 static void step(void)
 {
 	u16 op;
@@ -273,8 +281,7 @@ static void step(void)
 			print_state();
 	}
 
-	op = mem[cs_pc()];
-	inc_cs_pc(1);
+	op = fetch();
 
 
 	// the top four bits are the alu op or the branch condition, or E or F
@@ -451,8 +458,7 @@ static void step(void)
 
 			cycle_count += 9;
 
-			x1 = mem[cs_pc()];
-			inc_cs_pc(1);
+			x1 = fetch();
 			push(reg[7], 0);
 			push(reg[6], 0);
 			set_cs_pc((opimm << 16) | x1);
@@ -464,7 +470,7 @@ static void step(void)
 
 			cycle_count += 5;
 
-			x1 = mem[cs_pc()];
+			x1 = fetch();
 			set_cs_pc((opimm << 16) | x1);
 			return;
 
@@ -590,8 +596,7 @@ static void step(void)
 				cycle_count++;
 
 			x0 = reg[opB];
-			x1 = mem[cs_pc()];
-			inc_cs_pc(1);
+			x1 = fetch();
 			break;
 
 		case 2:		// [imm16]
@@ -600,8 +605,7 @@ static void step(void)
 				cycle_count++;
 
 			x0 = reg[opB];
-			d = mem[cs_pc()];
-			inc_cs_pc(1);
+			d = fetch();
 			if (op0 == 13)
 				x1 = 0x0bad;
 			else
@@ -615,8 +619,7 @@ static void step(void)
 
 			x0 = reg[opB];
 			x1 = reg[opA];
-			d = mem[cs_pc()];
-			inc_cs_pc(1);
+			d = fetch();
 			break;
 
 		default:	// ASR
