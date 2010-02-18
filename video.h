@@ -22,4 +22,6 @@ u16 video_load(u32 addr);
 
 void blit_screen(void);
 
+void video_init(void);
+
 #endif

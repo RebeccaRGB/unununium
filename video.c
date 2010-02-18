@@ -471,3 +471,9 @@ void blit_screen(void)
 			blit_sprites(depth);
 	}
 }
+
+void video_init(void)
+{
+	mem[0x2836] = 0xffff;
+	mem[0x2837] = 0xffff;
+}

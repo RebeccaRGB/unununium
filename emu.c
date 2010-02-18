@@ -948,6 +948,7 @@ void emu(void)
 	read_rom(0);
 	board_init();
 	io_init();
+	video_init();
 	audio_init();
 
 	memset(reg, 0, sizeof reg);
