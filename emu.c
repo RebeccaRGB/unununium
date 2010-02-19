@@ -890,13 +890,6 @@ static void do_controller(void)
 	} while (key);
 }
 
-struct timer timer_controller = {
-	.name = "controller",
-	.time = 0,
-	.interval = 20000,
-	.run = do_controller
-};
-
 static void run(void)
 {
 	for (line_count = 0; line_count < lines_per_field; line_count++) {
@@ -957,8 +950,6 @@ void emu(void)
 
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector
-
-	timer_add(&timer_controller);
 
 	for (;;)
 		run();
