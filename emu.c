@@ -775,6 +775,7 @@ static void do_idle(void)
 //		printf("  sleeping %dus\n", last_retrace_time + PERIOD - now);
 		usleep(last_retrace_time + PERIOD - now);
 	}
+	last_retrace_time = now;
 }
 
 u16 get_video_line(void)
@@ -916,6 +917,8 @@ static void run(void)
 //	printf("-> %uus for this field (cpu)\n", now - last);
 //	last = now;
 
+	do_idle();
+
 	update_screen();
 
 //	now = get_realtime();
@@ -941,8 +944,6 @@ static void run(void)
 		while (update_controller() == 0)
 			;
 	}
-
-	do_idle();
 }
 
 void emu(void)
