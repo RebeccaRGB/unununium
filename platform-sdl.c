@@ -91,8 +91,23 @@ void save_eeprom(void *cookie, u8 *data, u32 len)
 
 static SDL_Surface *sdl_surface;
 
+static inline u8 x58(u32 x)
+{
+	x &= 31;
+	return (x << 3) | (x >> 2);
+}
+
 void update_screen(void)
 {
+	u32 i;
+	for (i = 0; i < 256; i++) {
+		u16 p = mem[0x2b00 + i];
+		palette_rgb[i] = SDL_MapRGB(sdl_surface->format,
+		                            x58((p >> 10) & 31),
+		                            x58((p >> 5) & 31),
+		                            x58(p & 31));
+	}
+
 	blit_screen();
 
 	if (SDL_MUSTLOCK(sdl_surface))
@@ -103,58 +118,40 @@ void update_screen(void)
 	for (y = 0; y < 240; y++) {
 #ifdef SIZE_1X1
 		u32 *p = sdl_surface->pixels + y*sdl_surface->pitch;
-		u8 *s_r = screen_r + 320*y;
-		u8 *s_g = screen_g + 320*y;
-		u8 *s_b = screen_b + 320*y;
+		u32 *s = screen + 320*y;
 
-		for (x = 0; x < 320; x++)
-			*p++ = SDL_MapRGB(sdl_surface->format, *s_r++, *s_g++, *s_b++);
+		memcpy(p, s, 4*320);
 #endif
 #ifdef SIZE_2X2
 		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;
 		u32 *p2 = sdl_surface->pixels + (2*y+1)*sdl_surface->pitch;
-		u8 *s_r = screen_r + 320*y;
-		u8 *s_g = screen_g + 320*y;
-		u8 *s_b = screen_b + 320*y;
+		u32 *s = screen + 320*y;
 
 		for (x = 0; x < 320; x++) {
-			u32 c = SDL_MapRGB(sdl_surface->format, *s_r++, *s_g++, *s_b++);
+			u32 c = *s++;
 
-			p[0] = c;
-			p[1] = c;
-			p += 2;
-
-			p2[0] = c;
-			p2[1] = c;
-			p2 += 2;
+			p[2*x] = c;
+			p[2*x + 1] = c;
 		}
+
+		memcpy(p2, p, 8*320);
 #endif
 #ifdef SIZE_3X3
 		u32 *p = sdl_surface->pixels + 3*y*sdl_surface->pitch;
 		u32 *p2 = sdl_surface->pixels + (3*y+1)*sdl_surface->pitch;
 		u32 *p3 = sdl_surface->pixels + (3*y+2)*sdl_surface->pitch;
-		u8 *s_r = screen_r + 320*y;
-		u8 *s_g = screen_g + 320*y;
-		u8 *s_b = screen_b + 320*y;
+		u32 *s = screen + 320*y;
 
 		for (x = 0; x < 320; x++) {
-			u32 c = SDL_MapRGB(sdl_surface->format, *s_r++, *s_g++, *s_b++);
+			u32 c = *s++;
 
-			p[0] = c;
-			p[1] = c;
-			p[2] = c;
-			p += 3;
-
-			p2[0] = c;
-			p2[1] = c;
-			p2[2] = c;
-			p2 += 3;
-
-			p3[0] = c;
-			p3[1] = c;
-			p3[2] = c;
-			p3 += 3;
+			p[2*x] = c;
+			p[2*x + 1] = c;
+			p[2*x + 2] = c;
 		}
+
+		memcpy(p2, p, 12*320);
+		memcpy(p3, p, 12*320);
 #endif
 	}
 
@@ -298,6 +295,9 @@ static void mix(void *cookie, u8 *data, int n)
 }
 
 
+u32 pixel_mask[3];
+u32 pixel_shift[3];
+
 void platform_init(void)
 {
 	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO) < 0)
@@ -315,8 +315,18 @@ void platform_init(void)
 #ifdef SIZE_3X3
 	sdl_surface = SDL_SetVideoMode(960, 720, 32, SDL_SWSURFACE);
 #endif
+
 	if (!sdl_surface)
 		fatal("Unable to initialise video: %s\n", SDL_GetError());
+	if (sdl_surface->format->BytesPerPixel != 4)
+		fatal("Didn't get a 32-bit surface");
+
+	pixel_mask[0] = sdl_surface->format->Rmask;
+	pixel_mask[1] = sdl_surface->format->Gmask;
+	pixel_mask[2] = sdl_surface->format->Bmask;
+	pixel_shift[0] = sdl_surface->format->Rshift;
+	pixel_shift[1] = sdl_surface->format->Gshift;
+	pixel_shift[2] = sdl_surface->format->Bshift;
 
 	SDL_AudioSpec spec = {
 		.freq = 44100,

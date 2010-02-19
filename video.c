@@ -14,9 +14,8 @@
 #include "video.h"
 
 
-u8 screen_r[320*240];
-u8 screen_g[320*240];
-u8 screen_b[320*240];
+u32 palette_rgb[256];
+u32 screen[320*240];
 
 int hide_page_1;
 int hide_page_2;
@@ -89,6 +88,7 @@ static void trace_unknown(u32 addr, u16 val, int is_read)
 		       is_read ? "READ" : "WRITE", addr, val);
 }
 
+
 static void do_dma(u32 len)
 {
 	u32 src = mem[0x2870];
@@ -125,6 +125,8 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x2820 ... 0x2822:	// bitmap offsets
+			if (mem[addr] != val)
+				bitmap_cache_clear();
 			break;
 
 		case 0x282a:		// blend level
@@ -237,36 +239,37 @@ u16 video_load(u32 addr)
 }
 
 
-static inline u8 x58(u32 x)
+static u8 *bitmap_cache[65536];
+static u16 bitmap_cache_attr[65536];
+
+static u32 bitmap_cache_hash(u32 page, u16 tile, u16 attr)
 {
-	x &= 31;
-	return (x << 3) | (x >> 2);
+	return (page << 14) ^ tile ^ (attr & 0x0fff);
 }
 
-static inline void set_pixel(u32 offset, u16 rgb)
+void bitmap_cache_clear(void)
 {
-	screen_r[offset] = x58(rgb >> 10);
-	screen_g[offset] = x58(rgb >> 5);
-	screen_b[offset] = x58(rgb);
+	u32 i;
+	for (i = 0; i < 65536; i++)
+		if (bitmap_cache[i]) {
+			free(bitmap_cache[i]);
+			bitmap_cache[i] = 0;
+		}
 }
 
-static inline u8 mix_channel(u8 old, u8 new)
+static u8 *bitmap_cache_make(u32 page, u16 tile, u16 attr)
 {
-	u8 alpha = mem[0x282a];
-	return ((4 - alpha)*old + alpha*new) / 4;
-}
+	u32 hash = bitmap_cache_hash(page, tile, attr);
+	if (bitmap_cache[hash] && bitmap_cache_attr[hash] == (attr & 0x0fff))
+		return bitmap_cache[hash];
 
-static inline void mix_pixel(u32 offset, u16 rgb)
-{
-	screen_r[offset] = mix_channel(screen_r[offset], x58(rgb >> 10));
-	screen_g[offset] = mix_channel(screen_g[offset], x58(rgb >> 5));
-	screen_b[offset] = mix_channel(screen_b[offset], x58(rgb));
-}
-
-static void blit(u32 xoff, u32 yoff, u32 attr, u32 ctrl, u32 bitmap, u16 tile)
-{
 	u32 h = sizes[(attr & 0x00c0) >> 6];
 	u32 w = sizes[(attr & 0x0030) >> 4];
+
+	u8 *p = malloc(h * w);
+	free(bitmap_cache[hash]);
+	bitmap_cache[hash] = p;
+	bitmap_cache_attr[hash] = attr & 0x0fff;
 
 	u32 yflipmask = attr & 0x0008 ? h - 1 : 0;
 	u32 xflipmask = attr & 0x0004 ? w - 1 : 0;
@@ -277,15 +280,16 @@ static void blit(u32 xoff, u32 yoff, u32 attr, u32 ctrl, u32 bitmap, u16 tile)
 	palette_offset >>= nc;
 	palette_offset <<= nc;
 
+	u32 bitmap = 0x40*mem[0x2820 + page];
 	u32 m = bitmap + nc*w*h/16*tile;
 	u32 bits = 0;
 	u32 nbits = 0;
 
 	for (u32 y = 0; y < h; y++) {
-		u32 yy = (yoff + (y ^ yflipmask)) & 0x1ff;
+		u32 yy = y ^ yflipmask;
 
 		for (u32 x = 0; x < w; x++) {
-			u32 xx = (xoff + (x ^ xflipmask)) & 0x1ff;
+			u32 xx = x ^ xflipmask;
 
 			bits <<= nc;
 			if (nbits < nc) {
@@ -299,6 +303,47 @@ static void blit(u32 xoff, u32 yoff, u32 attr, u32 ctrl, u32 bitmap, u16 tile)
 			u32 pal = palette_offset | (bits >> 16);
 			bits &= 0xffff;
 
+			p[w*yy + xx] = pal;
+		}
+	}
+
+	return p;
+}
+
+
+static inline u8 mix_channel(u8 old, u8 new)
+{
+	u8 alpha = mem[0x282a];
+	return ((4 - alpha)*old + alpha*new) / 4;
+}
+
+static inline void mix_pixel(u32 offset, u32 rgb)
+{
+	u32 x = 0;
+	u32 i;
+	for (i = 0; i < 3; i++) {
+		u8 old = (screen[offset] & pixel_mask[i]) >> pixel_shift[i];
+		u8 new = (rgb & pixel_mask[i]) >> pixel_shift[i];
+		x |= (mix_channel(old, new) << pixel_shift[i]) & pixel_mask[i];
+	}
+	screen[offset] = x;
+}
+
+static void blit(u32 page, u32 xoff, u32 yoff, u32 attr, u32 ctrl, u16 tile)
+{
+	u8 *p = bitmap_cache_make(page, tile, attr);
+
+	u32 h = sizes[(attr & 0x00c0) >> 6];
+	u32 w = sizes[(attr & 0x0030) >> 4];
+
+	for (u32 y = 0; y < h; y++) {
+		u32 yy = (yoff + y) & 0x1ff;
+
+		for (u32 x = 0; x < w; x++) {
+			u32 xx = (xoff + x) & 0x1ff;
+
+			u32 pal = *p++;
+
 			if ((ctrl & 0x0010) && yy < 240)
 				xx = (xx - mem[0x2900 + yy]) & 0x01ff;
 
@@ -309,18 +354,19 @@ static void blit(u32 xoff, u32 yoff, u32 attr, u32 ctrl, u32 bitmap, u16 tile)
 				u16 rgb = mem[0x2b00 + pal];
 				if ((rgb & 0x8000) == 0) {
 					if (attr & 0x4000 || ctrl & 0x0100)
-						mix_pixel(xx + 320*yy, rgb);
+						mix_pixel(xx + 320*yy, palette_rgb[pal]);
 					else
-						set_pixel(xx + 320*yy, rgb);
+						screen[xx + 320*yy] = palette_rgb[pal];
 				}
 			}
 		}
 	}
 }
 
-static void blit_page(u32 depth, u32 bitmap, u16 *regs)
+static void __attribute__((noinline)) blit_page(u32 page, u32 depth)
 {
-	u32 x0, y0;
+	u16 *regs = &mem[0x2810 + 6*page];
+
 	u32 xscroll = regs[0];
 	u32 yscroll = regs[1];
 	u32 attr = regs[2];
@@ -340,6 +386,7 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 	u32 hn = 256/h;
 	u32 wn = 512/h;
 
+	u32 x0, y0;
 	for (y0 = 0; y0 < hn; y0++)
 		for (x0 = 0; x0 < wn; x0++) {
 			u32 which = (ctrl & 4) ? 0 : x0 + wn*y0;
@@ -369,7 +416,7 @@ static void blit_page(u32 depth, u32 bitmap, u16 *regs)
 			u32 yy = ((h*y0 - yscroll + 0x10) & 0xff) - 0x10;
 			u32 xx = (w*x0 - xscroll) & 0x1ff;
 
-			blit(xx, yy, tileattr, tilectrl, bitmap, tile);
+			blit(page, xx, yy, tileattr, tilectrl, tile);
 		}
 }
 
@@ -377,7 +424,6 @@ static void blit_sprite(u32 depth, u16 *sprite)
 {
 	u16 tile, attr;
 	s16 x, y;
-	u32 bitmap = 0x40*mem[0x2822];
 
 	tile = sprite[0];
 	x = sprite[1];
@@ -406,10 +452,10 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	x = x & 0x1ff;
 	y = y & 0x1ff;
 
-	blit(x, y, attr, 0, bitmap, tile);
+	blit(2, x, y, attr, 0, tile);
 }
 
-static void blit_sprites(u32 depth)
+static void __attribute__((noinline)) blit_sprites(u32 depth)
 {
 	u32 n;
 
@@ -455,9 +501,7 @@ void blit_screen(void)
 	printf("\n");
 #endif
 
-	memset(screen_r, 0, sizeof screen_r);
-	memset(screen_g, 0, sizeof screen_g);
-	memset(screen_b, 0, sizeof screen_b);
+	memset(screen, 0, sizeof screen);
 
 	if (mem[0x3d20] & 0x0004)	// video DAC disable
 		return;
@@ -465,9 +509,9 @@ void blit_screen(void)
 	u32 depth;
 	for (depth = 0; depth < 4; depth++) {
 		if (!hide_page_1)
-			blit_page(depth, 0x40*mem[0x2820], mem + 0x2810);
+			blit_page(0, depth);
 		if (!hide_page_2)
-			blit_page(depth, 0x40*mem[0x2821], mem + 0x2816);
+			blit_page(1, depth);
 		if (!hide_sprites)
 			blit_sprites(depth);
 	}
