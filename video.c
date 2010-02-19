@@ -20,8 +20,41 @@ u32 screen[320*240];
 int hide_page_1;
 int hide_page_2;
 int hide_sprites;
+int show_fps = 0;
 int trace_unknown_video = 1;
 
+
+static void fill_rect(u32 x, u32 y, u32 w, u32 h, u32 rgb)
+{
+	u32 xx, yy;
+	for (yy = y; yy < y + h; yy++)
+		for (xx = x; xx < x + w; xx++)
+			screen[320*yy + xx] = rgb;
+}
+
+static void do_show_fps(void)
+{
+	static u32 fps = 0;
+
+	const int per_n = 10;
+	static int count = 0;
+	count++;
+	if (count == per_n) {
+		static u32 last = 0;
+		u32 now = get_realtime();
+		if (last)
+			fps = 1000000 * per_n / (now - last);
+		last = now;
+		count = 0;
+	}
+
+	if (fps > 50)
+		fps = 50;
+
+	fill_rect(3, 3, 7, 52, 0xffffff);
+	fill_rect(4, 4, 5, 50 - fps, 0x000000);
+	fill_rect(4, 54 - fps, 5, fps, 0x00ff00);
+}
 
 static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
@@ -515,6 +548,9 @@ void blit_screen(void)
 		if (!hide_sprites)
 			blit_sprites(depth);
 	}
+
+	if (show_fps)
+		do_show_fps();
 }
 
 void video_init(void)

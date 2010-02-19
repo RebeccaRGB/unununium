@@ -883,6 +883,10 @@ static void do_controller(void)
 			hide_sprites ^= 1;
 			break;
 
+		case 'f':
+			show_fps ^= 1;
+			break;
+
 		case 'x':
 			dump(0, 0x4000);
 			break;
