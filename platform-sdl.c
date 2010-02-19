@@ -145,9 +145,9 @@ void update_screen(void)
 		for (x = 0; x < 320; x++) {
 			u32 c = *s++;
 
-			p[2*x] = c;
-			p[2*x + 1] = c;
-			p[2*x + 2] = c;
+			p[3*x] = c;
+			p[3*x + 1] = c;
+			p[3*x + 2] = c;
 		}
 
 		memcpy(p2, p, 12*320);
