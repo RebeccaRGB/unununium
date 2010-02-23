@@ -16,9 +16,7 @@
 #include "platform.h"
 
 
-//#define SIZE_1X1
-//#define SIZE_2X2
-#define SIZE_3X3
+#define PIXEL_SIZE 2
 
 
 static void *rom_file;
@@ -114,45 +112,23 @@ void update_screen(void)
 		if (SDL_LockSurface(sdl_surface) < 0)
 			fatal("oh crap\n");
 
-	u32 x, y;
+	u32 pitch = sdl_surface->pitch / 4;
+	u32 *pixels = sdl_surface->pixels;
+
+	u32 x, y, j;
 	for (y = 0; y < 240; y++) {
-#ifdef SIZE_1X1
-		u32 *p = sdl_surface->pixels + y*sdl_surface->pitch;
-		u32 *s = screen + 320*y;
-
-		memcpy(p, s, 4*320);
-#endif
-#ifdef SIZE_2X2
-		u32 *p = sdl_surface->pixels + 2*y*sdl_surface->pitch;
-		u32 *p2 = sdl_surface->pixels + (2*y+1)*sdl_surface->pitch;
+		u32 *p = pixels + PIXEL_SIZE*y*pitch;
 		u32 *s = screen + 320*y;
 
 		for (x = 0; x < 320; x++) {
 			u32 c = *s++;
 
-			p[2*x] = c;
-			p[2*x + 1] = c;
+			for (j = 0; j < PIXEL_SIZE; j++)
+				p[PIXEL_SIZE*x + j] = c;
 		}
 
-		memcpy(p2, p, 8*320);
-#endif
-#ifdef SIZE_3X3
-		u32 *p = sdl_surface->pixels + 3*y*sdl_surface->pitch;
-		u32 *p2 = sdl_surface->pixels + (3*y+1)*sdl_surface->pitch;
-		u32 *p3 = sdl_surface->pixels + (3*y+2)*sdl_surface->pitch;
-		u32 *s = screen + 320*y;
-
-		for (x = 0; x < 320; x++) {
-			u32 c = *s++;
-
-			p[3*x] = c;
-			p[3*x + 1] = c;
-			p[3*x + 2] = c;
-		}
-
-		memcpy(p2, p, 12*320);
-		memcpy(p3, p, 12*320);
-#endif
+		for (j = 1; j < PIXEL_SIZE; j++)
+			memcpy(p + j*pitch, p, 4*PIXEL_SIZE*320);
 	}
 
 	if (SDL_MUSTLOCK(sdl_surface))
@@ -307,15 +283,7 @@ void platform_init(void)
 
 	SDL_WM_SetCaption("Unununium", 0);
 
-#ifdef SIZE_1X1
-	sdl_surface = SDL_SetVideoMode(320, 240, 32, SDL_SWSURFACE);
-#endif
-#ifdef SIZE_2X2
-	sdl_surface = SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
-#endif
-#ifdef SIZE_3X3
-	sdl_surface = SDL_SetVideoMode(960, 720, 32, SDL_SWSURFACE);
-#endif
+	sdl_surface = SDL_SetVideoMode(PIXEL_SIZE*320, PIXEL_SIZE*240, 32, SDL_SWSURFACE);
 
 	if (!sdl_surface)
 		fatal("Unable to initialise video: %s\n", SDL_GetError());
