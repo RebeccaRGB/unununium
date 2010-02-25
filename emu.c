@@ -14,6 +14,7 @@
 #include "audio.h"
 #include "io.h"
 #include "platform.h"
+#include "render.h"
 #include "board.h"
 
 #include "emu.h"
@@ -913,7 +914,7 @@ static void run(void)
 
 	do_idle();
 
-	update_screen();
+	render();
 
 //	now = get_realtime();
 //	printf("-> %uus for this field (gfx)\n", now - last);

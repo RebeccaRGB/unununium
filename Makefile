@@ -1,5 +1,14 @@
+# Build for what platform?
+PLATFORM := sdl
+
+# What video renderer?
+RENDER := gl
+#RENDER := soft
+
+
 CC := gcc
 CFLAGS := -std=gnu99 -Wall -W -O2 -g  -Wmissing-declarations -ffast-math
+CFLAGS += -DRENDER_$(RENDER)
 LDFLAGS := -g
 
 # Build for what platform?
@@ -14,8 +23,8 @@ un-disas: un-disas.o disas.o
 
 # The emulator.
 uuu-$(PLATFORM): uuu-%: uuu-%.o platform-%.o \
-                 disas.o emu.o timer.o video.o audio.o io.o \
-                 i2c-bus.o i2c-eeprom.o \
+                 disas.o emu.o timer.o video.o render.o render-$(RENDER).o \
+                 audio.o io.o i2c-bus.o i2c-eeprom.o \
                  board.o board-VII.o board-WAL.o board-BAT.o board-V_X.o board-dummy.o
 
 # SDL needs special compiler flags and some libraries.
@@ -49,7 +58,9 @@ endif
 # Clean up.
 .PHONY: clean
 clean:
-	rm -f un-disas un-disas.o disas.o emu.o timer.o video.o audio.o io.o
+	rm -f un-disas un-disas.o disas.o
+	rm -f emu.o timer.o video.o audio.o io.o
 	rm -f i2c-bus.o i2c-eeprom.o
 	rm -f board.o board-VII.o board-WAL.o board-BAT.o board-V_X.o board-dummy.o
+	rm -f render.o render-gl.o render-soft.o
 	rm -f uuu-sdl uuu-sdl.o platform-sdl.o dialog-cocoa.o

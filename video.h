@@ -13,15 +13,13 @@ extern u32 screen[320*240];
 extern int hide_page_1;
 extern int hide_page_2;
 extern int hide_sprites;
-
 extern int show_fps;
 
 
 void video_store(u16 val, u32 addr);
 u16 video_load(u32 addr);
 
-void bitmap_cache_clear(void);
-void blit_screen(void);
+void render_bitmap(u8 *dest, u32 pitch, u32 addr, u16 attr);
 
 void video_init(void);
 

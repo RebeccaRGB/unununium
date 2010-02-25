@@ -7,11 +7,13 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <SDL.h>
+#include <SDL_opengl.h>
 
 #include "types.h"
 #include "emu.h"
 #include "video.h"
 #include "audio.h"
+#include "render.h"
 
 #include "platform.h"
 
@@ -89,13 +91,19 @@ void save_eeprom(void *cookie, u8 *data, u32 len)
 
 static SDL_Surface *sdl_surface;
 
+#ifdef RENDER_soft
 static inline u8 x58(u32 x)
 {
 	x &= 31;
 	return (x << 3) | (x >> 2);
 }
 
-void update_screen(void)
+u32 get_colour(u8 r, u8 g, u8 b)
+{
+	return SDL_MapRGB(sdl_surface->format, r, g, b);
+}
+
+void render_palette(void)
 {
 	u32 i;
 	for (i = 0; i < 256; i++) {
@@ -105,9 +113,10 @@ void update_screen(void)
 		                            x58((p >> 5) & 31),
 		                            x58(p & 31));
 	}
+}
 
-	blit_screen();
-
+void update_screen(void)
+{
 	if (SDL_MUSTLOCK(sdl_surface))
 		if (SDL_LockSurface(sdl_surface) < 0)
 			fatal("oh crap\n");
@@ -136,6 +145,14 @@ void update_screen(void)
 
 	SDL_UpdateRect(sdl_surface, 0, 0, 0, 0);
 }
+#endif
+
+#ifdef RENDER_gl
+void update_screen(void)
+{
+	SDL_GL_SwapBuffers();
+}
+#endif
 
 
 u8 button_up;
@@ -272,9 +289,6 @@ static void mix(__unused void *cookie, u8 *data, int n)
 }
 
 
-u32 pixel_mask[3];
-u32 pixel_shift[3];
-
 void platform_init(void)
 {
 	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO) < 0)
@@ -283,12 +297,14 @@ void platform_init(void)
 
 	SDL_WM_SetCaption("Unununium", 0);
 
-	sdl_surface = SDL_SetVideoMode(PIXEL_SIZE*320, PIXEL_SIZE*240, 32, SDL_SWSURFACE);
+#ifdef RENDER_soft
+	sdl_surface = SDL_SetVideoMode(PIXEL_SIZE*320, PIXEL_SIZE*240, 0,
+	                               SDL_SWSURFACE);
 
 	if (!sdl_surface)
 		fatal("Unable to initialise video: %s\n", SDL_GetError());
 	if (sdl_surface->format->BytesPerPixel != 4)
-		fatal("Didn't get a 32-bit surface");
+		fatal("Didn't get a 32-bit surface\n");
 
 	pixel_mask[0] = sdl_surface->format->Rmask;
 	pixel_mask[1] = sdl_surface->format->Gmask;
@@ -296,6 +312,21 @@ void platform_init(void)
 	pixel_shift[0] = sdl_surface->format->Rshift;
 	pixel_shift[1] = sdl_surface->format->Gshift;
 	pixel_shift[2] = sdl_surface->format->Bshift;
+#endif
+
+#ifdef RENDER_gl
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
+
+	sdl_surface = SDL_SetVideoMode(PIXEL_SIZE*320, PIXEL_SIZE*240, 0, SDL_OPENGL);
+
+	if (!sdl_surface)
+		fatal("Unable to initialise video: %s\n", SDL_GetError());
+#endif
+
+	render_init(PIXEL_SIZE);
 
 	SDL_AudioSpec spec = {
 		.freq = 44100,

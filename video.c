@@ -9,7 +9,6 @@
 #include "types.h"
 #include "emu.h"
 #include "platform.h"
-#include "board.h"
 
 #include "video.h"
 
@@ -20,41 +19,9 @@ u32 screen[320*240];
 int hide_page_1;
 int hide_page_2;
 int hide_sprites;
-int show_fps = 0;
+int show_fps = 1;
 int trace_unknown_video = 1;
 
-
-static void fill_rect(u32 x, u32 y, u32 w, u32 h, u32 rgb)
-{
-	u32 xx, yy;
-	for (yy = y; yy < y + h; yy++)
-		for (xx = x; xx < x + w; xx++)
-			screen[320*yy + xx] = rgb;
-}
-
-static void do_show_fps(void)
-{
-	static u32 fps = 0;
-
-	const int per_n = 10;
-	static int count = 0;
-	count++;
-	if (count == per_n) {
-		static u32 last = 0;
-		u32 now = get_realtime();
-		if (last)
-			fps = 1000000 * per_n / (now - last);
-		last = now;
-		count = 0;
-	}
-
-	if (fps > 50)
-		fps = 50;
-
-	fill_rect(3, 3, 7, 52, 0xffffff);
-	fill_rect(4, 4, 5, 50 - fps, 0x000000);
-	fill_rect(4, 54 - fps, 5, fps, 0x00ff00);
-}
 
 static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
@@ -158,8 +125,6 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x2820 ... 0x2822:	// bitmap offsets
-			if (mem[addr] != val)
-				bitmap_cache_clear();
 			break;
 
 		case 0x282a:		// blend level
@@ -272,49 +237,18 @@ u16 video_load(u32 addr)
 }
 
 
-static u8 *bitmap_cache[65536];
-static u16 bitmap_cache_attr[65536];
 
-static u32 bitmap_cache_hash(u32 page, u16 tile, u16 attr)
+void render_bitmap(u8 *dest, u32 pitch, u32 addr, u16 attr)
 {
-	return (page << 14) ^ tile ^ (attr & 0x0fff);
-}
-
-void bitmap_cache_clear(void)
-{
-	u32 i;
-	for (i = 0; i < 65536; i++)
-		if (bitmap_cache[i]) {
-			free(bitmap_cache[i]);
-			bitmap_cache[i] = 0;
-		}
-}
-
-static u8 *bitmap_cache_make(u32 page, u16 tile, u16 attr)
-{
-	u32 hash = bitmap_cache_hash(page, tile, attr);
-	if (bitmap_cache[hash] && bitmap_cache_attr[hash] == (attr & 0x0fff))
-		return bitmap_cache[hash];
-
 	u32 h = sizes[(attr & 0x00c0) >> 6];
 	u32 w = sizes[(attr & 0x0030) >> 4];
-
-	u8 *p = malloc(h * w);
-	free(bitmap_cache[hash]);
-	bitmap_cache[hash] = p;
-	bitmap_cache_attr[hash] = attr & 0x0fff;
 
 	u32 yflipmask = attr & 0x0008 ? h - 1 : 0;
 	u32 xflipmask = attr & 0x0004 ? w - 1 : 0;
 
 	u32 nc = colour_sizes[attr & 0x0003];
 
-	u32 palette_offset = (attr & 0x0f00) >> 4;
-	palette_offset >>= nc;
-	palette_offset <<= nc;
-
-	u32 bitmap = 0x40*mem[0x2820 + page];
-	u32 m = bitmap + nc*w*h/16*tile;
+	u32 m = addr;
 	u32 bits = 0;
 	u32 nbits = 0;
 
@@ -333,225 +267,13 @@ static u8 *bitmap_cache_make(u32 page, u16 tile, u16 attr)
 			}
 			nbits -= nc;
 
-			u32 pal = palette_offset | (bits >> 16);
+			dest[pitch*yy + xx] = bits >> 16;
+
 			bits &= 0xffff;
-
-			p[w*yy + xx] = pal;
-		}
-	}
-
-	return p;
-}
-
-
-static inline u8 mix_channel(u8 old, u8 new)
-{
-	u8 alpha = mem[0x282a];
-	return ((4 - alpha)*old + alpha*new) / 4;
-}
-
-static inline void mix_pixel(u32 offset, u32 rgb)
-{
-	u32 x = 0;
-	u32 i;
-	for (i = 0; i < 3; i++) {
-		u8 old = (screen[offset] & pixel_mask[i]) >> pixel_shift[i];
-		u8 new = (rgb & pixel_mask[i]) >> pixel_shift[i];
-		x |= (mix_channel(old, new) << pixel_shift[i]) & pixel_mask[i];
-	}
-	screen[offset] = x;
-}
-
-static void blit(u32 page, u32 xoff, u32 yoff, u32 attr, u32 ctrl, u16 tile)
-{
-	u8 *p = bitmap_cache_make(page, tile, attr);
-
-	u32 h = sizes[(attr & 0x00c0) >> 6];
-	u32 w = sizes[(attr & 0x0030) >> 4];
-
-	for (u32 y = 0; y < h; y++) {
-		u32 yy = (yoff + y) & 0x1ff;
-
-		for (u32 x = 0; x < w; x++) {
-			u32 xx = (xoff + x) & 0x1ff;
-
-			u32 pal = *p++;
-
-			if ((ctrl & 0x0010) && yy < 240)
-				xx = (xx - mem[0x2900 + yy]) & 0x01ff;
-
-			//if ((ctrl & 0x0020) && yy < 240)	// hcmp
-			//	xx = (xx - mem[0x2a00 + yy]) & 0x01ff;//WRONG
-
-			if (xx < 320 && yy < 240) {
-				u16 rgb = mem[0x2b00 + pal];
-				if ((rgb & 0x8000) == 0) {
-					if (attr & 0x4000 || ctrl & 0x0100)
-						mix_pixel(xx + 320*yy, palette_rgb[pal]);
-					else
-						screen[xx + 320*yy] = palette_rgb[pal];
-				}
-			}
 		}
 	}
 }
 
-static void __noinline blit_page(u32 page, u32 depth)
-{
-	u16 *regs = &mem[0x2810 + 6*page];
-
-	u32 xscroll = regs[0];
-	u32 yscroll = regs[1];
-	u32 attr = regs[2];
-	u32 ctrl = regs[3];
-	u32 tilemap = regs[4];
-	u32 palette_map = regs[5];
-
-	if ((ctrl & 8) == 0)
-		return;
-
-	if ((attr & 0x3000) >> 12 != depth)
-		return;
-
-	u32 h = sizes[(attr & 0x00c0) >> 6];
-	u32 w = sizes[(attr & 0x0030) >> 4];
-
-	u32 hn = 256/h;
-	u32 wn = 512/h;
-
-	u32 x0, y0;
-	for (y0 = 0; y0 < hn; y0++)
-		for (x0 = 0; x0 < wn; x0++) {
-			u32 which = (ctrl & 4) ? 0 : x0 + wn*y0;
-			u16 tile = mem[tilemap + which];
-
-			if (tile == 0)
-				continue;
-
-			u16 palette = mem[palette_map + which/2];
-			if (which & 1)
-				palette >>= 8;
-
-			u32 tileattr = attr;
-			u32 tilectrl = ctrl;
-			if ((ctrl & 2) == 0) {
-// -(1) bld(1) flip(2) pal(4)
-				tileattr &= ~0x000c;
-				tileattr |= (palette >> 2) & 0x000c;	// flip
-
-				tileattr &= ~0x0f00;
-				tileattr |= (palette << 8) & 0x0f00;	// palette
-
-				tilectrl &= ~0x0100;
-				tilectrl |= (palette << 2) & 0x0100;	// blend
-			}
-
-			u32 yy = ((h*y0 - yscroll + 0x10) & 0xff) - 0x10;
-			u32 xx = (w*x0 - xscroll) & 0x1ff;
-
-			blit(page, xx, yy, tileattr, tilectrl, tile);
-		}
-}
-
-static void blit_sprite(u32 depth, u16 *sprite)
-{
-	u16 tile, attr;
-	s16 x, y;
-
-	tile = sprite[0];
-	x = sprite[1];
-	y = sprite[2];
-	attr = sprite[3];
-//if (tile >= 0x8000)
-//	printf("UH-OH: %04x %04x %04x %04x\n", tile, x, y, attr);
-
-	if (tile == 0)
-		return;
-
-	if ((u32)(attr & 0x3000) >> 12 != depth)
-		return;
-
-	if (board->use_centered_coors) {
-		x = 160 + x;
-		y = 120 - y;
-
-		u32 h = sizes[(attr & 0x00c0) >> 6];
-		u32 w = sizes[(attr & 0x0030) >> 4];
-
-		x -= (w/2);
-		y -= (h/2) - 8;
-	}
-
-	x = x & 0x1ff;
-	y = y & 0x1ff;
-
-	blit(2, x, y, attr, 0, tile);
-}
-
-static void __noinline blit_sprites(u32 depth)
-{
-	u32 n;
-
-	if ((mem[0x2842] & 1) == 0)
-		return;
-
-	for (n = 0; n < 256; n++)
-///		if (mem[0x2c00 + 4*n]) {
-//			if (mem[0x2c00 + 4*n] & 0xc000)
-//				printf("sprite %04x %04x %04x %04x\n", mem[0x2c00 + 4*n],
-//				       mem[0x2c01 + 4*n], mem[0x2c02 + 4*n], mem[0x2c03 + 4*n]);
-			blit_sprite(depth, mem + 0x2c00 + 4*n);
-///		}
-}
-
-void blit_screen(void)
-{
-//	printf("\033[H\033[2J\n\n");
-#if 0
-	printf("-----  VIDEO UPDATE  -----\n");
-
-	printf("page 1:\n");
-	printf("  x off  = %04x\n", mem[0x2810]);
-	printf("  y off  = %04x\n", mem[0x2811]);
-	printf("  attr   = %04x\n", mem[0x2812]);
-	printf("  ctrl   = %04x\n", mem[0x2813]);	// 0x81: non-palette
-	printf("  tiles  = %04x\n", mem[0x2814]);
-	printf("  dunno5 = %04x\n", mem[0x2815]);
-	printf("  bitmap = %04x\n", mem[0x2820]);
-
-	printf("page 2:\n");
-	printf("  x off  = %04x\n", mem[0x2816]);
-	printf("  y off  = %04x\n", mem[0x2817]);
-	printf("  attr   = %04x\n", mem[0x2818]);
-	printf("  ctrl   = %04x\n", mem[0x2819]);
-	printf("  tiles  = %04x\n", mem[0x281a]);
-	printf("  dunno5 = %04x\n", mem[0x281b]);
-	printf("  bitmap = %04x\n", mem[0x2821]);
-
-	printf("sprites:\n");
-	printf("  bitmap = %04x\n", mem[0x2822]);
-
-	printf("\n");
-#endif
-
-	memset(screen, 0, sizeof screen);
-
-	if (mem[0x3d20] & 0x0004)	// video DAC disable
-		return;
-
-	u32 depth;
-	for (depth = 0; depth < 4; depth++) {
-		if (!hide_page_1)
-			blit_page(0, depth);
-		if (!hide_page_2)
-			blit_page(1, depth);
-		if (!hide_sprites)
-			blit_sprites(depth);
-	}
-
-	if (show_fps)
-		do_show_fps();
-}
 
 void video_init(void)
 {

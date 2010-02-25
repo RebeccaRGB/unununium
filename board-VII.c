@@ -21,6 +21,8 @@ static void switch_bank(u32 bank)
 		return;
 	current_bank = bank;
 
+	render_kill_cache();
+
 	read_rom(N_MEM*bank);
 //	memset(ever_ran_this, 0, N_MEM);
 
