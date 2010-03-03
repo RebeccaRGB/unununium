@@ -45,7 +45,6 @@ static u8 sb_banked[3];
 static u8 irq_active, fiq_active;
 static u8 irq_enabled, fiq_enabled;
 
-static u64 insn_count;
 static u32 cycle_count;
 static u32 line_count;
 static const u32 cycles_per_line = 1728;  // 1728 for PAL, 1716 for NTSC
@@ -158,7 +157,7 @@ static void print_state(void)
 {
 	int i;
 
-	printf("\n[insn_count = %llu]\n", insn_count);
+	printf("\n");
 	printf(" SP   R1   R2   R3   R4   BP   SR   PC   CS NZSC DS  SB IRQ FIQ\n");
 	for (i = 0; i < 8; i++)
 		printf("%04x ", reg[i]);
@@ -808,9 +807,7 @@ static void run_line(void)
 		}
 
 		step();
-		insn_count++;
 		if (cycle_count >= cycles_per_line) {
-//			printf("PING!\n");
 			cycle_count -= cycles_per_line;
 			break;
 		}
