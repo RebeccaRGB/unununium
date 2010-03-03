@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -std=gnu99 -Wall -W -O2 -g  -Wmissing-declarations
+CFLAGS := -std=gnu99 -Wall -W -O2 -g  -Wmissing-declarations -ffast-math
 LDFLAGS := -g
 
 # Build for what platform?
