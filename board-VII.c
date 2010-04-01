@@ -32,7 +32,8 @@ static void switch_bank(u32 bank)
 	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43) {	// VC1
 		board->idle_pc = 0x42daa;
 		controller_should_be_rotated = 1;
-		//mem[0x38ecf] = 0;	// no life lost in LP
+		//mem[0x38ecf] = 0;		// no life lost in LP
+		//mem[0x38eb1] = mem[0xb8eb0];	// no upgrades lost in LP
 	}
 	if (mem[0x3ecb9] == 0x4311 && mem[0x3ecbb] == 0x4e43) {	// VC2
 		board->idle_pc = 0x3ecb9;
