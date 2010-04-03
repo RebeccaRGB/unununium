@@ -44,7 +44,7 @@ all: .stamp-bundle
 endif
 
 # Laziness rules, and lazy rules rule most of all.
-*.o: *.h
+*.o: *.h Makefile
 
 # Clean up.
 .PHONY: clean
