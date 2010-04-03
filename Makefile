@@ -11,8 +11,9 @@ CFLAGS := -std=gnu99 -Wall -W -O2 -g  -Wmissing-declarations -ffast-math
 CFLAGS += -DRENDER_$(RENDER)
 LDFLAGS := -g
 
-# Build for what platform?
-PLATFORM := sdl
+### End of config
+
+
 
 # Default targets.
 .PHONY: all
