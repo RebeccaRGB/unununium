@@ -50,6 +50,24 @@
 // c8+X: left: 3..7
 // c0+X: right: 3..7
 
+// version:
+// 0000  no vsmile
+// 0001  no vsmile
+// 0010  no text on vsmile
+// 0011  no text on vsmile
+// 0100  english
+// 0101  english
+// 0110  english
+// 0111  chinese
+// 1000  mexican
+// 1001  english
+// 1010  italian
+// 1011  german
+// 1100  spanish
+// 1101  french
+// 1110  english
+// 1111  english
+
 
 #include <stdio.h>
 
@@ -80,7 +98,10 @@ static u32 bit(u16 x, u32 n)
 static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 {
 //if (n == 2) what &= ~0x1400;
-//if (n == 2) what |= 0x1400;
+if (n == 2) what |= 0x1400;
+
+if (n == 2) what = (what & ~0x000f) | 0x000d;	// french
+//if (n == 2) what = (what & ~0x0010) | 0x0000;	// no vtech logo
 
 	if (trace_gpio) {
 		static u16 old[3][4];
@@ -106,9 +127,56 @@ static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 	return what;
 }
 
+static void uart_send(u8 x)
+{
+printf("--- uart_send(%02x)\n", x);
+}
+
+static u32 controller_in_count;
+static u8 controller_input[8];
+
+static u8 uart_recv(void)
+{
+	if (controller_in_count == 0) {
+		if (button_up)
+			controller_input[controller_in_count++] = 0x83;
+		else if (button_down)
+			controller_input[controller_in_count++] = 0x8b;
+		else
+			controller_input[controller_in_count++] = 0x80;
+
+
+		if (button_left)
+			controller_input[controller_in_count++] = 0xcb;
+		else if (button_right)
+			controller_input[controller_in_count++] = 0xc3;
+		else
+			controller_input[controller_in_count++] = 0xc0;
+
+		u8 buttons = 0;
+		if (button_A)
+			buttons |= 0x08;
+		if (button_B)
+			buttons |= 0x04;
+		if (button_C)
+			buttons |= 0x02;
+
+		controller_input[controller_in_count++] = 0x90 | buttons;
+	}
+
+	u8 x = controller_input[0];
+	controller_in_count--;
+	memcpy(controller_input, controller_input + 1, controller_in_count);
+
+printf("V.x UART: %02x\n", x);
+	return x;
+}
+
 struct board board_V_X = {
 	.use_centered_coors = 1,
 
 	.init = init,
-	.gpio = gpio
+	.gpio = gpio,
+	.uart_send = uart_send,
+	.uart_recv = uart_recv
 };
