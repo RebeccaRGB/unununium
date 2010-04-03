@@ -37,7 +37,7 @@ static const u16 known_reg_bits[] = {
 	0x0007,							// 3d2e		FIQ control
 	0x003f,							// 3d2f		DS
 	0x00ef,							// 3d30		UART control
-	0x0003,							// 3d31		UART status
+	0x00ff,							// 3d31		UART status
 	0,							// 3d32
 	0x00ff, 0x00ff,						// 3d33..3d34	UART baud rate
 	0x00ff,							// 3d35		UART TX
@@ -323,6 +323,7 @@ void io_store(u16 val, u32 addr)
 			board->uart_send(val);
 		else
 			debug("UART write %02x (not hooked up)\n", val);
+		mem[0x3d31] |= 0x02;
 		return;
 
 
@@ -443,9 +444,10 @@ u16 io_load(u32 addr)
 		return get_ds();
 
 	case 0x3d31:			// UART status     FIXME
-		return 3;
+		return val | 0x81;
 
 	case 0x3d36:			// UART RX data
+		mem[0x3d31] &= ~0x80;
 		if (board->uart_recv)
 			val = board->uart_recv();
 		else {
