@@ -23,8 +23,7 @@ const char *dialog_rom_file(void)
 	if (result != NSOKButton)
 		return 0;
 
-	[[panel filename] getCString:path maxLength:(sizeof path)
-	                                  encoding:NSASCIIStringEncoding];
+	[[panel filename] getCString:path maxLength:(sizeof path)];
 
 	return path;
 }
