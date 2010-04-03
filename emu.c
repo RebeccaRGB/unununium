@@ -31,7 +31,6 @@ static int trace_new = 0;
 static int store_trace = 0;
 static int trace_calls = 0;
 static int pause_after_every_frame = 0;
-//static u8 trace_irq[9] = { 0, 1, 1, 1, 1, 1, 1, 1, 1 };
 static u8 trace_irq[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 static const u32 unsp_version = 11;	// version a.b as 10*a + b
 static u8 ever_ran_this[N_MEM];
@@ -92,11 +91,8 @@ static void store(u16 val, u32 addr)
 		debug("ROM STORE %04x to %04x\n", val, addr);
 }
 
-static u16 load(u32 addr)
+static u16 __load(u32 addr)
 {
-	if (addr < 0x2800 || addr >= 0x4000)	// RAM / ROM
-		return mem[addr];
-
 	if (addr < 0x3000)
 		return video_load(addr);
 
@@ -104,6 +100,14 @@ static u16 load(u32 addr)
 		return audio_load(addr);
 
 	return io_load(addr);
+}
+
+static inline u16 load(u32 addr)
+{
+	if (addr < 0x2800 || addr >= 0x4000)
+		return mem[addr];
+
+	return __load(addr);
 }
 
 static inline u32 cs_pc(void)
@@ -284,6 +288,10 @@ static void step(void)
 	}
 
 	op = fetch();
+
+
+if (op == 0x0000 || op == 0xffff)
+	goto bad;
 
 
 	// the top four bits are the alu op or the branch condition, or E or F
@@ -677,6 +685,7 @@ static void step(void)
 		if (opA == 7)
 			cycle_count++;
 
+		d = opimm;
 		x1 = load(opimm);
 		break;
 
@@ -772,10 +781,11 @@ static void do_idle(void)
 {
 	static u32 last_retrace_time = 0;
 
+	const u32 slack = 5000;
 	u32 now = get_realtime();
-	if (now < last_retrace_time + PERIOD) {
-//		debug("  sleeping %dus\n", last_retrace_time + PERIOD - now);
-		usleep(last_retrace_time + PERIOD - now);
+	if (now + slack < last_retrace_time + PERIOD) {
+//		debug("  sleeping %dus\n", last_retrace_time + PERIOD - now - slack);
+		usleep(last_retrace_time + PERIOD - now - slack);
 	}
 	last_retrace_time = now;
 }
@@ -894,6 +904,7 @@ static void do_controller(void)
 	} while (key);
 }
 
+
 static void run(void)
 {
 	for (line_count = 0; line_count < lines_per_field; line_count++) {
@@ -945,8 +956,8 @@ static void run(void)
 
 void emu(void)
 {
-	platform_init();
 	read_rom(0);
+	platform_init();
 	board_init();
 	io_init();
 	video_init();
