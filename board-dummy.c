@@ -11,7 +11,7 @@
 #include "board.h"
 
 
-static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
+static u16 gpio(__unused u32 n, u16 what, __unused u16 push, __unused u16 pull, __unused u16 special)
 {
 	return what;
 }

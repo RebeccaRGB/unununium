@@ -396,7 +396,7 @@ static void blit(u32 page, u32 xoff, u32 yoff, u32 attr, u32 ctrl, u16 tile)
 	}
 }
 
-static void __attribute__((noinline)) blit_page(u32 page, u32 depth)
+static void __noinline blit_page(u32 page, u32 depth)
 {
 	u16 *regs = &mem[0x2810 + 6*page];
 
@@ -488,7 +488,7 @@ static void blit_sprite(u32 depth, u16 *sprite)
 	blit(2, x, y, attr, 0, tile);
 }
 
-static void __attribute__((noinline)) blit_sprites(u32 depth)
+static void __noinline blit_sprites(u32 depth)
 {
 	u32 n;
 

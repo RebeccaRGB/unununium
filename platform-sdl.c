@@ -261,7 +261,7 @@ void fatal(const char *format, ...)
 }
 
 
-static void mix(void *cookie, u8 *data, int n)
+static void mix(__unused void *cookie, u8 *data, int n)
 {
 	if (mute_audio) {
 		memset(data, 0, n);

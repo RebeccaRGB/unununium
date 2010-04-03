@@ -23,4 +23,9 @@ typedef signed int s32;
 #define subtype(_type, _base, _field) \
 	(void *)((u8 *)(_base) - offsetof(_type, _field))
 
+
+#undef __unused
+#define __unused __attribute__((__unused__))
+#define __noinline __attribute__((__noinline__))
+
 #endif
