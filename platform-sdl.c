@@ -326,6 +326,7 @@ void platform_init(void)
 		fatal("Unable to initialise video: %s\n", SDL_GetError());
 #endif
 
+	render_kill_cache();
 	render_init(PIXEL_SIZE);
 
 	SDL_AudioSpec spec = {
