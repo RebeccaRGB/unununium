@@ -27,5 +27,6 @@ typedef signed int s32;
 #undef __unused
 #define __unused __attribute__((__unused__))
 #define __noinline __attribute__((__noinline__))
+#define __noreturn __attribute__((__noreturn__))
 
 #endif

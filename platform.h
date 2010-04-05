@@ -33,7 +33,7 @@ char update_controller(void);
 
 u32 get_realtime(void);
 
-void fatal(const char *format, ...);
+void __noreturn fatal(const char *format, ...);
 void warn(const char *format, ...);
 
 #endif
