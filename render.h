@@ -12,24 +12,19 @@ void render_kill_cache(void);
 
 void render_palette(void);
 void render_atlas(u32 atlas_y, u32 atlas_h);
-void render_begin(void); // XXX: get rid of this?
+void render_begin(void);
 void render_end(void);
 
-#define N_RENDER_TILES (2*256*32+256)
-#define N_RENDER_RECTS 256
 
-extern struct render_tile {
-	int x, y, w, h;
-	u32 atlas_x, atlas_y;
-	u8 pal_offset, alpha;
-} render_tiles[N_RENDER_TILES];
+extern u16 render_page_atlas_coors[4096];
+extern u8 render_page_tile_colours[4096];
+extern u16 render_page_hoff[256];
 
-extern struct render_rect {
-	int x, y, w, h;
-	u8 r, g, b;
-} render_rects[N_RENDER_RECTS];
+void render_page(u32 xscroll, u32 yscroll, u32 h, u32 w);
 
-extern u32 n_render_tiles, n_render_rects;
+
+void render_texture(int x, int y, int w, int h, u16 atlas_x, u16 atlas_y, u8 pal_offset, u8 alpha);
+void render_rect(int x, int y, int w, int h, u8 r, u8 g, u8 b);
 
 
 // ATLAS_W and ATLAS_H should be a multiple of 64 and a power of two;
