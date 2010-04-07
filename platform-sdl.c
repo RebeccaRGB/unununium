@@ -16,7 +16,7 @@
 #include "platform.h"
 
 
-#define PIXEL_SIZE 2
+#define PIXEL_SIZE 3
 
 
 static void *rom_file;
