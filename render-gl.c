@@ -359,17 +359,23 @@ static void init_fragment_programs(void)
 {
 	const char tile_frag[] =
 		"!!ARBfp1.0\n"
+		"OPTION ARB_precision_hint_nicest; \n"
+
 		"TEMP r0; \n"
-		"TEX r0.x, fragment.texcoord[0], texture[0], 2D; \n"
+
+		"TEX r0.x, fragment.texcoord[0], texture[0], 2D; \n"	//**
 		"ADD r0.x, r0.x, fragment.color.r; \n"
-		"TEX r0, r0, texture[1], 1D; \n"
+
+		"TEX r0, r0, texture[1], 1D; \n"			//**
 		"MUL r0.a, r0.a, fragment.color.a; \n"
 		"MOV result.color, r0; \n"
+
 		"END";
 	init_fragment_program(&tile_fragment_program, tile_frag);
 
 	const char page_frag[] =
 		"!!ARBfp1.0\n"
+		"OPTION ARB_precision_hint_nicest; \n"
 
 		"TEMP coor, tile_coor, tile, tile_colour; \n"
 		"TEMP atlas_coor, palette_coor, colour, hoff; \n"
