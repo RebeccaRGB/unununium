@@ -98,10 +98,18 @@ static u32 bit(u16 x, u32 n)
 static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 {
 //if (n == 2) what &= ~0x1400;
-if (n == 2) what |= 0x1400;
+//if (n == 2) what |= 0x1400;
 
 if (n == 2) what = (what & ~0x000f) | 0x000d;	// french
 //if (n == 2) what = (what & ~0x0010) | 0x0000;	// no vtech logo
+
+if (n == 2) debug("-- pin 8,5 set to %d,%d\n", (what >> 8) & 1, (what >> 9) & 1);
+if (n == 2) debug("-- pin 9,6 set to %d,%d\n", (what >> 10) & 1, (what >> 12) & 1);
+if (n == 2) debug("-- pin 9,6 push set to %d,%d\n", (push >> 10) & 1, (push >> 12) & 1);
+if (n == 2) debug("-- pin 9,6 pull set to %d,%d\n", (pull >> 10) & 1, (pull >> 12) & 1);
+
+if (what & 0x0100) what |= 0x0400;
+if (what & 0x0200) what |= 0x1000;
 
 	if (trace_gpio) {
 		static u16 old[3][4];
@@ -129,7 +137,7 @@ if (n == 2) what = (what & ~0x000f) | 0x000d;	// french
 
 static void uart_send(u8 x)
 {
-printf("--- uart_send(%02x)\n", x);
+debug("--- uart_send(%02x)\n", x);
 }
 
 static u32 controller_in_count;
@@ -137,6 +145,11 @@ static u8 controller_input[8];
 
 static u8 uart_recv(void)
 {
+//u8 x = random();
+static u8 x = 0;
+if (random() % 100 == 0) x--;
+debug("--- uart_recv() = %02x\n", x);
+return x;
 	if (controller_in_count == 0) {
 		if (button_up)
 			controller_input[controller_in_count++] = 0x83;
@@ -164,11 +177,11 @@ static u8 uart_recv(void)
 		controller_input[controller_in_count++] = 0x90 | buttons;
 	}
 
-	u8 x = controller_input[0];
+//	u8 x = controller_input[0];
 	controller_in_count--;
 	memcpy(controller_input, controller_input + 1, controller_in_count);
 
-printf("V.x UART: %02x\n", x);
+debug("V.x UART: %02x\n", x);
 	return x;
 }
 
