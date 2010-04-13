@@ -159,7 +159,7 @@ void render_page(u32 xscroll, u32 yscroll, u32 h, u32 w)
 	                GL_UNSIGNED_SHORT, hoff);
 
 	glProgramLocalParameter4fARB(GL_FRAGMENT_PROGRAM_ARB, 0,
-	                             xscroll/w, yscroll/h, 0, 0);
+	                             (float)xscroll/w, (float)yscroll/h, 0, 0);
 	glProgramLocalParameter4fARB(GL_FRAGMENT_PROGRAM_ARB, 1,
 	                             512.0f/w, 256.0f/h, 0, 0);
 	glProgramLocalParameter4fARB(GL_FRAGMENT_PROGRAM_ARB, 2,
