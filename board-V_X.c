@@ -3,33 +3,33 @@
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 
-// IOA not connected
+// IOA  i+  not connected
 
-// IOB0   CS#1 = a3; b3 = ROMCS#; o3 = cart CS1#
-// IOB1   CS#2 = cart CS2#
-// IOB2   CS#3 = a0; b0 = cart det (high if cart, pull to ROMCS#); o0 = sys CS#
-// IOB3   reset switch
-// IOB4   cart front 24?
-// IOB5   power off
-// IOB6   power off switch
-// IOB7   power on switch
+// IOB0  os  CS#1 = a3; b3 = ROMCS#; o3 = cart CS1#
+// IOB1  os  CS#2 = cart CS2#
+// IOB2  os  CS#3 = a0; b0 = cart det (high if cart, pull to ROMCS#); o0 = sys CS#
+// IOB3  i+  reset switch
+// IOB4  o   cart front 24?
+// IOB5  i+  power off
+// IOB6  i+  power off switch
+// IOB7  i+  power on switch
 
-// IOC0   JP13 \ version jumper
-// IOC1   JP12 |
-// IOC2   JP11 |
-// IOC3   JP10 /
-// IOC4   JP14   logo
-// IOC5   test point
-// IOC6   amp power
-// IOC7   system reset
-// IOC8   controller pin 8    controller select, high active
-// IOC9   controller pin 5     " "
-// IOC10  controller pin 9 (also extint1)
-// IOC11  N/C?
-// IOC12  controller pin 6 (also extint2)
-// IOC13  controller pins 4 and 7 ANDed together, pullups
-// IOC14  controller pin 2, through a buffer
-// IOC15  power / charger / whatever enable (top left)
+// IOC0  i+  JP13 \ version jumper
+// IOC1  i+  JP12 |
+// IOC2  i+  JP11 |
+// IOC3  i+  JP10 /
+// IOC4  i+  JP14   logo
+// IOC5  i+  test point
+// IOC6  o   amp power
+// IOC7  o   system reset
+// IOC8  i+  controller pin 8    controller select, high active
+// IOC9  i+  controller pin 5     " "
+// IOC10 i+  controller pin 9 (also extint1)
+// IOC11 o   N/C?
+// IOC12 i+  controller pin 6 (also extint2)
+// IOC13 i+  controller pins 4 and 7 ANDed together, pullups
+// IOC14 i+  controller pin 2, through a buffer
+// IOC15 o   power / charger / whatever enable (top left)
 
 // controller:
 // pin1  ground
