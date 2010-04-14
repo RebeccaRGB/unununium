@@ -16,34 +16,37 @@
 int trace_unknown_io = 1;
 
 static const u16 known_reg_bits[] = {
-	0x001f,							// 3d00		GPIO control
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff,			// 3d01..3d05	IOA
-	0x00ff, 0x00ff, 0x00ff, 0x00ff, 0x00ff,			// 3d06..3d0a	IOB
-	0xffff, 0xffff, 0xffff, 0xffff, 0xffff,			// 3d0b..3d0f	IOC
-	0x000f,							// 3d10		timebase freq
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 3d11..3d1f
-	0x4006,							// 3d20		system control
-	0x3ffb,							// 3d21		IRQ control
-	0x7fff,							// 3d22		IRQ status
-	0x003e,							// 3d23		memory control
-	0xffff,							// 3d24		watchdog
-	0x2002,							// 3d25		ADC control
-	0, 0,							// 3d26..3d27
-	0xffff,							// 3d28		sleep
-	0x0080,							// 3d29		wakeup source
-	0x00ff,							// 3d2a		wakeup delay
-	0x0001,							// 3d2b		PAL/NTSC
-	0, 0,							// 3d2c..3d2d
-	0x0007,							// 3d2e		FIQ control
-	0x003f,							// 3d2f		DS
-	0x00ef,							// 3d30		UART control
-	0x00ff,							// 3d31		UART status
-	0,							// 3d32
-	0x00ff, 0x00ff,						// 3d33..3d34	UART baud rate
-	0x00ff,							// 3d35		UART TX
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,				// 3d36..3d3f
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 3d40..3d4f
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 3d50..3d5f
+	0x001f,					// 3d00		GPIO control
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff,	// 3d01..3d05	IOA
+	0x00ff, 0x00ff, 0x00ff, 0x00ff, 0x00ff,	// 3d06..3d0a	IOB
+	0xffff, 0xffff, 0xffff, 0xffff, 0xffff,	// 3d0b..3d0f	IOC
+	0x000f,					// 3d10		timebase freq
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+						// 3d11..3d1f
+	0x4006,					// 3d20		system control
+	0x3ffb,					// 3d21		IRQ control
+	0x7fff,					// 3d22		IRQ status
+	0x003e,					// 3d23		memory control
+	0xffff,					// 3d24		watchdog
+	0x2002,					// 3d25		ADC control
+	0, 0,					// 3d26..3d27
+	0xffff,					// 3d28		sleep
+	0x0080,					// 3d29		wakeup source
+	0x00ff,					// 3d2a		wakeup delay
+	0x0001,					// 3d2b		PAL/NTSC
+	0, 0,					// 3d2c..3d2d
+	0x0007,					// 3d2e		FIQ control
+	0x003f,					// 3d2f		DS
+	0x00ef,					// 3d30		UART control
+	0x00ff,					// 3d31		UART status
+	0,					// 3d32
+	0x00ff, 0x00ff,				// 3d33..3d34	UART baud rate
+	0x00ff,					// 3d35		UART TX
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 3d36..3d3f
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+						// 3d40..3d4f
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+						// 3d50..3d5f
 };
 
 static const u16 known_dma_reg_bits[] = {

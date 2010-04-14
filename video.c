@@ -27,36 +27,40 @@ static const u8 sizes[] = { 8, 16, 32, 64 };
 static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 static const u16 known_reg_bits[] = {
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		// 2800..280f
-	0xffff, 0xffff, 0x3fff, 0x011e, 0x3fff, 0x3fff,		// 2810..2815	text page 1
-	0xffff, 0xffff, 0x3fff, 0x011e, 0x3fff, 0x3fff,		// 2816..281b	text page 2
-	0x00ff,							// 281c		vcmp value
-	0, 0, 0,						// 281d..281f
-	0xffff, 0xffff, 0xffff,					// 2820..2822
-	0, 0, 0, 0, 0, 0, 0,					// 2823..2829
-	0x0003,							// 282a		blend level
-	0, 0, 0, 0, 0,						// 282b..282f
-	0x00ff,							// 2830		fade offset
-	0, 0, 0, 0, 0,						// 2831..2835
-	0xffff, 0xffff,						// 2836..2837   IRQ pos
-	0, 0, 0, 0,						// 2838..283b
-	0xffff,							// 283c		TV hue/saturation
-	0, 0, 0,						// 283d..283f
-	0, 0,							// 2840..2841
-	0x0001,							// 2842
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2843..284f
-	0, 0, 0, 0,						// 2850..2853
-	0x0007,							// 2854		LCD control
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2855..285f
-	0, 0,							// 2860..2861
-	0x0007, 0x0007,						// 2862..2863
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2864..286f
-	0x3fff, 0x03ff, 0x03ff,					// 2870..2872	DMA
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			// 2873..287f
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+						// 2800..280f
+	0xffff, 0xffff, 0x3fff, 0x011e, 0x3fff, 0x3fff,
+						// 2810..2815	text page 1
+	0xffff, 0xffff, 0x3fff, 0x011e, 0x3fff, 0x3fff,
+						// 2816..281b	text page 2
+	0x00ff,					// 281c		vcmp value
+	0, 0, 0,				// 281d..281f
+	0xffff, 0xffff, 0xffff,			// 2820..2822
+	0, 0, 0, 0, 0, 0, 0,			// 2823..2829
+	0x0003,					// 282a		blend level
+	0, 0, 0, 0, 0,				// 282b..282f
+	0x00ff,					// 2830		fade offset
+	0, 0, 0, 0, 0,				// 2831..2835
+	0xffff, 0xffff,				// 2836..2837   IRQ pos
+	0, 0, 0, 0,				// 2838..283b
+	0xffff,					// 283c		TV hue/sat
+	0, 0, 0,				// 283d..283f
+	0, 0,					// 2840..2841
+	0x0001,					// 2842
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	// 2843..284f
+	0, 0, 0, 0,				// 2850..2853
+	0x0007,					// 2854		LCD control
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	// 2855..285f
+	0, 0,					// 2860..2861
+	0x0007, 0x0007,				// 2862..2863
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	// 2864..286f
+	0x3fff, 0x03ff, 0x03ff,			// 2870..2872	DMA
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	// 2873..287f
 };
 
 static const u16 known_sprite_bits[] = {
-	0xffff, 0xffff, 0xffff, 0xffff	// actually only low 9 bits of X/Y, low 15 of attr
+	0xffff, 0xffff, 0xffff, 0xffff
+		// actually only low 9 bits of X/Y, low 15 of attr
 };
 
 static void trace_unknown(u32 addr, u16 val, int is_read)
