@@ -63,28 +63,28 @@ static void trace_unknown(u32 addr, u16 val, int is_read)
 {
 	if (addr >= 0x2800 && addr < 0x2800 + ARRAY_SIZE(known_reg_bits)) {
 		if (val & ~known_reg_bits[addr - 0x2800])
-			printf("*** UNKNOWN VIDEO REG BITS %s: %04x bits %04x\n",
+			debug("*** UNKNOWN VIDEO REG BITS %s: %04x bits %04x\n",
 			       is_read ? "READ" : "WRITE", addr,
 			       val & ~known_reg_bits[addr - 0x2800]);
 	} else if (addr >= 0x2900 && addr < 0x2a00) {
 		if (val & ~0xffff)
-			printf("*** UNKNOWN VIDEO HOFFSET BITS %s: %04x bits %04x\n",
+			debug("*** UNKNOWN VIDEO HOFFSET BITS %s: %04x bits %04x\n",
 			       is_read ? "READ" : "WRITE", addr, val & ~0x01ff);
 	} else if (addr >= 0x2a00 && addr < 0x2b00) {
 		if (val & ~0x00ff)
-			printf("*** UNKNOWN VIDEO HCMP BITS %s: %04x bits %04x\n",
+			debug("*** UNKNOWN VIDEO HCMP BITS %s: %04x bits %04x\n",
 			       is_read ? "READ" : "WRITE", addr, val & ~0x00ff);
 	} else if (addr >= 0x2b00 && addr < 0x2c00) {
 		if (val & ~0xffff)
-			printf("*** UNKNOWN VIDEO PALETTE BITS %s: %04x bits %04x\n",
+			debug("*** UNKNOWN VIDEO PALETTE BITS %s: %04x bits %04x\n",
 			       is_read ? "READ" : "WRITE", addr, val & ~0xffff);
 	} else if (addr >= 0x2c00 && addr < 0x3000) {
 		if (val != 0xffff && val & ~known_sprite_bits[addr & 3])
-			printf("*** UNKNOWN VIDEO SPRITE BITS %s: %04x bits %04x\n",
+			debug("*** UNKNOWN VIDEO SPRITE BITS %s: %04x bits %04x\n",
 			       is_read ? "READ" : "WRITE", addr,
 			       val & ~known_sprite_bits[addr & 3]);
 	} else
-		printf("*** UNKNOWN VIDEO %s: [%04x] = %04x\n",
+		debug("*** UNKNOWN VIDEO %s: [%04x] = %04x\n",
 		       is_read ? "READ" : "WRITE", addr, val);
 }
 
@@ -132,7 +132,7 @@ void video_store(u16 val, u32 addr)
 
 		case 0x2830:		// fade offset
 			if ((mem[addr] & 0x00ff) != (val & 0x00ff))
-				printf("*** TV FADE set to %02x\n", val & 0x00ff);
+				debug("*** TV FADE set to %02x\n", val & 0x00ff);
 			break;
 
 		case 0x2836:		// IRQ pos V
@@ -142,9 +142,9 @@ void video_store(u16 val, u32 addr)
 
 		case 0x283c:		// TV control 1 (hue/saturation)
 			if ((mem[addr] & 0xff00) != (val & 0xff00))
-				printf("*** TV HUE set to %02x\n", val >> 8);
+				debug("*** TV HUE set to %02x\n", val >> 8);
 			if ((mem[addr] & 0x00ff) != (val & 0x00ff))
-				printf("*** TV SATURATION set to %02x\n", val & 0x00ff);
+				debug("*** TV SATURATION set to %02x\n", val & 0x00ff);
 			break;
 
 		case 0x283d:		// XXX TV control 2
@@ -162,10 +162,10 @@ void video_store(u16 val, u32 addr)
 				"B/W", "16 grey levels", "4096 colours", "BAD"
 			};
 			if ((mem[addr] & 0x0003) != (val & 0x0003))
-				printf("*** LCD COLOUR MODE set to %s\n",
+				debug("*** LCD COLOUR MODE set to %s\n",
 				       lcd_colour_mode[val & 0x0003]);
 			if ((mem[addr] & 0x0004) != (val & 0x0004))
-				printf("*** LCD RESOLUTION set to %s\n",
+				debug("*** LCD RESOLUTION set to %s\n",
 				       (val & 0x0004) ? "320x240" : "160x100");
 			break;
 		}
@@ -186,7 +186,7 @@ void video_store(u16 val, u32 addr)
 			return;
 
 		default:
-			printf("VIDEO STORE %04x to %04x\n", val, addr);
+			debug("VIDEO STORE %04x to %04x\n", val, addr);
 		}
 	} else if (addr < 0x2a00) {	// scroll per raster line
 	} else if (addr < 0x2b00) {	// horizontal stretch
@@ -229,7 +229,7 @@ u16 video_load(u32 addr)
 			break;
 
 		default:
-			printf("VIDEO LOAD %04x from %04x\n", val, addr);
+			debug("VIDEO LOAD %04x from %04x\n", val, addr);
 		}
 	}
 

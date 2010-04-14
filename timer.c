@@ -42,7 +42,7 @@ void timer_add(struct timer *timer)
 
 void timer_run(u32 ticks)
 {
-//printf("going to run for %u ticks...\n", ticks);
+//debug("going to run for %u ticks...\n", ticks);
 //timer_debug();
 
 	struct timer *timer;
@@ -65,6 +65,6 @@ void timer_run(u32 ticks)
 	if (timer)
 		timer->time -= ticks;
 
-//printf("timers done:\n");
+//debug("timers done:\n");
 //timer_debug();
 }

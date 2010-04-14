@@ -7,6 +7,7 @@
 
 #include "types.h"
 #include "emu.h"
+#include "platform.h"
 
 #include "audio.h"
 
@@ -29,7 +30,7 @@ void audio_store(u16 val, u32 addr)
 		return;
 	}
 
-	printf("AUDIO STORE %04x to %04x\n", val, addr);
+	debug("AUDIO STORE %04x to %04x\n", val, addr);
 }
 
 u16 audio_load(u32 addr)
@@ -37,19 +38,19 @@ u16 audio_load(u32 addr)
 	u16 val = mem[addr];
 
 	if (addr >= 0x3000 && addr < 0x3200) {		// audio something
-		//printf("LOAD %04x from %04x\n", val, addr);
+		//debug("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
 	if (addr >= 0x3200 && addr < 0x3300) {		// audio something
-		//printf("LOAD %04x from %04x\n", val, addr);
+		//debug("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
 	if (addr >= 0x3400 && addr < 0x3500) {		// audio something
-		//printf("LOAD %04x from %04x\n", val, addr);
+		//debug("LOAD %04x from %04x\n", val, addr);
 		return val;
 	}
 
-	printf("UNKNOWN AUDIO LOAD from %04x\n", addr);
+	debug("UNKNOWN AUDIO LOAD from %04x\n", addr);
 	return val;
 }
 
@@ -81,7 +82,7 @@ loop:
 		mem[0x3000 + 16*ch]++;
 		if (mem[0x3000 + 16*ch] == 0)
 			mem[0x3001 + 16*ch]++;	// XXX: mask?
-//printf("--> addr = %06x\n", addr);
+//debug("--> addr = %06x\n", addr);
 	}
 
 	mem[0x300b + 16*ch] = bits_left[ch] << 8;

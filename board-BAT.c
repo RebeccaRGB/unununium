@@ -16,7 +16,7 @@ static struct i2c_bus *i2c_bus;
 
 static u16 gpio(u32 n, u16 what, __unused u16 push, __unused u16 pull, __unused u16 special)
 {
-//	fprintf(stderr, "--->  PORT %c  what=%04x push=%04x pull=%04x\n",
+//	debug("--->  PORT %c  what=%04x push=%04x pull=%04x\n",
 //	        'A' + n, what, push, pull);
 
 	if (n == 0) {
@@ -41,7 +41,7 @@ static u16 gpio(u32 n, u16 what, __unused u16 push, __unused u16 pull, __unused 
 	if (n == 2) {
 		int sda = what & 1;
 		int scl = (what >> 1) & 1;
-//fprintf(stderr, "SDA=%d SCL=%d\n", sda, scl);
+//debug("SDA=%d SCL=%d\n", sda, scl);
 		sda = i2c_bitbang(i2c_bus, sda, scl);
 		what = (what & ~1) | sda;
 	}

@@ -51,10 +51,10 @@ static void init(void)
 static u16 gpio(u32 n, u16 what, __unused u16 push, __unused u16 pull, __unused u16 special)
 {
 	if (n == 1) {
-		printf("STORE %04x to port B\n", what);
+		debug("STORE %04x to port B\n", what);
 		u32 bank = ((what & 0x80) >> 7) | ((what & 0x20) >> 4);
 		switch_bank(bank);
-		fprintf(stderr, "switched to bank %x\n", bank);
+		debug("switched to bank %x\n", bank);
 	}
 
 	return what;
@@ -62,7 +62,7 @@ static u16 gpio(u32 n, u16 what, __unused u16 push, __unused u16 pull, __unused 
 
 static void uart_send(__unused u8 x)
 {
-//printf("--- uart_send(%02x)\n", x);
+//debug("--- uart_send(%02x)\n", x);
 }
 
 static u32 controller_in_count;

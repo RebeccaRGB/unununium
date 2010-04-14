@@ -244,7 +244,7 @@ char update_controller(void)
 			continue;
 
 		default:
-			fprintf(stderr, "Unknown SDL event type %d\n", event.type);
+			warn("Unknown SDL event type %d\n", event.type);
 			continue;
 		}
 	}
@@ -268,6 +268,15 @@ void warn(const char *format, ...)
 	va_start(ap, format);
 	vfprintf(stderr, format, ap);
 }
+
+#ifdef USE_DEBUG
+void debug(const char *format, ...)
+{
+	va_list ap;
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+}
+#endif
 
 void fatal(const char *format, ...)
 {
@@ -338,8 +347,8 @@ void platform_init(void)
 		.userdata = 0
 	}, actual;
 	int ret = SDL_OpenAudio(&spec, &actual);
-	printf("ret: %d (%s)\n", ret, SDL_GetError());
-printf("--> fr=%d ch=%d sam=%d size=%d sil=x'%04x\n", actual.freq, actual.channels, actual.samples, actual.size, actual.silence);
+	debug("ret: %d (%s)\n", ret, SDL_GetError());
+debug("--> fr=%d ch=%d sam=%d size=%d sil=x'%04x\n", actual.freq, actual.channels, actual.samples, actual.size, actual.silence);
 	SDL_PauseAudio(0);
 
 	// First SDL input does a lot of init, do it now.

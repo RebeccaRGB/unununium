@@ -85,7 +85,7 @@ static struct cache *cache_make(u32 key)
 			fatal("WHOOPS, CACHE WENT BAD (make)\n");
 	}
 
-printf("make, new slot %04x\n", cache_free_head - cache);
+debug("make, new slot %04x\n", cache_free_head - cache);
 	slot->next = cache_free_head;
 	slot = cache_free_head;
 	cache_free_head = cache_free_head->next;
@@ -119,7 +119,7 @@ static void render_texture_into_atlas(u32 addr, u16 attr, int w, int h)
 		atlas_y = 0;
 		atlas_h = 0;
 
-printf("filled atlas\n");
+debug("filled atlas\n");
 
 // XXX FIXME
 		render_kill_cache();
@@ -127,7 +127,7 @@ printf("filled atlas\n");
 
 	u8 *p = &atlas[atlas_y*ATLAS_W + atlas_x];
 
-//printf("rendering at %d %d\n", atlas_x, atlas_y);
+//debug("rendering at %d %d\n", atlas_x, atlas_y);
 	render_bitmap(p, ATLAS_W, addr, attr);
 
 	cache->atlas_x = atlas_x;

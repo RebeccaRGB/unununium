@@ -9,6 +9,7 @@
 #include "emu.h"
 #include "board.h"
 #include "video.h"
+#include "platform.h"
 
 #include "render.h"
 
@@ -35,7 +36,7 @@ static inline void mix_pixel(u32 offset, u32 rgb, u8 alpha)
 
 void render_texture(int xoff, int yoff, int w, int h, u16 atlas_x, u16 atlas_y, u8 pal_offset, u8 alpha)
 {
-//printf("drawing at %d %d\n", atlas_x, atlas_y);
+//debug("drawing at %d %d\n", atlas_x, atlas_y);
 	u8 *p = &atlas[atlas_y*ATLAS_W + atlas_x];
 
 	for (u32 y = 0; y < (u32)h; y++) {
@@ -71,7 +72,7 @@ void render_rect(int x, int y, int w, int h, u8 r, u8 g, u8 b)
 
 void render_atlas(u32 atlas_y, u32 atlas_h)
 {
-	printf("atlas: %d+%d\n", atlas_y, atlas_h);
+	debug("atlas: %d+%d\n", atlas_y, atlas_h);
 }
 
 

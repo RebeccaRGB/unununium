@@ -78,7 +78,7 @@ static void dump(u32 addr, u32 len)
 static void store(u16 val, u32 addr)
 {
 	if (store_trace)
-		printf("WRITE %04x TO %04x (was %04x)\n", val, addr, mem[addr]);
+		debug("WRITE %04x TO %04x (was %04x)\n", val, addr, mem[addr]);
 
 	if (addr < 0x2800)	// RAM
 		mem[addr] = val;
@@ -89,7 +89,7 @@ static void store(u16 val, u32 addr)
 	else if (addr < 0x4000)
 		io_store(val, addr);
 	else
-		printf("ROM STORE %04x to %04x\n", val, addr);
+		debug("ROM STORE %04x to %04x\n", val, addr);
 }
 
 static u16 load(u32 addr)
@@ -176,7 +176,7 @@ static void do_irq(int irqno)
 		return;
 
 	if (trace_irq[irqno])
-		printf("### IRQ #%x ###\n", irqno);
+		debug("### IRQ #%x ###\n", irqno);
 
 	irq_active = 1;
 
@@ -195,7 +195,7 @@ static void do_fiq(void)
 		return;
 
 	if (trace_irq[8])
-		printf("### FIQ ###\n");
+		debug("### FIQ ###\n");
 
 	fiq_active = 1;
 
@@ -481,38 +481,38 @@ static void step(void)
 			case 0:
 				irq_enabled = 0;
 				fiq_enabled = 0;
-				//printf("INT OFF\n");
+				//debug("INT OFF\n");
 				return;
 			case 1:
 				irq_enabled = 1;
 				fiq_enabled = 0;
-				//printf("INT IRQ\n");
+				//debug("INT IRQ\n");
 				return;
 			case 2:
 				irq_enabled = 0;
 				fiq_enabled = 1;
-				//printf("INT FIQ\n");
+				//debug("INT FIQ\n");
 				return;
 			case 3:
 				irq_enabled = 1;
 				fiq_enabled = 1;
-				//printf("INT FIQ,IRQ\n");
+				//debug("INT FIQ,IRQ\n");
 				return;
 			case 8:
 				irq_enabled = 0;
-				//printf("IRQ OFF\n");
+				//debug("IRQ OFF\n");
 				return;
 			case 9:
 				irq_enabled = 1;
-				//printf("IRQ ON\n");
+				//debug("IRQ ON\n");
 				return;
 			case 12:
 				fiq_enabled = 0;
-				//printf("FIQ OFF\n");
+				//debug("FIQ OFF\n");
 				return;
 			case 14:
 				fiq_enabled = 1;
-				//printf("FIQ ON\n");
+				//debug("FIQ ON\n");
 				return;
 			case 0x25:	// NOP
 				return;
@@ -682,7 +682,7 @@ static void step(void)
 		goto bad;
 	}
 
-//printf("--> args: %04x %04x\n", x0, x1);
+//debug("--> args: %04x %04x\n", x0, x1);
 
 	// then, perform the alu op
 	switch (op0) {
@@ -750,7 +750,7 @@ static void step(void)
 	if (op0 == 4 || op0 == 12)	// CMP, TEST
 		return;
 
-//printf("--> result: %04x\n", x);
+//debug("--> result: %04x\n", x);
 
 	if (op1 == 4 && opN == 3)	// [imm16] = ...
 		store(x, d);
@@ -772,7 +772,7 @@ static void do_idle(void)
 
 	u32 now = get_realtime();
 	if (now < last_retrace_time + PERIOD) {
-//		printf("  sleeping %dus\n", last_retrace_time + PERIOD - now);
+//		debug("  sleeping %dus\n", last_retrace_time + PERIOD - now);
 		usleep(last_retrace_time + PERIOD - now);
 	}
 	last_retrace_time = now;
@@ -909,7 +909,7 @@ static void run(void)
 
 //	static u32 last;
 //	u32 now = get_realtime();
-//	printf("-> %uus for this field (cpu)\n", now - last);
+//	debug("-> %uus for this field (cpu)\n", now - last);
 //	last = now;
 
 	do_idle();
@@ -917,7 +917,7 @@ static void run(void)
 	render();
 
 //	now = get_realtime();
-//	printf("-> %uus for this field (gfx)\n", now - last);
+//	debug("-> %uus for this field (gfx)\n", now - last);
 //	last = now;
 
 	do_controller();

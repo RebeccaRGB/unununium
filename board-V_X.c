@@ -91,7 +91,7 @@ static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 			   || bit(push, i) != bit(old[n][1], i)
 			   || bit(pull, i) != bit(old[n][2], i)
 			   || bit(special, i) != bit(old[n][3], i))
-				printf("IO%c%d data=%x push=%x pull=%x special=%x\n",
+				debug("IO%c%d data=%x push=%x pull=%x special=%x\n",
 				       'A' + n, i, bit(what, i), bit(push, i), bit(pull, i), bit(special, i));
 
 		old[n][0] = what;
@@ -100,7 +100,7 @@ static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 		old[n][3] = special;
 	}
 
-//	printf("IO%c data=%04x push=%04x pull=%04x special=%04x\n",
+//	debug("IO%c data=%04x push=%04x pull=%04x special=%04x\n",
 //	       'A' + n, what, push, pull, special);
 
 	return what;

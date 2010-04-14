@@ -57,16 +57,16 @@ static void trace_unknown(u32 addr, u16 val, int is_read)
 {
 	if (addr >= 0x3d00 && addr < 0x3d00 + ARRAY_SIZE(known_reg_bits)) {
 		if (val & ~known_reg_bits[addr - 0x3d00])
-			printf("*** UNKNOWN IO REG BITS %s: %04x bits %04x\n",
+			debug("*** UNKNOWN IO REG BITS %s: %04x bits %04x\n",
 			       is_read ? "READ" : "WRITE", addr,
 			       val & ~known_reg_bits[addr - 0x3d00]);
 	} else if (addr >= 0x3e00 && addr < 0x3e00 + ARRAY_SIZE(known_dma_reg_bits)) {
 		if (val & ~known_dma_reg_bits[addr - 0x3e00])
-			printf("*** UNKNOWN DMA REG BITS %s: %04x bits %04x\n",
+			debug("*** UNKNOWN DMA REG BITS %s: %04x bits %04x\n",
 			       is_read ? "READ" : "WRITE", addr,
 			       val & ~known_reg_bits[addr - 0x3e00]);
 	} else
-		printf("*** UNKNOWN IO %s: [%04x] = %04x\n",
+		debug("*** UNKNOWN IO %s: [%04x] = %04x\n",
 		       is_read ? "READ" : "WRITE", addr, val);
 }
 
@@ -150,17 +150,17 @@ void io_store(u16 val, u32 addr)
 	switch (addr) {
 	case 0x3d00:		// GPIO special function select
 		if ((mem[addr] & 0x0001) != (val & 0x0001))
-			printf("*** IOA SPECIAL set #%d\n", val & 0x0001);
+			debug("*** IOA SPECIAL set #%d\n", val & 0x0001);
 		if ((mem[addr] & 0x0002) != (val & 0x0002))
-			printf("*** IOB SPECIAL set #%d\n", (val & 0x0002) >> 1);
+			debug("*** IOB SPECIAL set #%d\n", (val & 0x0002) >> 1);
 		if ((mem[addr] & 0x0004) != (val & 0x0004))
-			printf("*** IOA WAKE %sabled\n",
+			debug("*** IOA WAKE %sabled\n",
 			       (val & 0x0004) ? "en" : "dis");
 		if ((mem[addr] & 0x0008) != (val & 0x0008))
-			printf("*** IOB WAKE %sabled\n",
+			debug("*** IOB WAKE %sabled\n",
 			       (val & 0x0008) ? "en" : "dis");
 		if ((mem[addr] & 0x0010) != (val & 0x0010))
-			printf("*** IOC WAKE %sabled\n",
+			debug("*** IOC WAKE %sabled\n",
 			       (val & 0x0010) ? "en" : "dis");
 		break;
 
@@ -189,12 +189,12 @@ void io_store(u16 val, u32 addr)
 	case 0x3d10:		// timebase control
 		if ((mem[addr] & 0x0003) != (val & 0x0003)) {
 			u16 hz = 8 << (val & 0x0003);
-			printf("*** TMB1 FREQ set to %dHz\n", hz);
+			debug("*** TMB1 FREQ set to %dHz\n", hz);
 			timer_tmb1.interval = 27000000 / hz;
 		}
 		if ((mem[addr] & 0x000c) != (val & 0x000c)) {
 			u16 hz = 128 << ((val & 0x000c) >> 2);
-			printf("*** TMB2 FREQ set to %dHz\n", hz);
+			debug("*** TMB2 FREQ set to %dHz\n", hz);
 			timer_tmb2.interval = 27000000 / hz;
 		}
 		break;
@@ -217,7 +217,7 @@ void io_store(u16 val, u32 addr)
 
 	case 0x3d20:		// system control
 		if ((mem[addr] & 0x4000) != (val & 0x4000))
-			printf("*** SLEEP MODE %sabled\n",
+			debug("*** SLEEP MODE %sabled\n",
 			       (val & 0x4000) ? "en" : "dis");
 		break;
 
@@ -230,19 +230,19 @@ void io_store(u16 val, u32 addr)
 
 	case 0x3d23:		// memory control
 		if ((mem[addr] & 0x0006) != (val & 0x0006))
-			printf("*** MEMORY WAIT STATE switched to %d\n", (val & 0x0006) >> 1);
+			debug("*** MEMORY WAIT STATE switched to %d\n", (val & 0x0006) >> 1);
 		if ((mem[addr] & 0x0038) != (val & 0x0038))
-			printf("*** BUS ARBITER switched to mode %d\n", (val & 0x0038) >> 3);
+			debug("*** BUS ARBITER switched to mode %d\n", (val & 0x0038) >> 3);
 		break;
 
 	case 0x3d24:		// watchdog
 		if (val != 0x55aa)
-			printf("*** WEIRD WATCHDOG WRITE: %04x\n", val);
+			debug("*** WEIRD WATCHDOG WRITE: %04x\n", val);
 		break;
 
 	case 0x3d25:		// ADC control
 		if ((mem[addr] & 0x0002) != (val & 0x0002))
-			printf("*** ADC %sabled\n",
+			debug("*** ADC %sabled\n",
 			       (val & 0002) ? "dis" : "en");
 		mem[addr] = ((val | mem[addr]) & 0x2000) ^ val;
 		return;
@@ -252,18 +252,18 @@ void io_store(u16 val, u32 addr)
 
 	case 0x3d28:		// sleep
 		if (val != 0xaa55)
-			printf("*** WEIRD SLEEP WRITE: %04x\n", val);
+			debug("*** WEIRD SLEEP WRITE: %04x\n", val);
 		break;
 
 	case 0x3d29:		// wakeup source
 		if ((mem[addr] & 0x0080) != (val & 0x0080))
-			printf("*** WAKE ON KEY %sabled\n",
+			debug("*** WAKE ON KEY %sabled\n",
 			       (val & 0x0080) ? "en" : "dis");
 		break;
 
 	case 0x3d2a:		// wakeup delay
 		if ((mem[addr] & 0x00ff) != (val & 0x00ff))
-			printf("*** WAKE DELAY %d\n", val & 0x00ff);
+			debug("*** WAKE DELAY %d\n", val & 0x00ff);
 		break;
 
 	// case 0x3d2b: PAL/NTSC
@@ -272,7 +272,7 @@ void io_store(u16 val, u32 addr)
 
 	case 0x3d2e:		// FIQ select
 		if ((mem[addr] & 0x0007) != (val & 0x0007))
-			printf("*** FIQ select %d\n", val & 0x0007);
+			debug("*** FIQ select %d\n", val & 0x0007);
 		break;
 
 	case 0x3d2f:		// DS
@@ -284,22 +284,22 @@ void io_store(u16 val, u32 addr)
 			"0", "1", "odd", "even"
 		};
 		if ((mem[addr] & 0x0001) != (val & 0x0001))
-			printf("*** UART RX IRQ %sabled\n",
+			debug("*** UART RX IRQ %sabled\n",
 			       (val & 0x0001) ? "en" : "dis");
 		if ((mem[addr] & 0x0002) != (val & 0x0002))
-			printf("*** UART TX IRQ %sabled\n",
+			debug("*** UART TX IRQ %sabled\n",
 			       (val & 0x0002) ? "en" : "dis");
 		if ((mem[addr] & 0x000c) != (val & 0x000c))
-			printf("*** UART 9th bit is %s\n",
+			debug("*** UART 9th bit is %s\n",
 			       mode[(val & 0x000c) >> 2]);
 		if ((mem[addr] & 0x0020) != (val & 0x0020))
-			printf("*** UART 9th bit %sabled\n",
+			debug("*** UART 9th bit %sabled\n",
 			       (val & 0x0020) ? "en" : "dis");
 		if ((mem[addr] & 0x0040) != (val & 0x0040))
-			printf("*** UART RX %sabled\n",
+			debug("*** UART RX %sabled\n",
 			       (val & 0x0040) ? "en" : "dis");
 		if ((mem[addr] & 0x0080) != (val & 0x0080))
-			printf("*** UART TX %sabled\n",
+			debug("*** UART TX %sabled\n",
 			       (val & 0x0080) ? "en" : "dis");
 		break;
 	}
@@ -311,18 +311,18 @@ void io_store(u16 val, u32 addr)
 	// case 0x3d32:		// UART reset
 
 	case 0x3d33:		// UART baud rate low byte
-		printf("*** UART BAUD RATE is %u\n", 27000000 / 16 / (0x10000 - (mem[0x3d34] << 8) - val));
+		debug("*** UART BAUD RATE is %u\n", 27000000 / 16 / (0x10000 - (mem[0x3d34] << 8) - val));
 		break;
 
 	case 0x3d34:		// UART baud rate high byte
-		printf("*** UART BAUD RATE is %u\n", 27000000 / 16 / (0x10000 - (val << 8) - mem[0x3d33]));
+		debug("*** UART BAUD RATE is %u\n", 27000000 / 16 / (0x10000 - (val << 8) - mem[0x3d33]));
 		break;
 
 	case 0x3d35:		// UART TX data
 		if (board->uart_send)
 			board->uart_send(val);
 		else
-			printf("UART write %02x (not hooked up)\n", val);
+			debug("UART write %02x (not hooked up)\n", val);
 		return;
 
 
@@ -449,7 +449,7 @@ u16 io_load(u32 addr)
 		if (board->uart_recv)
 			val = board->uart_recv();
 		else {
-			printf("UART READ (not hooked up)\n");
+			debug("UART READ (not hooked up)\n");
 			val = 0;
 		}
 		return val;

@@ -5,6 +5,9 @@ PLATFORM := sdl
 RENDER := gl
 #RENDER := soft
 
+# Debugging spew? (yes/no)
+USE_DEBUG := yes
+
 
 CC := gcc
 CFLAGS := -std=gnu99 -Wall -W -O2 -g  -Wmissing-declarations -ffast-math
@@ -13,6 +16,11 @@ LDFLAGS := -g
 
 ### End of config
 
+
+
+ifeq ($(USE_DEBUG),yes)
+CFLAGS += -DUSE_DEBUG
+endif
 
 
 # Default targets.

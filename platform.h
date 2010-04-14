@@ -35,5 +35,10 @@ u32 get_realtime(void);
 
 void __noreturn fatal(const char *format, ...);
 void warn(const char *format, ...);
+#ifdef USE_DEBUG
+void debug(const char *format, ...);
+#else
+static inline void debug(__unused const char *format, ...) { }
+#endif
 
 #endif

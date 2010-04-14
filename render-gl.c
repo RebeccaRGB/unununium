@@ -227,7 +227,7 @@ error();
 
 void render_atlas(u32 atlas_y, u32 atlas_h)
 {
-printf("atlas: %d+%d\n", atlas_y, atlas_h);
+debug("atlas: %d+%d\n", atlas_y, atlas_h);
 
 	glBindTexture(GL_TEXTURE_2D, atlas_texture);
 error();
@@ -298,7 +298,7 @@ static void init_fragment_program(GLuint *id, const char *program)
 	GLint err;
 	glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &err);
 	if (err != -1) {
-		printf("problem compiling fragment problem:\n");
+		printf("problem compiling fragment program:\n");
 		printf("  err pos = %ld\n", (long)err);
 		printf("  err msg: %s\n",
 		       glGetString(GL_PROGRAM_ERROR_STRING_ARB));
@@ -310,43 +310,43 @@ static void init_fragment_program(GLuint *id, const char *program)
 	                  GL_PROGRAM_INSTRUCTIONS_ARB, &n);
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_NATIVE_INSTRUCTIONS_ARB, &nn);
-	printf(">>> %d (%d) insns\n", n, nn);
+	debug(">>> %d (%d) insns\n", n, nn);
 
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_TEMPORARIES_ARB, &n);
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_NATIVE_TEMPORARIES_ARB, &nn);
-	printf(">>> %d (%d) temps\n", n, nn);
+	debug(">>> %d (%d) temps\n", n, nn);
 
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_PARAMETERS_ARB, &n);
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_NATIVE_PARAMETERS_ARB, &nn);
-	printf(">>> %d (%d) params\n", n, nn);
+	debug(">>> %d (%d) params\n", n, nn);
 
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_ATTRIBS_ARB, &n);
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_NATIVE_ATTRIBS_ARB, &nn);
-	printf(">>> %d (%d) attrs\n", n, nn);
+	debug(">>> %d (%d) attrs\n", n, nn);
 
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_ALU_INSTRUCTIONS_ARB, &n);
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_NATIVE_ALU_INSTRUCTIONS_ARB, &nn);
-	printf(">>> %d (%d) alu insns\n", n, nn);
+	debug(">>> %d (%d) alu insns\n", n, nn);
 
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_TEX_INSTRUCTIONS_ARB, &n);
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_NATIVE_TEX_INSTRUCTIONS_ARB, &nn);
-	printf(">>> %d (%d) tex insns\n", n, nn);
+	debug(">>> %d (%d) tex insns\n", n, nn);
 
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_TEX_INDIRECTIONS_ARB, &n);
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
 	                  GL_PROGRAM_NATIVE_TEX_INDIRECTIONS_ARB, &nn);
-	printf(">>> %d (%d) tex indirs\n", n, nn);
+	debug(">>> %d (%d) tex indirs\n", n, nn);
 
 	GLint ok;
 	glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB,
@@ -411,10 +411,10 @@ static void init_fragment_programs(void)
 
 void render_init(u32 pixel_size)
 {
-	printf("GL RENDERER: %s\n", glGetString(GL_RENDERER));
-	printf("GL VENDOR: %s\n", glGetString(GL_VENDOR));
-//	printf("GL EXTENSIONS: %s\n", glGetString(GL_EXTENSIONS));
-	printf("GL VERSION: %s\n", glGetString(GL_VERSION));
+	debug("GL RENDERER: %s\n", glGetString(GL_RENDERER));
+	debug("GL VENDOR: %s\n", glGetString(GL_VENDOR));
+//	debug("GL EXTENSIONS: %s\n", glGetString(GL_EXTENSIONS));
+	debug("GL VERSION: %s\n", glGetString(GL_VERSION));
 
 
 	glViewport(0, 0, pixel_size*320, pixel_size*240);
