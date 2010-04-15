@@ -6,10 +6,11 @@ VOCABULARY ASM ALSO ASM DEFINITIONS
 
 : org  tdp ! ;
 
+4e00 OPnn   jne-forw
+5e00 OPnn   jeq-forw
 4e40 OPnn   jne-back
 5e40 OPnn   jeq-back
 ee40 OPnn   jmp-back
-5e00 OPnn   jeq-forw
 f040 OPnnnn call
 f140 OP     int-off
 fe80 OPnnnn goto
@@ -19,10 +20,16 @@ fe80 OPnnnn goto
 92e3 OP     r1=d[r3]
 92f3 OP     r1=d[r3++]
 9339 OP     r1>>=4
+b30b OPnnnn r1=r3&#
+9303 OP     r1=r3
+9304 OP     r1=r4
 
 470b OPnnnn r3==#
 490c OPnnnn r4==#
 0841 OP     r4++
+
+d688 OP     push-r3
+9488 OP     pop-r3
 
 0240 OPnn   r1+=##
 9240 OPnn   r1=##
@@ -82,23 +89,21 @@ noppie noppie
 c100 goto
 
 
+\ dump
 c100 org
 
-\ message
-d000 r3=#
-
-r1=[r3++]  3 jeq-forw
-c200 call
-5 jmp-back
-
-\ dump
 3d23 dup r1=[]  80 r1|=#  []=r1
 30 r4=##  0 r3=##
+
 3d2f []=r4
+
+ff r1=r3&# 2 jne-forw c300 call
+
 r1=d[r3]  c200 call
 r1=d[r3++]  r1>>=4 r1>>=4 c200 call
-0 r3==#  b jne-back
-r4++  40 r4==# 11 jne-back  21 jmp-back
+0 r3==#  10 jne-back
+r4++  40 r4==#  16 jne-back  1f jmp-back
+
 
 c200 org
 
@@ -107,10 +112,27 @@ c200 org
 retf
 
 
+\ message
+c300 org
+
+push-r3
+r1=r4  c200 call
+r1=r3  r1>>=4 r1>>=4  c200 call
+r1=r3  c200 call
+
+d000 r3=#
+
+r1=[r3++]  3 jeq-forw
+c200 call
+5 jmp-back
+
+pop-r3
+retf
+
+
 d000 org
 char O t, char H t, char A t, char I t, bl t, char K t, char I t, char T t,
-char T t, char E t, char H t, char S t, char ! t, char 1 t, char ! t,
-0d t, 0a t, 0 t,
+char T t, char E t, char H t, char S t, char ! t, 0 t,
 
 
 fff5 org
