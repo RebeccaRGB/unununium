@@ -2,15 +2,43 @@
 : OPnnnn  CREATE , DOES> @ t, t, ;
 : OPnn  CREATE , DOES> @ or t, ;
 : OP#   CREATE , , DOES> over 0 40 within IF cell+ @ or t, ELSE @ t, t, THEN ;
-: JUMP  CREATE , DOES> @ over 0< IF 40 or >r negate r> THEN or t, ;
+
+
+
+\   x D 0 imm   [bp+NN]                    6 cyc           D <> 7         st
+\   x D 1 imm   NN                         2 cyc           D <> 7
+\   x D 2 s S   r{D-s-1},rD to/from [rS]   4+2*s cyc                      st
+\   x D 3 x S   [rS] and friends           6 cyc                          st
+\   x D 4 0 S   rS                         3 cyc
+\   x D 4 1 S   NNNN                       4 cyc           ld ignores S
+\   x D 4 2 S   [NNNN]                     7 cyc           ld ignores S
+\   x D 4 3 S   [NNNN] = rD op rS          7 cyc           st ignores S   st
+\   x D 4 x S   rS asr                     3 cyc
+\   x D 5 x S   rS lsl/lsr                 3 cyc
+\   x D 6 x S   rS rol/ror                 3 cyc
+\   x D 7 imm   [NN]                       5 cyc                          st
+
+
+
+\   load:
+\   NN [bp] D ld          000
+\   NN # D ld             040
+\   (push/pop)            080
+\   S  @ @+ +@ @-  D ld   0c0/0c8/0d0/0d8   d: 020
+\   S D ld                100
+\   NNNN # D ld           108
+\   NNNN [] D ld          110   (store: 118)
+\                         asr 120, lsl 140, lsr 160, rol 180. ror 1a0
+\   NN [] D ld            1c0
 
 VOCABULARY ASM ALSO ASM DEFINITIONS
 
 : org  tdp ! ;
 
-4e00 JUMP   jne
-5e00 JUMP   jeq
-ee40 JUMP   jmp
+100 CONSTANT sp   101 CONSTANT r1   102 CONSTANT r2   103 CONSTANT r3
+104 CONSTANT r4   105 CONSTANT bp   106 CONSTANT sr   107 CONSTANT pc
+
+: ld  7 and 9 lshift or 9000 or t, ;
 
 f040 OPnnnn call
 f140 OP     int-off
@@ -22,8 +50,6 @@ fe80 OPnnnn goto
 92f3 OP     r1=d[r3++]
 9339 OP     r1>>=4
 b30b OPnnnn r1=r3&#
-9303 OP     r1=r3
-9304 OP     r1=r4
 
 470b OPnnnn r3==#
 490c OPnnnn r4==#
@@ -51,6 +77,24 @@ d319 OPnnnn []=r1
 d91c OPnnnn []=r4
 
 4444 OP     noppie
+
+: IF    ( insn -- orig )  there swap t, ;
+: THEN  ( orig -- )  there over - 1-
+                     dup 40 >= ABORT" forward jump offset too big"
+                     over t@ or swap t! ;
+: BEGIN  ( -- dest )  there ;
+: UNTIL  ( dest insn -- )  there 1+ rot -
+                           dup 40 >= ABORT" backward jump offset too big"
+                           40 or or t, ;
+: AGAIN  ( dest -- )  ee00 UNTIL ;
+: WHILE  ( dest insn -- orig dest )  IF swap ;
+: REPEAT ( orig dest -- )  AGAIN THEN ;
+: AHEAD  ( -- orig )  ee00 IF ;
+: ELSE   ( orig1 -- orig2 )  AHEAD swap THEN ;
+
+4e00 CONSTANT 0=    4e00 CONSTANT =
+5e00 CONSTANT 0<>   5e00 CONSTANT <>
+
 
 PREVIOUS DEFINITIONS
 
@@ -92,22 +136,27 @@ c100 goto
 \ dump
 c100 org
 
+BEGIN
 3d23 dup r1=[]  80 r1|=imm  []=r1
 30 r4=imm  0 r3=imm
 
+BEGIN
 3d2f []=r4
 
-ff r1=r3&# 2 jne c300 call
+BEGIN
+ff r1=r3&# 0= IF c300 call THEN
 
 r1=d[r3]  c200 call
 r1=d[r3++]  r1>>=4 r1>>=4 c200 call
-0 r3==#  -10 jne
-r4++  40 r4==#  -16 jne  -1f jmp
+0 r3==#  0= UNTIL
+r4++  40 r4==#  = UNTIL
+AGAIN
+
 
 
 c200 org
 
-3d31 r2=[]  40 r2&=imm  -5 jne
+BEGIN 3d31 r2=[]  40 r2&=imm  0= UNTIL
 3d35 []=r1
 retf
 
@@ -116,15 +165,13 @@ retf
 c300 org
 
 push-r3
-r1=r4  c200 call
-r1=r3  r1>>=4 r1>>=4  c200 call
-r1=r3  c200 call
+r4 r1 ld  c200 call
+r3 r1 ld  r1>>=4 r1>>=4  c200 call
+r3 r1 ld  c200 call
 
 d000 r3=imm
 
-r1=[r3++]  3 jeq
-c200 call
--5 jmp
+BEGIN  r1=[r3++]  0<> WHILE  c200 call  REPEAT
 
 pop-r3
 retf

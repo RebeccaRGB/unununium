@@ -20,6 +20,8 @@ VOCABULARY CROSS ALSO CROSS DEFINITIONS
 : w!  2dup c! >r 8 rshift r> char+ c! ;
 
 : t!  2* mem + w! ;
+: t@  2* mem + w@ ;
+
 \ : ta!  1 over >tag c!  t! ;
 \ : tc!  2 over >tag c!  c! ;
 \ : ts!  3 over >tag c!  t! ;
