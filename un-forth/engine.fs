@@ -1,6 +1,7 @@
 : OP  CREATE , DOES> @ t, ;
 : OPnnnn  CREATE , DOES> @ t, t, ;
 : OPnn  CREATE , DOES> @ or t, ;
+: OP#   CREATE , , DOES> over 0 40 within IF cell+ @ or t, ELSE @ t, t, THEN ;
 : JUMP  CREATE , DOES> @ over 0< IF 40 or >r negate r> THEN or t, ;
 
 VOCABULARY ASM ALSO ASM DEFINITIONS
@@ -14,7 +15,7 @@ ee40 JUMP   jmp
 f040 OPnnnn call
 f140 OP     int-off
 fe80 OPnnnn goto
-9a90 OP     retf
+9a90 OP     retf    \ a special pop
 
 92d3 OP     r1=[r3++]
 92e3 OP     r1=d[r3]
@@ -31,19 +32,18 @@ b30b OPnnnn r1=r3&#
 d688 OP     push-r3
 9488 OP     pop-r3
 
-0240 OPnn   r1+=##
-9240 OPnn   r1=##
-9640 OPnn   r3=##
-9840 OPnn   r4=##
-a240 OPnn   r1|=##
-b240 OPnn   r1&=##
+0240 0309 OP# r1+=imm
 
-9108 OPnnnn sp=#
-9309 OPnnnn r1=#
-970b OPnnnn r3=#
-a309 OPnnnn r1|=#
-b309 OPnnnn r1&=#
-b50a OPnnnn r2&=#
+9040 9108 OP# sp=imm
+9240 9309 OP# r1=imm
+9440 950a OP# r2=imm
+9640 970b OP# r3=imm
+9840 990c OP# r4=imm
+
+a240 a309 OP# r1|=imm
+
+b240 b309 OP# r1&=imm
+b440 b50a OP# r2&=imm
 
 9311 OPnnnn r1=[]
 9512 OPnnnn r2=[]
@@ -60,31 +60,31 @@ ALSO ASM
 c000 org
 
 int-off
-55aa r1=#  3d24 []=r1
-3d23 dup r1=[]  fff9 r1&=#  04 r1|=##  []=r1
-3d20 dup r1=[]  7fff r1&=#  []=r1
-4006 r1=#  3d20 []=r1
-02 r1=##  3d25 []=r1
-08 r1=##  3d00 []=r1
-3d0a dup r1=[]  07 r1|=##  []=r1
-3d09 dup r1=[]  07 r1&=##  17 r1|=##  []=r1
-3d08 dup r1=[]  07 r1&=##  17 r1|=##  []=r1
-3d07 dup r1=[]  0f r1&=##  ff r1|=#  []=r1
-88c0 r1=#  3d0e []=r1  3d0d []=r1
-f77f r1=#  3d0b []=r1
-0 r1=##  3d04 []=r1  3d03 []=r1
-ffff r1=#  3d01 []=r1
-27ff sp=#
+55aa r1=imm  3d24 []=r1
+3d23 dup r1=[]  fff9 r1&=imm  04 r1|=imm  []=r1
+3d20 dup r1=[]  7fff r1&=imm  []=r1
+4006 r1=imm  3d20 []=r1
+02 r1=imm  3d25 []=r1
+08 r1=imm  3d00 []=r1
+3d0a dup r1=[]  07 r1|=imm  []=r1
+3d09 dup r1=[]  07 r1&=imm  17 r1|=imm  []=r1
+3d08 dup r1=[]  07 r1&=imm  17 r1|=imm  []=r1
+3d07 dup r1=[]  0f r1&=imm  ff r1|=imm  []=r1
+88c0 r1=imm  3d0e []=r1  3d0d []=r1
+f77f r1=imm  3d0b []=r1
+0 r1=imm  3d04 []=r1  3d03 []=r1
+ffff r1=imm  3d01 []=r1
+27ff sp=imm
 
-c3 r1=#  3d30 []=r1
+c3 r1=imm  3d30 []=r1
 3d31 r1=[]
-\ ff r1=#  3d34 []=r1  a8 r1=#  3d33 []=r1   \ baud rate 19200
-ff r1=#  3d34 []=r1  f1 r1=#  3d33 []=r1   \ baud rate 115200
-03 r1=##  3d31 []=r1
-3d0f dup r1=[]  6000 r1|=#  []=r1
-3d0e dup r1=[]  6000 r1|=#  []=r1
+\ ff r1=imm  3d34 []=r1  a8 r1=imm  3d33 []=r1   \ baud rate 19200
+ff r1=imm  3d34 []=r1  f1 r1=imm  3d33 []=r1   \ baud rate 115200
+03 r1=imm  3d31 []=r1
+3d0f dup r1=[]  6000 r1|=imm  []=r1
+3d0e dup r1=[]  6000 r1|=imm  []=r1
 noppie noppie
-3d0d dup r1=[]  4000 r1|=#  []=r1
+3d0d dup r1=[]  4000 r1|=imm  []=r1
 noppie noppie
 c100 goto
 
@@ -92,8 +92,8 @@ c100 goto
 \ dump
 c100 org
 
-3d23 dup r1=[]  80 r1|=#  []=r1
-30 r4=##  0 r3=##
+3d23 dup r1=[]  80 r1|=imm  []=r1
+30 r4=imm  0 r3=imm
 
 3d2f []=r4
 
@@ -107,7 +107,7 @@ r4++  40 r4==#  -16 jne  -1f jmp
 
 c200 org
 
-3d31 r2=[]  40 r2&=#  -5 jne
+3d31 r2=[]  40 r2&=imm  -5 jne
 3d35 []=r1
 retf
 
@@ -120,7 +120,7 @@ r1=r4  c200 call
 r1=r3  r1>>=4 r1>>=4  c200 call
 r1=r3  c200 call
 
-d000 r3=#
+d000 r3=imm
 
 r1=[r3++]  3 jeq
 c200 call
