@@ -1,16 +1,16 @@
 : OP  CREATE , DOES> @ t, ;
 : OPnnnn  CREATE , DOES> @ t, t, ;
 : OPnn  CREATE , DOES> @ or t, ;
+: JUMP  CREATE , DOES> @ over 0< IF 40 or >r negate r> THEN or t, ;
 
 VOCABULARY ASM ALSO ASM DEFINITIONS
 
 : org  tdp ! ;
 
-4e00 OPnn   jne-forw
-5e00 OPnn   jeq-forw
-4e40 OPnn   jne-back
-5e40 OPnn   jeq-back
-ee40 OPnn   jmp-back
+4e00 JUMP   jne
+5e00 JUMP   jeq
+ee40 JUMP   jmp
+
 f040 OPnnnn call
 f140 OP     int-off
 fe80 OPnnnn goto
@@ -97,17 +97,17 @@ c100 org
 
 3d2f []=r4
 
-ff r1=r3&# 2 jne-forw c300 call
+ff r1=r3&# 2 jne c300 call
 
 r1=d[r3]  c200 call
 r1=d[r3++]  r1>>=4 r1>>=4 c200 call
-0 r3==#  10 jne-back
-r4++  40 r4==#  16 jne-back  1f jmp-back
+0 r3==#  -10 jne
+r4++  40 r4==#  -16 jne  -1f jmp
 
 
 c200 org
 
-3d31 r2=[]  40 r2&=#  5 jne-back
+3d31 r2=[]  40 r2&=#  -5 jne
 3d35 []=r1
 retf
 
@@ -122,9 +122,9 @@ r1=r3  c200 call
 
 d000 r3=#
 
-r1=[r3++]  3 jeq-forw
+r1=[r3++]  3 jeq
 c200 call
-5 jmp-back
+-5 jmp
 
 pop-r3
 retf
