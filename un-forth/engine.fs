@@ -1,8 +1,19 @@
-: OP  CREATE , DOES> @ t, ;
+: OPx CREATE , DOES> @ t, ;
 : OPnnnn  CREATE , DOES> @ t, t, ;
 : OPnn  CREATE , DOES> @ or t, ;
 : OP#   CREATE , , DOES> over 0 40 within IF cell+ @ or t, ELSE @ t, t, THEN ;
 
+
+VARIABLE imm
+: imm?  ( op -- f )  1f8 and 108 120 within ;
+: short?   ( -- f )  imm @ 0 40 within ;
+
+: 2OP  CREATE , DOES>
+  @ >r 7 and 9 lshift or r> or dup imm? IF short? IF
+  dup fe00 and swap 38 and 08 = IF 40 ELSE 1c0 THEN or imm @ or t, ELSE
+  dup f038 and d010 = IF 8 + THEN
+  dup 9 rshift 7 and or t, imm @ t, THEN EXIT THEN
+  t, ;
 
 
 \   x D 0 imm   [bp+NN]                    6 cyc           D <> 7         st
@@ -21,62 +32,57 @@
 
 
 \   load:
-\   NN [bp] D ld          000
-\   NN # D ld             040
+\   NN [bp] D :=          000
+\ \   NN # D :=             040
 \   (push/pop)            080
-\   S  @ @+ +@ @-  D ld   0c0/0c8/0d0/0d8   d: 020
-\   S D ld                100
-\   NNNN # D ld           108
-\   NNNN [] D ld          110   (store: 118)
+\ \   S  @ @- @+ +@  D :=   0c0/0c8/0d0/0d8   d: 020
+\ \   S D :=                100
+\ \   NNNN # D :=           108
+\ \   NNNN [] D :=          110   (store: 118)
 \                         asr 120, lsl 140, lsr 160, rol 180. ror 1a0
-\   NN [] D ld            1c0
+\ \   NN [] D :=            1c0
 
 VOCABULARY ASM ALSO ASM DEFINITIONS
 
 : org  tdp ! ;
 
+\ The registers.  Sneakily encode "register direct" addressing mode in these.
 100 CONSTANT sp   101 CONSTANT r1   102 CONSTANT r2   103 CONSTANT r3
 104 CONSTANT r4   105 CONSTANT bp   106 CONSTANT sr   107 CONSTANT pc
 
-: ld  7 and 9 lshift or 9000 or t, ;
+\ The addressing modes.
+: d:  20 or ;
+: @   ff and 0c0 or ;
+: @-  ff and 0c8 or ;
+: @+  ff and 0d0 or ;
+: +@  ff and 0d8 or ;
+: #   imm ! 108 ;
+: []  imm ! 110 ;
+
+\ The ops.
+0000 2OP +=
+4000 2OP cmp
+9000 2OP :=
+a000 2OP |=
+b000 2OP &=
+d000 2OP st
+
+
 
 f040 OPnnnn call
-f140 OP     int-off
+f140 OPx    int-off
 fe80 OPnnnn goto
-9a90 OP     retf    \ a special pop
+9a90 OPx    retf    \ a special pop
 
-92d3 OP     r1=[r3++]
-92e3 OP     r1=d[r3]
-92f3 OP     r1=d[r3++]
-9339 OP     r1>>=4
+9339 OPx    r1>>=4
 b30b OPnnnn r1=r3&#
 
-470b OPnnnn r3==#
-490c OPnnnn r4==#
-0841 OP     r4++
+d688 OPx    push-r3
+9488 OPx    pop-r3
 
-d688 OP     push-r3
-9488 OP     pop-r3
+4444 OPx    noppie
 
-0240 0309 OP# r1+=imm
 
-9040 9108 OP# sp=imm
-9240 9309 OP# r1=imm
-9440 950a OP# r2=imm
-9640 970b OP# r3=imm
-9840 990c OP# r4=imm
-
-a240 a309 OP# r1|=imm
-
-b240 b309 OP# r1&=imm
-b440 b50a OP# r2&=imm
-
-9311 OPnnnn r1=[]
-9512 OPnnnn r2=[]
-d319 OPnnnn []=r1
-d91c OPnnnn []=r4
-
-4444 OP     noppie
 
 : IF    ( insn -- orig )  there swap t, ;
 : THEN  ( orig -- )  there over - 1-
@@ -104,31 +110,31 @@ ALSO ASM
 c000 org
 
 int-off
-55aa r1=imm  3d24 []=r1
-3d23 dup r1=[]  fff9 r1&=imm  04 r1|=imm  []=r1
-3d20 dup r1=[]  7fff r1&=imm  []=r1
-4006 r1=imm  3d20 []=r1
-02 r1=imm  3d25 []=r1
-08 r1=imm  3d00 []=r1
-3d0a dup r1=[]  07 r1|=imm  []=r1
-3d09 dup r1=[]  07 r1&=imm  17 r1|=imm  []=r1
-3d08 dup r1=[]  07 r1&=imm  17 r1|=imm  []=r1
-3d07 dup r1=[]  0f r1&=imm  ff r1|=imm  []=r1
-88c0 r1=imm  3d0e []=r1  3d0d []=r1
-f77f r1=imm  3d0b []=r1
-0 r1=imm  3d04 []=r1  3d03 []=r1
-ffff r1=imm  3d01 []=r1
-27ff sp=imm
+55aa # r1 :=   3d24 [] r1 st
+3d23 dup [] r1 :=   fff9 # r1 &=   04 # r1 |=   [] r1 st
+3d20 dup [] r1 :=   7fff # r1 &=   [] r1 st
+4006 # r1 :=   3d20 [] r1 st
+02 # r1 :=   3d25 [] r1 st
+08 # r1 :=   3d00 [] r1 st
+3d0a dup [] r1 :=    07 # r1 |=   [] r1 st
+3d09 dup [] r1 :=    07 # r1 &=   17 # r1 |=   [] r1 st
+3d08 dup [] r1 :=    07 # r1 &=   17 # r1 |=   [] r1 st
+3d07 dup [] r1 :=    0f # r1 &=   ff # r1 |=   [] r1 st
+88c0 # r1 :=   3d0e [] r1 st  3d0d [] r1 st
+f77f # r1 :=   3d0b [] r1 st
+0 # r1 :=   3d04 [] r1 st  3d03 [] r1 st
+ffff # r1 :=   3d01 [] r1 st
+27ff # sp :=
 
-c3 r1=imm  3d30 []=r1
-3d31 r1=[]
-\ ff r1=imm  3d34 []=r1  a8 r1=imm  3d33 []=r1   \ baud rate 19200
-ff r1=imm  3d34 []=r1  f1 r1=imm  3d33 []=r1   \ baud rate 115200
-03 r1=imm  3d31 []=r1
-3d0f dup r1=[]  6000 r1|=imm  []=r1
-3d0e dup r1=[]  6000 r1|=imm  []=r1
+c3 # r1 :=   3d30 [] r1 st
+3d31 [] r1 :=
+\ ff # r1 :=   3d34 [] r1 st  a8 # r1 :=   3d33 [] r1 st   \ baud rate 19200
+ff # r1 :=   3d34 [] r1 st  f1 # r1 :=   3d33 [] r1 st   \ baud rate 115200
+03 # r1 :=   3d31 [] r1 st
+3d0f dup [] r1 :=   6000 # r1 |=   [] r1 st
+3d0e dup [] r1 :=   6000 # r1 |=   [] r1 st
 noppie noppie
-3d0d dup r1=[]  4000 r1|=imm  []=r1
+3d0d dup [] r1 :=   4000 # r1 |=   [] r1 st
 noppie noppie
 c100 goto
 
@@ -137,27 +143,24 @@ c100 goto
 c100 org
 
 BEGIN
-3d23 dup r1=[]  80 r1|=imm  []=r1
-30 r4=imm  0 r3=imm
-
-BEGIN
-3d2f []=r4
-
-BEGIN
-ff r1=r3&# 0= IF c300 call THEN
-
-r1=d[r3]  c200 call
-r1=d[r3++]  r1>>=4 r1>>=4 c200 call
-0 r3==#  0= UNTIL
-r4++  40 r4==#  = UNTIL
+  3d23 dup [] r1 :=    80 # r1 |=   [] r1 st
+  30 # r4 :=  0 # r3 :=
+  BEGIN
+    3d2f [] r4 st
+    BEGIN
+      ff r1=r3&# 0= IF c300 call THEN
+      r3 d: @  r1 :=                 c200 call
+      r3 d: @+ r1 :=  r1>>=4 r1>>=4  c200 call
+    0 # r3 cmp  = UNTIL
+  1 # r4 +=   40 # r4 cmp  = UNTIL
 AGAIN
 
 
 
 c200 org
 
-BEGIN 3d31 r2=[]  40 r2&=imm  0= UNTIL
-3d35 []=r1
+BEGIN 3d31 [] r2 :=   40 # r2 &=   0= UNTIL
+3d35 [] r1 st
 retf
 
 
@@ -165,13 +168,13 @@ retf
 c300 org
 
 push-r3
-r4 r1 ld  c200 call
-r3 r1 ld  r1>>=4 r1>>=4  c200 call
-r3 r1 ld  c200 call
+r4 r1 :=  c200 call
+r3 r1 :=  r1>>=4 r1>>=4  c200 call
+r3 r1 :=  c200 call
 
-d000 r3=imm
+d000 # r3 :=
 
-BEGIN  r1=[r3++]  0<> WHILE  c200 call  REPEAT
+BEGIN  r3 @+ r1 :=  0<> WHILE  c200 call  REPEAT
 
 pop-r3
 retf
@@ -186,11 +189,3 @@ fff5 org
 
 ffff t, ffff t, c000 t,
 ffff t, ffff t, ffff t, ffff t, ffff t, ffff t, ffff t, ffff t,
-
-
-: make-file ( addr len name len -- )
-  w/o bin open-file ABORT" couldn't create file"
-  dup >r write-file ABORT" couldn't write file"
-      r> close-file ABORT" couldn't close file" ;
-
-mem 20000 s" t.b" make-file
