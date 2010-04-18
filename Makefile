@@ -1,22 +1,9 @@
-# Build for what platform?
-PLATFORM := sdl
-
-# What video renderer?
-RENDER := gl
-#RENDER := soft
-
-# Debugging spew? (yes/no)
-USE_DEBUG := yes
+include config
 
 
-CC := gcc
-CFLAGS := -std=gnu99 -Wall -W -O2 -g  -Wmissing-declarations -ffast-math
+CFLAGS += -std=gnu99 -Wall -W -O2 -g  -Wmissing-declarations -ffast-math
 CFLAGS += -DRENDER_$(RENDER)
 LDFLAGS := -g
-
-### End of config
-
-
 
 ifeq ($(USE_DEBUG),yes)
 CFLAGS += -DUSE_DEBUG
@@ -70,7 +57,7 @@ all: .stamp-bundle
 endif
 
 # Laziness rules, and lazy rules rule most of all.
-*.o: *.h Makefile
+*.o: *.h Makefile config
 
 # Clean up.
 .PHONY: clean

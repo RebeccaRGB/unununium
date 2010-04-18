@@ -1,0 +1,12 @@
+# Build for what platform?
+PLATFORM := sdl
+
+# What video renderer? (gl/soft)
+RENDER := gl
+
+# Debugging spew? (yes/no)
+USE_DEBUG := no
+
+# Compiler, compiler flags.
+CC := gcc
+CFLAGS := -march=native
