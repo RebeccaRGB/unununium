@@ -80,24 +80,24 @@ static void do_i2c(void)
 {
 	u32 addr;
 
-	addr = (mem[0x3d5b] & 0x06) << 7;
-	addr |= mem[0x3d5c] & 0xff;
+	addr = (ram[0x3d5b] & 0x06) << 7;
+	addr |= ram[0x3d5c] & 0xff;
 
-	if (mem[0x3d58] & 0x40)
-		mem[0x3d5e] = seeprom[addr];
+	if (ram[0x3d58] & 0x40)
+		ram[0x3d5e] = seeprom[addr];
 	else
-		seeprom[addr] = mem[0x3d5d];
+		seeprom[addr] = ram[0x3d5d];
 
-	mem[0x3d59] |= 1;
+	ram[0x3d59] |= 1;
 }
 
 static void do_gpio(u32 addr)
 {
 	u32 n = (addr - 0x3d01) / 5;
-	u16 buffer  = mem[0x3d02 + 5*n];
-	u16 dir     = mem[0x3d03 + 5*n];
-	u16 attr    = mem[0x3d04 + 5*n];
-	u16 special = mem[0x3d05 + 5*n];
+	u16 buffer  = ram[0x3d02 + 5*n];
+	u16 dir     = ram[0x3d03 + 5*n];
+	u16 attr    = ram[0x3d04 + 5*n];
+	u16 special = ram[0x3d05 + 5*n];
 
 	u16 push = dir;
 	u16 pull = (~dir) & (~attr);
@@ -108,29 +108,29 @@ static void do_gpio(u32 addr)
 	if (board->gpio)
 		what = board->gpio(n, what, push, pull, special);
 
-	mem[0x3d01 + 5*n] = what;
+	ram[0x3d01 + 5*n] = what;
 }
 
 static void do_dma(u32 len)
 {
-	u32 src = ((mem[0x3e01] & 0x3f) << 16) | mem[0x3e00];
-	u32 dst = mem[0x3e03] & 0x3fff;
+	u32 src = ((ram[0x3e01] & 0x3f) << 16) | ram[0x3e00];
+	u32 dst = ram[0x3e03] & 0x3fff;
 	u32 j;
 
 	for (j = 0; j < len; j++)
-		mem[dst+j] = mem[src+j];
+		store(load(src + j), dst + j);
 
-	mem[0x3e02] = 0;
+	ram[0x3e02] = 0;
 }
 
 static void do_tmb1(void)
 {
-	mem[0x3d22] |= 0x0001;
+	ram[0x3d22] |= 0x0001;
 }
 
 static void do_tmb2(void)
 {
-	mem[0x3d22] |= 0x0002;
+	ram[0x3d22] |= 0x0002;
 }
 
 static struct timer timer_tmb1 = {
@@ -152,17 +152,17 @@ void io_store(u16 val, u32 addr)
 
 	switch (addr) {
 	case 0x3d00:		// GPIO special function select
-		if ((mem[addr] & 0x0001) != (val & 0x0001))
+		if ((ram[addr] & 0x0001) != (val & 0x0001))
 			debug("*** IOA SPECIAL set #%d\n", val & 0x0001);
-		if ((mem[addr] & 0x0002) != (val & 0x0002))
+		if ((ram[addr] & 0x0002) != (val & 0x0002))
 			debug("*** IOB SPECIAL set #%d\n", (val & 0x0002) >> 1);
-		if ((mem[addr] & 0x0004) != (val & 0x0004))
+		if ((ram[addr] & 0x0004) != (val & 0x0004))
 			debug("*** IOA WAKE %sabled\n",
 			       (val & 0x0004) ? "en" : "dis");
-		if ((mem[addr] & 0x0008) != (val & 0x0008))
+		if ((ram[addr] & 0x0008) != (val & 0x0008))
 			debug("*** IOB WAKE %sabled\n",
 			       (val & 0x0008) ? "en" : "dis");
-		if ((mem[addr] & 0x0010) != (val & 0x0010))
+		if ((ram[addr] & 0x0010) != (val & 0x0010))
 			debug("*** IOC WAKE %sabled\n",
 			       (val & 0x0010) ? "en" : "dis");
 		break;
@@ -185,17 +185,17 @@ void io_store(u16 val, u32 addr)
 	case 0x3d02 ... 0x3d04:	// port A
 	case 0x3d07 ... 0x3d09:	// port B
 	case 0x3d0c ... 0x3d0e:	// port C
-		mem[addr] = val;
+		ram[addr] = val;
 		do_gpio(addr);
 		return;
 
 	case 0x3d10:		// timebase control
-		if ((mem[addr] & 0x0003) != (val & 0x0003)) {
+		if ((ram[addr] & 0x0003) != (val & 0x0003)) {
 			u16 hz = 8 << (val & 0x0003);
 			debug("*** TMB1 FREQ set to %dHz\n", hz);
 			timer_tmb1.interval = 27000000 / hz;
 		}
-		if ((mem[addr] & 0x000c) != (val & 0x000c)) {
+		if ((ram[addr] & 0x000c) != (val & 0x000c)) {
 			u16 hz = 128 << ((val & 0x000c) >> 2);
 			debug("*** TMB2 FREQ set to %dHz\n", hz);
 			timer_tmb2.interval = 27000000 / hz;
@@ -219,7 +219,7 @@ void io_store(u16 val, u32 addr)
 	// case 0x3d1f:
 
 	case 0x3d20:		// system control
-		if ((mem[addr] & 0x4000) != (val & 0x4000))
+		if ((ram[addr] & 0x4000) != (val & 0x4000))
 			debug("*** SLEEP MODE %sabled\n",
 			       (val & 0x4000) ? "en" : "dis");
 		break;
@@ -228,13 +228,13 @@ void io_store(u16 val, u32 addr)
 		break;
 
 	case 0x3d22:		// IRQ ack
-		mem[addr] &= ~val;
+		ram[addr] &= ~val;
 		return;
 
 	case 0x3d23:		// memory control
-		if ((mem[addr] & 0x0006) != (val & 0x0006))
+		if ((ram[addr] & 0x0006) != (val & 0x0006))
 			debug("*** MEMORY WAIT STATE switched to %d\n", (val & 0x0006) >> 1);
-		if ((mem[addr] & 0x0038) != (val & 0x0038))
+		if ((ram[addr] & 0x0038) != (val & 0x0038))
 			debug("*** BUS ARBITER switched to mode %d\n", (val & 0x0038) >> 3);
 		break;
 
@@ -244,10 +244,10 @@ void io_store(u16 val, u32 addr)
 		break;
 
 	case 0x3d25:		// ADC control
-		if ((mem[addr] & 0x0002) != (val & 0x0002))
+		if ((ram[addr] & 0x0002) != (val & 0x0002))
 			debug("*** ADC %sabled\n",
 			       (val & 0002) ? "dis" : "en");
-		mem[addr] = ((val | mem[addr]) & 0x2000) ^ val;
+		ram[addr] = ((val | ram[addr]) & 0x2000) ^ val;
 		return;
 
 	// case 0x3d26:
@@ -259,13 +259,13 @@ void io_store(u16 val, u32 addr)
 		break;
 
 	case 0x3d29:		// wakeup source
-		if ((mem[addr] & 0x0080) != (val & 0x0080))
+		if ((ram[addr] & 0x0080) != (val & 0x0080))
 			debug("*** WAKE ON KEY %sabled\n",
 			       (val & 0x0080) ? "en" : "dis");
 		break;
 
 	case 0x3d2a:		// wakeup delay
-		if ((mem[addr] & 0x00ff) != (val & 0x00ff))
+		if ((ram[addr] & 0x00ff) != (val & 0x00ff))
 			debug("*** WAKE DELAY %d\n", val & 0x00ff);
 		break;
 
@@ -274,7 +274,7 @@ void io_store(u16 val, u32 addr)
 	// case 0x3d2d: PRNG #2
 
 	case 0x3d2e:		// FIQ select
-		if ((mem[addr] & 0x0007) != (val & 0x0007))
+		if ((ram[addr] & 0x0007) != (val & 0x0007))
 			debug("*** FIQ select %d\n", val & 0x0007);
 		break;
 
@@ -286,39 +286,39 @@ void io_store(u16 val, u32 addr)
 		static const char *mode[4] = {
 			"0", "1", "odd", "even"
 		};
-		if ((mem[addr] & 0x0001) != (val & 0x0001))
+		if ((ram[addr] & 0x0001) != (val & 0x0001))
 			debug("*** UART RX IRQ %sabled\n",
 			       (val & 0x0001) ? "en" : "dis");
-		if ((mem[addr] & 0x0002) != (val & 0x0002))
+		if ((ram[addr] & 0x0002) != (val & 0x0002))
 			debug("*** UART TX IRQ %sabled\n",
 			       (val & 0x0002) ? "en" : "dis");
-		if ((mem[addr] & 0x000c) != (val & 0x000c))
+		if ((ram[addr] & 0x000c) != (val & 0x000c))
 			debug("*** UART 9th bit is %s\n",
 			       mode[(val & 0x000c) >> 2]);
-		if ((mem[addr] & 0x0020) != (val & 0x0020))
+		if ((ram[addr] & 0x0020) != (val & 0x0020))
 			debug("*** UART 9th bit %sabled\n",
 			       (val & 0x0020) ? "en" : "dis");
-		if ((mem[addr] & 0x0040) != (val & 0x0040))
+		if ((ram[addr] & 0x0040) != (val & 0x0040))
 			debug("*** UART RX %sabled\n",
 			       (val & 0x0040) ? "en" : "dis");
-		if ((mem[addr] & 0x0080) != (val & 0x0080))
+		if ((ram[addr] & 0x0080) != (val & 0x0080))
 			debug("*** UART TX %sabled\n",
 			       (val & 0x0080) ? "en" : "dis");
 		break;
 	}
 
 	case 0x3d31:		// UART status
-		mem[addr] ^= (mem[addr] & 0x0003 & val);
+		ram[addr] ^= (ram[addr] & 0x0003 & val);
 		return;
 
 	// case 0x3d32:		// UART reset
 
 	case 0x3d33:		// UART baud rate low byte
-		debug("*** UART BAUD RATE is %u\n", 27000000 / 16 / (0x10000 - (mem[0x3d34] << 8) - val));
+		debug("*** UART BAUD RATE is %u\n", 27000000 / 16 / (0x10000 - (ram[0x3d34] << 8) - val));
 		break;
 
 	case 0x3d34:		// UART baud rate high byte
-		debug("*** UART BAUD RATE is %u\n", 27000000 / 16 / (0x10000 - (val << 8) - mem[0x3d33]));
+		debug("*** UART BAUD RATE is %u\n", 27000000 / 16 / (0x10000 - (val << 8) - ram[0x3d33]));
 		break;
 
 	case 0x3d35:		// UART TX data
@@ -326,7 +326,7 @@ void io_store(u16 val, u32 addr)
 			board->uart_send(val);
 		else
 			debug("UART write %02x (not hooked up)\n", val);
-		mem[0x3d31] |= 0x02;
+		ram[0x3d31] |= 0x02;
 		return;
 
 
@@ -366,12 +366,12 @@ void io_store(u16 val, u32 addr)
 	// case 0x3d57:
 
 	case 0x3d58:		// IIC command
-		mem[addr] = val;
+		ram[addr] = val;
 		do_i2c();
 		return;
 
 	case 0x3d59:		// IIC status/ack
-		mem[addr] &= ~val;
+		ram[addr] &= ~val;
 		return;
 
 	case 0x3d5a:		// IIC access mode?  always 80, "combined mode"
@@ -405,12 +405,12 @@ void io_store(u16 val, u32 addr)
 		;
 	}
 
-	mem[addr] = val;
+	ram[addr] = val;
 }
 
 u16 io_load(u32 addr)
 {
-	u16 val = mem[addr];
+	u16 val = ram[addr];
 
 	if (trace_unknown_io)
 		trace_unknown(addr, val, 1);
@@ -420,7 +420,7 @@ u16 io_load(u32 addr)
 	case 0x3d06:
 	case 0x3d0b:			// GPIO
 		do_gpio(addr);
-		return mem[addr];
+		return ram[addr];
 
 	case 0x3d02 ... 0x3d05:
 	case 0x3d07 ... 0x3d0a:
@@ -450,7 +450,7 @@ u16 io_load(u32 addr)
 		return val | 0x81;
 
 	case 0x3d36:			// UART RX data
-		mem[0x3d31] &= ~0x80;
+		ram[0x3d31] &= ~0x80;
 		if (board->uart_recv)
 			val = board->uart_recv();
 		else {

@@ -145,7 +145,7 @@ static void render_tile(u32 xoff, u32 yoff, u32 addr, u16 attr)
 
 	u8 alpha = 255;
 	if (attr & 0x4000)
-		alpha = mem[0x282a] << 6;
+		alpha = ram[0x282a] << 6;
 
 	u32 pal_offset = (attr & 0x0f00) >> 4;
 	pal_offset >>= nc;
@@ -178,14 +178,14 @@ static void render_tile_into_atlas(u32 page, u16 attr, u16 tile)
 
 	u32 nc = colour_sizes[attr & 0x0003];
 
-	u32 addr = 0x40*mem[0x2820 + page] + nc*w*h/16*tile;
+	u32 addr = 0x40*ram[0x2820 + page] + nc*w*h/16*tile;
 
 	render_texture_into_atlas(addr, attr, w, h);
 }
 
 static void __noinline render_page_into_atlas(u32 page)
 {
-	u16 *regs = &mem[0x2810 + 6*page];
+	u16 *regs = &ram[0x2810 + 6*page];
 
 	u32 attr = regs[2];
 	u32 ctrl = regs[3];
@@ -205,12 +205,12 @@ static void __noinline render_page_into_atlas(u32 page)
 	for (y0 = 0; y0 < hn; y0++)
 		for (x0 = 0; x0 < wn; x0++) {
 			u32 which = (ctrl & 4) ? 0 : x0 + wn*y0;
-			u16 tile = mem[tilemap + which];
+			u16 tile = load(tilemap + which);
 
 			if (tile == 0)
 				continue;
 
-			u16 palette = mem[palette_map + which/2];
+			u16 palette = load(palette_map + which/2);
 			if (which & 1)
 				palette >>= 8;
 
@@ -239,17 +239,17 @@ static void render_sprite_into_atlas(u16 *sprite)
 
 static void __noinline render_sprites_into_atlas(void)
 {
-	if ((mem[0x2842] & 1) == 0)
+	if ((ram[0x2842] & 1) == 0)
 		return;
 
 	u32 i;
 	for (i = 0; i < 256; i++)
-		render_sprite_into_atlas(mem + 0x2c00 + 4*i);
+		render_sprite_into_atlas(ram + 0x2c00 + 4*i);
 }
 
 static void __noinline render_page_arrays(u32 page, u32 depth)
 {
-	u16 *regs = &mem[0x2810 + 6*page];
+	u16 *regs = &ram[0x2810 + 6*page];
 
 	u32 attr = regs[2];
 	u32 ctrl = regs[3];
@@ -273,9 +273,9 @@ static void __noinline render_page_arrays(u32 page, u32 depth)
 	for (i = 0; i < hn*wn; i++) {
 		u32 which = (ctrl & 4) ? 0 : i;
 
-		u16 tile = mem[tilemap + which];
+		u16 tile = load(tilemap + which);
 
-		u16 palette = mem[palette_map + which/2];
+		u16 palette = load(palette_map + which/2);
 		if (which & 1)
 			palette >>= 8;
 
@@ -294,7 +294,7 @@ static void __noinline render_page_arrays(u32 page, u32 depth)
 
 		u16 atlas_x, atlas_y;
 		if (tile) {
-			u32 addr = 0x40*mem[0x2820 + page] + nc*w*h/16*tile;
+			u32 addr = 0x40*ram[0x2820 + page] + nc*w*h/16*tile;
 			struct cache *cache = cache_get(addr, tileattr);
 			atlas_x = cache->atlas_x;
 			atlas_y = cache->atlas_y;
@@ -309,7 +309,7 @@ static void __noinline render_page_arrays(u32 page, u32 depth)
 
 		u8 alpha = 255;
 		if (attr & 0x4000 || tilectrl & 0x0100)
-			alpha = mem[0x282a] << 6;
+			alpha = ram[0x282a] << 6;
 		if (tile == 0)
 			alpha = 0;
 
@@ -322,7 +322,7 @@ static void __noinline render_page_arrays(u32 page, u32 depth)
 
 static void __noinline __render_page(u32 page, u32 depth)
 {
-	u16 *regs = &mem[0x2810 + 6*page];
+	u16 *regs = &ram[0x2810 + 6*page];
 
 	u32 xscroll = regs[0];
 	u32 yscroll = regs[1];
@@ -340,7 +340,7 @@ static void __noinline __render_page(u32 page, u32 depth)
 
 	u32 i;
 	for (i = 0; i < 240; i++)
-		render_page_hoff[i] = (ctrl & 0x0010) ? mem[0x2900 + i] : 0;
+		render_page_hoff[i] = (ctrl & 0x0010) ? ram[0x2900 + i] : 0;
 
 	render_page(xscroll, yscroll, h, w);
 }
@@ -376,19 +376,19 @@ static void render_sprite(u32 depth, u16 *sprite)
 	x = x & 0x1ff;
 	y = y & 0x1ff;
 
-	u32 addr = 0x40*mem[0x2822] + nc*w*h/16*tile;
+	u32 addr = 0x40*ram[0x2822] + nc*w*h/16*tile;
 
 	render_tile(x, y, addr, attr);
 }
 
 static void __noinline render_sprites(u32 depth)
 {
-	if ((mem[0x2842] & 1) == 0)
+	if ((ram[0x2842] & 1) == 0)
 		return;
 
 	u32 i;
 	for (i = 0; i < 256; i++)
-		render_sprite(depth, mem + 0x2c00 + 4*i);
+		render_sprite(depth, ram + 0x2c00 + 4*i);
 }
 
 static void do_show_fps(void)
@@ -422,7 +422,7 @@ void render(void)
 
 	render_begin();
 
-	if ((mem[0x3d20] & 0x0004) == 0) {	// video DAC disable
+	if ((ram[0x3d20] & 0x0004) == 0) {	// video DAC disable
 		render_palette();
 
 		atlas_low_x = atlas_x;

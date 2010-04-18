@@ -10,7 +10,7 @@
 
 #define N_MEM 0x400000
 
-static u16 mem[N_MEM];
+static u16 mem[N_MEM+1];
 
 int main(int argc, char *argv[])
 {
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 #endif
 
 	for (i = 0; i < n; )
-		i += disas(mem, i);
+		i += disas(i, mem[i], mem[i+1]);
 
 	return 0;
 }

@@ -82,9 +82,10 @@ static int trace_gpio = 0;
 
 static void init(void)
 {
-	if (mem[0x5675c] == 0x9311 && mem[0x5675e] == 0x4240 &&	// Winnie
-	    mem[0x5675f] == 0x4e44)
-		board->idle_pc = 0x5675c;
+	if (load(0x5675c) == 0x9311 &&
+	    load(0x5675e) == 0x4240 &&
+	    load(0x5675f) == 0x4e44)
+		board->idle_pc = 0x5675c;	// Winnie
 
 //	else
 //		board->idle_pc = 0x4003a;	// studio, FIXME

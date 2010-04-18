@@ -48,7 +48,7 @@ void render_texture(int xoff, int yoff, int w, int h, u16 atlas_x, u16 atlas_y, 
 			u8 pal = p[y*ATLAS_W + x] + pal_offset;
 
 			if (xx < 320 && yy < 240) {
-				u16 rgb = mem[0x2b00 + pal];
+				u16 rgb = ram[0x2b00 + pal];
 				if ((rgb & 0x8000) == 0) {
 					if (alpha != 255)
 						mix_pixel(xx + 320*yy, palette_rgb[pal], alpha);

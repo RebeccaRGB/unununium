@@ -19,25 +19,24 @@ static void switch_bank(u32 bank)
 {
 	if (bank == current_bank)
 		return;
+
+	main_rom.extra = bank * 0x400000;
 	current_bank = bank;
 
 	render_kill_cache();
 
-	read_rom(N_MEM*bank);
-//	memset(ever_ran_this, 0, N_MEM);
-
 	board->idle_pc = 0;
-	if (mem[0x19792] == 0x4311 && mem[0x19794] == 0x4e43)	// VII bank 0
+	if (load(0x19792) == 0x4311 && load(0x19794) == 0x4e43)	// VII bank 0
 		board->idle_pc = 0x19792;
-	if (mem[0x21653] == 0x4311 && mem[0x21655] == 0x4e43)	// VII bank 2
+	if (load(0x21653) == 0x4311 && load(0x21655) == 0x4e43)	// VII bank 2
 		board->idle_pc = 0x21653;
-	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43) {	// VC1
+	if (load(0x42daa) == 0x4311 && load(0x42dac) == 0x4e43) {	// VC1
 		board->idle_pc = 0x42daa;
 		controller_should_be_rotated = 1;
 		//mem[0x38ecf] = 0;		// no life lost in LP
-		//mem[0x38eb1] = mem[0xb8eb0];	// no upgrades lost in LP
+		//mem[0x38eb1] = mem[0x38eb0];	// no upgrades lost in LP
 	}
-	if (mem[0x3ecb9] == 0x4311 && mem[0x3ecbb] == 0x4e43) {	// VC2
+	if (load(0x3ecb9) == 0x4311 && load(0x3ecbb) == 0x4e43) {	// VC2
 		board->idle_pc = 0x3ecb9;
 		controller_should_be_rotated = 1;
 	}

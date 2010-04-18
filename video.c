@@ -95,15 +95,15 @@ static void trace_unknown(u32 addr, u16 val, int is_read)
 
 static void do_dma(u32 len)
 {
-	u32 src = mem[0x2870];
-	u32 dst = mem[0x2871] + 0x2c00;
+	u32 src = ram[0x2870];
+	u32 dst = ram[0x2871] + 0x2c00;
 	u32 j;
 
 	for (j = 0; j < len; j++)
-		mem[dst+j] = mem[src+j];
+		store(load(src + j), dst + j);
 
-	mem[0x2872] = 0;
-	mem[0x2863] |= 4;	// trigger video DMA IRQ
+	ram[0x2872] = 0;
+	ram[0x2863] |= 4;	// trigger video DMA IRQ
 }
 
 void video_store(u16 val, u32 addr)
@@ -135,7 +135,7 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x2830:		// fade offset
-			if ((mem[addr] & 0x00ff) != (val & 0x00ff))
+			if ((ram[addr] & 0x00ff) != (val & 0x00ff))
 				debug("*** TV FADE set to %02x\n", val & 0x00ff);
 			break;
 
@@ -145,9 +145,9 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x283c:		// TV control 1 (hue/saturation)
-			if ((mem[addr] & 0xff00) != (val & 0xff00))
+			if ((ram[addr] & 0xff00) != (val & 0xff00))
 				debug("*** TV HUE set to %02x\n", val >> 8);
-			if ((mem[addr] & 0x00ff) != (val & 0x00ff))
+			if ((ram[addr] & 0x00ff) != (val & 0x00ff))
 				debug("*** TV SATURATION set to %02x\n", val & 0x00ff);
 			break;
 
@@ -165,10 +165,10 @@ void video_store(u16 val, u32 addr)
 			static const char *lcd_colour_mode[4] = {
 				"B/W", "16 grey levels", "4096 colours", "BAD"
 			};
-			if ((mem[addr] & 0x0003) != (val & 0x0003))
+			if ((ram[addr] & 0x0003) != (val & 0x0003))
 				debug("*** LCD COLOUR MODE set to %s\n",
 				       lcd_colour_mode[val & 0x0003]);
-			if ((mem[addr] & 0x0004) != (val & 0x0004))
+			if ((ram[addr] & 0x0004) != (val & 0x0004))
 				debug("*** LCD RESOLUTION set to %s\n",
 				       (val & 0x0004) ? "320x240" : "160x100");
 			break;
@@ -178,7 +178,7 @@ void video_store(u16 val, u32 addr)
 			break;
 
 		case 0x2863:		// video IRQ status
-			mem[addr] &= ~val;
+			ram[addr] &= ~val;
 			return;
 
 		case 0x2870:		// video DMA src
@@ -198,12 +198,12 @@ void video_store(u16 val, u32 addr)
 	} else {			// sprites
 	}
 
-	mem[addr] = val;
+	ram[addr] = val;
 }
 
 u16 video_load(u32 addr)
 {
-	u16 val = mem[addr];
+	u16 val = ram[addr];
 
 	if (trace_unknown_video)
 		trace_unknown(addr, val, 1);
@@ -264,7 +264,7 @@ void render_bitmap(u8 *dest, u32 pitch, u32 addr, u16 attr)
 
 			bits <<= nc;
 			if (nbits < nc) {
-				u16 b = mem[m++ & 0x3fffff];
+				u16 b = load(m++);
 				b = (b << 8) | (b >> 8);
 				bits |= b << (nc - nbits);
 				nbits += 16;
@@ -281,6 +281,6 @@ void render_bitmap(u8 *dest, u32 pitch, u32 addr, u16 attr)
 
 void video_init(void)
 {
-	mem[0x2836] = 0xffff;
-	mem[0x2837] = 0xffff;
+	ram[0x2836] = 0xffff;
+	ram[0x2837] = 0xffff;
 }

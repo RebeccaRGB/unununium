@@ -18,9 +18,9 @@ int mute_audio;
 void audio_store(u16 val, u32 addr)
 {
 	if (addr == 0x340b)
-		mem[addr] &= ~val;
+		ram[addr] &= ~val;
 	else
-		mem[addr] = val;
+		ram[addr] = val;
 
 	if (addr < 0x3200) {		// XXX
 		return;
@@ -35,7 +35,7 @@ void audio_store(u16 val, u32 addr)
 
 u16 audio_load(u32 addr)
 {
-	u16 val = mem[addr];
+	u16 val = ram[addr];
 
 	if (addr >= 0x3000 && addr < 0x3200) {		// audio something
 		//debug("LOAD %04x from %04x\n", val, addr);
@@ -61,7 +61,7 @@ static u32 get_channel_bit(u32 ch, u32 reg)
 		reg += 0x0100;
 		ch -= 16;
 	}
-	return (mem[reg] >> ch) & 1;
+	return (ram[reg] >> ch) & 1;
 }
 
 static u32 n_left[24];
@@ -70,22 +70,22 @@ static void do_next_sample(u32 ch)
 {
 loop:
 	if (n_left[ch] == 0) {
-		u32 addr = ((mem[0x3001 + 16*ch] & 0x3f) << 16) | mem[0x3000 + 16*ch];
-		bits_left[ch] = mem[addr];
+		u32 addr = ((ram[0x3001 + 16*ch] & 0x3f) << 16) | ram[0x3000 + 16*ch];
+		bits_left[ch] = load(addr);
 		if (bits_left[ch] == 0xffff) {
-			mem[0x3000 + 16*ch] = mem[0x3002 + 16*ch];
-			mem[0x3001 + 16*ch] &= 0xffc0;
-			mem[0x3001 + 16*ch] |= (mem[0x3001 + 16*ch] >> 6) & 0x3f;
+			ram[0x3000 + 16*ch] = ram[0x3002 + 16*ch];
+			ram[0x3001 + 16*ch] &= 0xffc0;
+			ram[0x3001 + 16*ch] |= (ram[0x3001 + 16*ch] >> 6) & 0x3f;
 			goto loop;
 		}
 		n_left[ch] = 2;
-		mem[0x3000 + 16*ch]++;
-		if (mem[0x3000 + 16*ch] == 0)
-			mem[0x3001 + 16*ch]++;	// XXX: mask?
+		ram[0x3000 + 16*ch]++;
+		if (ram[0x3000 + 16*ch] == 0)
+			ram[0x3001 + 16*ch]++;	// XXX: mask?
 //debug("--> addr = %06x\n", addr);
 	}
 
-	mem[0x300b + 16*ch] = bits_left[ch] << 8;
+	ram[0x300b + 16*ch] = bits_left[ch] << 8;
 	bits_left[ch] >>= 8;
 	n_left[ch]--;
 }
@@ -103,16 +103,16 @@ static u16 next_channel_sample(u32 ch)
 //		xxx[ch] = 0;
 //	return sample;
 
-	u16 sample = mem[0x300b + 16*ch];
-	u32 acc = (mem[0x3201 + 16*ch] << 16) | mem[0x3205 + 16*ch];
-	u32 inc = (mem[0x3200 + 16*ch] << 16) | mem[0x3204 + 16*ch];
+	u16 sample = ram[0x300b + 16*ch];
+	u32 acc = (ram[0x3201 + 16*ch] << 16) | ram[0x3205 + 16*ch];
+	u32 inc = (ram[0x3200 + 16*ch] << 16) | ram[0x3204 + 16*ch];
 	acc += inc;
 	if (acc >= 0x80000) {
 		do_next_sample(ch);
 		acc -= 0x80000;
 	}
-	mem[0x3201 + 16*ch] = acc >> 16;
-	mem[0x3205 + 16*ch] = acc;
+	ram[0x3201 + 16*ch] = acc >> 16;
+	ram[0x3205 + 16*ch] = acc;
 
 	return sample;
 }
@@ -133,7 +133,7 @@ static u16 next_sample(void)
 
 static s16 next_host_sample(void)
 {
-	if (mem[0x3d20] & 0x0002)	// audio DAC disable
+	if (ram[0x3d20] & 0x0002)	// audio DAC disable
 		return 0;
 
 return 0;

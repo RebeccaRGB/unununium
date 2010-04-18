@@ -6,6 +6,7 @@
 #define _PLATFORM_H
 
 #include "types.h"
+#include "emu.h"
 
 
 extern u8 button_up;
@@ -19,8 +20,7 @@ extern u8 button_menu;
 
 void platform_init(void);
 
-void open_rom(const char *path);
-void read_rom(u32 offset);
+void read_rom(struct memory_chip *chip, const char *path);
 
 void *open_eeprom(const char *name, u8 *data, u32 len);
 void save_eeprom(void *cookie, u8 *data, u32 len);

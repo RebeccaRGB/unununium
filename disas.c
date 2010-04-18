@@ -57,7 +57,7 @@ static void print_indirect_op(u8 opN, u8 opB)
 	printf(forms[opN & 3], regs[opB]);
 }
 
-u32 disas(const u16 *mem, u32 offset)
+u32 disas(u32 offset, u16 insn1, u16 insn2)
 {
 	u8 op0, opA, op1, opN, opB, opimm;
 	u16 op, ximm = 0x0bad;
@@ -65,7 +65,7 @@ u32 disas(const u16 *mem, u32 offset)
 
 	printf("%04x: ", offset);
 
-	op = mem[offset++];
+	op = insn1;
 
 
 	// the top four bits are the alu op or the branch condition, or E or F
@@ -90,7 +90,7 @@ u32 disas(const u16 *mem, u32 offset)
 	// some insns need a second word:
 	if ((op0 < 14 && op1 == 4 && (opN == 1 || opN == 2 || opN == 3))
 	 || (op0 == 15 && (op1 == 1 || op1 == 2))) {
-		ximm = mem[offset++];
+		ximm = insn2;
 		printf("%04x %04x   ", op, ximm);
 		len = 2;
 	} else
@@ -108,11 +108,11 @@ u32 disas(const u16 *mem, u32 offset)
 
 	// first, check for the conditional branch insns
 	if (op0 < 15 && opA == 7 && op1 == 0) {
-		printf("%s %04x\n", jumps[op0], offset+opimm);
+		printf("%s %04x\n", jumps[op0], offset+1+opimm);
 		return 1;
 	}
 	if (op0 < 15 && opA == 7 && op1 == 1) {
-		printf("%s %04x\n", jumps[op0], offset-opimm);
+		printf("%s %04x\n", jumps[op0], offset+1-opimm);
 		return 1;
 	}
 

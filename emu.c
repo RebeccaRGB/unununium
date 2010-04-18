@@ -24,7 +24,16 @@
 #define PERIOD (1000000/FREQ)
 
 
-u16 mem[N_MEM];
+struct memory_chip main_rom;
+struct memory_chip *memory_chips[4];
+
+
+u16 ram[0x4000];
+
+
+// One for each megaword.
+static struct memory_chip *memory_banks[4];
+
 
 static int trace = 0;
 static int trace_new = 0;
@@ -33,7 +42,7 @@ static int trace_calls = 0;
 static int pause_after_every_frame = 0;
 static u8 trace_irq[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 static const u32 unsp_version = 11;	// version a.b as 10*a + b
-static u8 ever_ran_this[N_MEM];
+static u8 ever_ran_this[0x400000];
 
 
 static int do_extint1, do_extint2;
@@ -69,26 +78,9 @@ static void dump(u32 addr, u32 len)
 		printf("%06x:", off);
 
 		for (i = 0; i < 16; i++)
-			printf(" %04x", mem[off+i]);
+			printf(" %04x", ram[off+i]);
 		printf("\n");
 	}
-}
-
-static void store(u16 val, u32 addr)
-{
-	if (store_trace)
-		debug("WRITE %04x TO %04x (was %04x)\n", val, addr, mem[addr]);
-
-	if (addr < 0x2800)	// RAM
-		mem[addr] = val;
-	else if (addr < 0x3000)
-		video_store(val, addr);
-	else if (addr < 0x3800)
-		audio_store(val, addr);
-	else if (addr < 0x4000)
-		io_store(val, addr);
-	else
-		debug("ROM STORE %04x to %04x\n", val, addr);
 }
 
 static u16 __load(u32 addr)
@@ -102,12 +94,34 @@ static u16 __load(u32 addr)
 	return io_load(addr);
 }
 
-static inline u16 load(u32 addr)
+u16 load(u32 addr)
 {
-	if (addr < 0x2800 || addr >= 0x4000)
-		return mem[addr];
+	if (addr < 0x2800)
+		return ram[addr];
+
+	if (addr >= 0x4000) {
+		struct memory_chip *chip = memory_banks[(addr >> 20) & 3];
+		return chip->data[(addr & chip->mask) | chip->extra];
+	}
 
 	return __load(addr);
+}
+
+void store(u16 val, u32 addr)
+{
+	if (store_trace)
+		printf("WRITE %04x TO %04x (was %04x)\n", val, addr, load(addr));
+
+	if (addr < 0x2800)	// RAM
+		ram[addr] = val;
+	else if (addr < 0x3000)
+		video_store(val, addr);
+	else if (addr < 0x3800)
+		audio_store(val, addr);
+	else if (addr < 0x4000)
+		io_store(val, addr);
+	else
+		debug("ROM STORE %04x to %04x\n", val, addr);
 }
 
 static inline u32 cs_pc(void)
@@ -171,7 +185,7 @@ static void print_state(void)
 	                    (reg[6] >> 7) & 1, (reg[6] >> 6) & 1);
 	printf(" %02x", reg[6] >> 10);
 	printf("  %x   %x   %x\n", sb, irq_enabled, fiq_enabled);
-	disas(mem, cs_pc());
+	disas(cs_pc(), load(cs_pc()), load(cs_pc() + 1));
 }
 
 static void do_irq(int irqno)
@@ -220,31 +234,31 @@ static int get_irq(void)
 		return -1;
 
 	// video
-	if (mem[0x2862] & mem[0x2863])
+	if (ram[0x2862] & ram[0x2863])
 		return 0;
 
 	// XXX audio, IRQ1
 
 	// timerA, timerB
-	if (mem[0x3d21] & mem[0x3d22] & 0x0c00)
+	if (ram[0x3d21] & ram[0x3d22] & 0x0c00)
 		return 2;
 
 	// UART, ADC		XXX: also SPI
-	if (mem[0x3d21] & mem[0x3d22] & 0x2100)
+	if (ram[0x3d21] & ram[0x3d22] & 0x2100)
 		return 3;
 
 	// XXX audio, IRQ4
 
 	// extint1, extint2
-	if (mem[0x3d21] & mem[0x3d22] & 0x1200)
+	if (ram[0x3d21] & ram[0x3d22] & 0x1200)
 		return 5;
 
 	// 1024Hz, 2048HZ, 4096HZ
-	if (mem[0x3d21] & mem[0x3d22] & 0x0070)
+	if (ram[0x3d21] & ram[0x3d22] & 0x0070)
 		return 6;
 
 	// TMB1, TMB2, 4Hz, key change
-	if (mem[0x3d21] & mem[0x3d22] & 0x008b)
+	if (ram[0x3d21] & ram[0x3d22] & 0x008b)
 		return 7;
 
 	return -1;
@@ -280,7 +294,7 @@ static void step(void)
 	u32 x, d = 0xff0000;
 
 	if (trace_calls) {
-		op = mem[cs_pc()];
+		op = load(cs_pc());
 		if ((op & 0xf3c0) == 0xf040 || (op & 0xfff0) == 0x9a90)
 			print_state();
 		if ((op & 0xfff0) == 0x9a90)
@@ -913,9 +927,9 @@ static void run(void)
 		timer_run(cycles_per_line);
 
 		if (line_count == 240)
-			mem[0x2863] |= 1;	// trigger vblank IRQ
-		if (line_count == mem[0x2836])
-			mem[0x2863] |= 2;	// trigger vpos IRQ
+			ram[0x2863] |= 1;	// trigger vblank IRQ
+		if (line_count == ram[0x2836])
+			ram[0x2863] |= 2;	// trigger vpos IRQ
 
 		maybe_enter_irq();
 	}
@@ -935,14 +949,14 @@ static void run(void)
 
 	do_controller();
 
-	mem[0x3d22] |= 0x0100; // UART  FIXME
+	ram[0x3d22] |= 0x0100; // UART  FIXME
 
 	if (do_extint1) {
-		mem[0x3d22] |= 0x0200;
+		ram[0x3d22] |= 0x0200;
 		do_extint1 = 0;
 	}
 	if (do_extint2) {
-		mem[0x3d22] |= 0x1000;
+		ram[0x3d22] |= 0x1000;
 		do_extint2 = 0;
 	}
 
@@ -956,7 +970,9 @@ static void run(void)
 
 void emu(void)
 {
-	read_rom(0);
+	for (u32 i = 0; i < 4; i++)
+		memory_banks[i] = &main_rom;
+
 	platform_init();
 	board_init();
 	io_init();
@@ -964,7 +980,7 @@ void emu(void)
 	audio_init();
 
 	memset(reg, 0, sizeof reg);
-	reg[7] = mem[0xfff7];	// reset vector
+	reg[7] = load(0xfff7);	// reset vector
 
 	for (;;)
 		run();

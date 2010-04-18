@@ -35,7 +35,7 @@ void render_palette(void)
 
 	u32 i;
 	for (i = 0; i < 256; i++) {
-		u16 p = mem[0x2b00 + i];
+		u16 p = ram[0x2b00 + i];
 		that[4*i] = 255*(p & 31) / 31.0f;
 		that[4*i+1] = 255*((p >> 5) & 31) / 31.0f;
 		that[4*i+2] = 255*((p >> 10) & 31) / 31.0f;

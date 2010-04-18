@@ -7,9 +7,19 @@
 
 #include "types.h"
 
-#define N_MEM 0x400000
+struct memory_chip {
+	u16 *data;
+	u32 mask;
+	u32 extra;
+};
 
-extern u16 mem[N_MEM];
+extern struct memory_chip main_rom;
+extern struct memory_chip *memory_chips[4];
+
+extern u16 ram[0x4000];
+
+u16 load(u32 addr);
+void store(u16 val, u32 addr);
 
 void emu(void);
 

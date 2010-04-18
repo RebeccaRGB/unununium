@@ -7,6 +7,6 @@
 
 #include "types.h"
 
-u32 disas(const u16 *mem, u32 offset);
+u32 disas(u32 offset, u16 insn1, u16 insn2);
 
 #endif

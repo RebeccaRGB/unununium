@@ -21,27 +21,41 @@
 #define PIXEL_SIZE 3
 
 
-static void *rom_file;
-
-void open_rom(const char *path)
+void read_rom(struct memory_chip *chip, const char *path)
 {
-	rom_file = fopen(path, "rb");
-	if (!rom_file)
+	FILE *fp;
+
+	fp = fopen(path, "rb");
+	if (!fp)
+		fatal("Cannot open ROM file %s\n", path);
+
+	if (fseek(fp, 0, SEEK_END))
+		fatal("Cannot seek to end of ROM file %s\n", path);
+
+	u32 len = ftell(fp);
+	if (len == -1U)
+		fatal("Cannot get size of ROM file %s\n", path);
+
+	if (len & (len - 1) || len & 1)
+		fatal("Size of ROM file %s not an even power of two\n", path);
+
+	u16 *rom = malloc(len);
+	if (!rom)
+		fatal("Couldn't malloc(%u) for ROM file %s\n", len, path);
+
+	rewind(fp);
+	if (len != fread(rom, 1, len, fp))
 		fatal("Cannot read ROM file %s\n", path);
-}
 
-void read_rom(u32 offset)
-{
-	u32 n;
+	fclose(fp);
 
-	fseek(rom_file, 2*(offset + 0x4000), SEEK_SET);
-	n = fread(mem + 0x4000, 2, N_MEM - 0x4000, rom_file);
-
-// gross, but whatever.  one day i'll fix this, but not today
 #ifdef _BIG_ENDIAN
-	for (u32 i = 0x4000; i < n + 0x4000; i++)
-		mem[i] = (mem[i] << 8) | (mem[i] >> 8);
+	for (u32 i = 0; i < len / 2; i++)
+		rom[i] = (rom[i] << 8) | (rom[i] >> 8);
 #endif
+
+	chip->data = rom;
+	chip->mask = (len/2 - 1) & 0x3fffff;
 }
 
 
@@ -107,7 +121,7 @@ void render_palette(void)
 {
 	u32 i;
 	for (i = 0; i < 256; i++) {
-		u16 p = mem[0x2b00 + i];
+		u16 p = ram[0x2b00 + i];
 		palette_rgb[i] = SDL_MapRGB(sdl_surface->format,
 		                            x58((p >> 10) & 31),
 		                            x58((p >> 5) & 31),

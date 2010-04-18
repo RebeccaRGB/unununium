@@ -12,23 +12,24 @@ struct board *board;
 
 static struct board *board_detect(void)
 {
-	if (mem[0x19792] == 0x4311 && mem[0x19794] == 0x4e43)	// VII
+	if (load(0x19792) == 0x4311 && load(0x19794) == 0x4e43)	// VII
 		return &board_VII;
-	if (mem[0x42daa] == 0x4311 && mem[0x42dac] == 0x4e43)	// VC1
+	if (load(0x42daa) == 0x4311 && load(0x42dac) == 0x4e43)	// VC1
 		return &board_VII;
-	if (mem[0x3ecb9] == 0x4311 && mem[0x3ecbb] == 0x4e43)	// VC2
+	if (load(0x3ecb9) == 0x4311 && load(0x3ecbb) == 0x4e43)	// VC2
 		return &board_VII;
 
-	if (mem[0xb1c6] == 0x9311 && mem[0xb1c8] == 0x4501 &&
-	    mem[0xb1c9] == 0x5e44)
+	if (load(0xb1c6) == 0x9311 && load(0xb1c8) == 0x4501 &&
+	    load(0xb1c9) == 0x5e44)
 		return &board_WAL;
 
-	if (mem[0x5ce1] == 0x42c2 && mem[0x5ce2] == 0x5e42)
+	if (load(0x5ce1) == 0x42c2 && load(0x5ce2) == 0x5e42)
 		return &board_BAT;
 
-	if (mem[0x5675c] == 0x9311 && mem[0x5675e] == 0x4240 &&	// Winnie
-	    mem[0x5675f] == 0x4e44)
-		return &board_V_X;
+	if (load(0x5675c) == 0x9311 &&
+	    load(0x5675e) == 0x4240 &&
+	    load(0x5675f) == 0x4e44)
+		return &board_V_X;	// Winnie
 
 return &board_V_X;
 
