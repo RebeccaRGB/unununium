@@ -277,8 +277,10 @@ static void step(void)
 
 	if (trace_calls) {
 		op = mem[cs_pc()];
-		if ((op & 0xf3c0) == 0xf040 || (op & 0xfff7) == 0x9a90)
+		if ((op & 0xf3c0) == 0xf040 || (op & 0xfff0) == 0x9a90)
 			print_state();
+		if ((op & 0xfff0) == 0x9a90)
+			printf("   to %04x\n", (load(reg[op & 7] + 1) & 0x3f) << 16 | load(reg[op & 7] + 2));
 	}
 
 	op = fetch();
