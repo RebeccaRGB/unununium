@@ -26,7 +26,7 @@ static const u16 known_reg_bits[] = {
 	0x4006,					// 3d20		system control
 	0x3ffb,					// 3d21		IRQ control
 	0x7fff,					// 3d22		IRQ status
-	0x003e,					// 3d23		memory control
+	0x00fe,					// 3d23		memory control
 	0xffff,					// 3d24		watchdog
 	0x2002,					// 3d25		ADC control
 	0, 0,					// 3d26..3d27
@@ -235,7 +235,11 @@ void io_store(u16 val, u32 addr)
 		if ((ram[addr] & 0x0006) != (val & 0x0006))
 			debug("*** MEMORY WAIT STATE switched to %d\n", (val & 0x0006) >> 1);
 		if ((ram[addr] & 0x0038) != (val & 0x0038))
-			debug("*** BUS ARBITER switched to mode %d\n", (val & 0x0038) >> 3);
+			debug("*** MEMORY BUS ARBITER switched to mode %d\n", (val & 0x0038) >> 3);
+		if ((ram[addr] & 0x00c0) != (val & 0x00c0)) {
+			set_address_decode((val & 0x00c0) >> 6);
+			debug("*** MEMORY ADDRESS DECODE switched to mode %d\n", (val & 0x00c0) >> 6);
+		}
 		break;
 
 	case 0x3d24:		// watchdog

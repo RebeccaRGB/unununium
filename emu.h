@@ -25,6 +25,7 @@ void emu(void);
 
 u32 get_ds(void);
 void set_ds(u32 ds);
+void set_address_decode(u32 x);
 u16 get_video_line(void);
 
 #endif

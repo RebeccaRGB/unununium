@@ -78,10 +78,17 @@
 #include "board.h"
 
 
+struct memory_chip system_rom;
+
+
 static int trace_gpio = 0;
 
 static void init(void)
 {
+	read_rom(&system_rom, "sysrom-fat-us.rom");
+	memory_chips[1] = &main_rom;
+	memory_chips[3] = &system_rom;
+
 	if (load(0x5675c) == 0x9311 &&
 	    load(0x5675e) == 0x4240 &&
 	    load(0x5675f) == 0x4e44)

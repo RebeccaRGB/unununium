@@ -24,15 +24,10 @@
 #define PERIOD (1000000/FREQ)
 
 
-struct memory_chip main_rom;
-struct memory_chip *memory_chips[4];
-
-
-u16 ram[0x4000];
-
-
-// One for each megaword.
-static struct memory_chip *memory_banks[4];
+struct memory_chip *memory_chips[4];		// One for each chip select.
+struct memory_chip main_rom;			// The ROM we boot from.
+u16 ram[0x4000];				// On-chip RAM and registers.
+static struct memory_chip *memory_banks[4];	// One for each megaword.
 
 
 static int trace = 0;
@@ -70,6 +65,29 @@ void set_ds(u32 ds)
 	reg[6] = (reg[6] & 0x03ff) | (ds << 10);
 }
 
+void set_address_decode(u32 x)
+{
+	u32 i;
+
+	switch (x) {
+	case 0:
+		for (i = 0; i < 4; i++)
+			memory_banks[i] = memory_chips[0];
+		break;
+
+	case 1:
+		for (i = 0; i < 4; i++)
+			memory_banks[i] = memory_chips[i/2];
+		break;
+
+	default:
+		for (i = 0; i < 4; i++)
+			memory_banks[i] = memory_chips[i];
+	}
+
+	render_kill_cache();
+}
+
 static void dump(u32 addr, u32 len)
 {
 	u32 off, i;
@@ -96,13 +114,17 @@ static u16 __load(u32 addr)
 
 u16 load(u32 addr)
 {
-	if (addr < 0x2800)
-		return ram[addr];
-
 	if (addr >= 0x4000) {
 		struct memory_chip *chip = memory_banks[(addr >> 20) & 3];
+		if (!chip) {
+			debug("Read from non-existent address %04x\n", addr);
+			return 0xffff;
+		}
 		return chip->data[(addr & chip->mask) | chip->extra];
 	}
+
+	if (addr < 0x2800)
+		return ram[addr];
 
 	return __load(addr);
 }
@@ -970,10 +992,9 @@ static void run(void)
 
 void emu(void)
 {
-	for (u32 i = 0; i < 4; i++)
-		memory_banks[i] = &main_rom;
-
 	platform_init();
+	memory_chips[0] = &main_rom;
+	set_address_decode(0);
 	board_init();
 	io_init();
 	video_init();
