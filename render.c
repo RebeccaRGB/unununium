@@ -35,6 +35,8 @@ static const u8 colour_sizes[] = { 2, 4, 6, 8 };
 
 void render_kill_cache(void)
 {
+	debug("Killing atlas\n");
+
 	u32 i;
 	for (i = 0; i < CACHE_SIZE; i++) {
 		cache[i].key = -1U;
@@ -45,6 +47,13 @@ void render_kill_cache(void)
 		cache[i].next = &cache[i + 1];
 	cache[CACHE_SIZE - 1].next = 0;
 	cache_free_head = &cache[HASH_SIZE];
+
+	atlas_low_x = 0;
+	atlas_low_y = 0;
+
+	atlas_x = 0;
+	atlas_y = 0;
+	atlas_h = 0;
 }
 
 static u32 cache_key(u32 addr, u16 attr)
@@ -110,20 +119,8 @@ static void render_texture_into_atlas(u32 addr, u16 attr, int w, int h)
 		atlas_h = 0;
 	}
 
-	if (atlas_y + h > ATLAS_H) {
-		render_atlas(atlas_low_y, atlas_y + atlas_h - atlas_low_y);
-		atlas_low_x = 0;
-		atlas_low_y = 0;
-
-		atlas_x = 0;
-		atlas_y = 0;
-		atlas_h = 0;
-
-debug("filled atlas\n");
-
-// XXX FIXME
-		render_kill_cache();
-	}
+	if (atlas_y + h > ATLAS_H)
+		fatal("Whoops, overran atlas\n");
 
 	u8 *p = &atlas[atlas_y*ATLAS_W + atlas_x];
 
@@ -420,6 +417,9 @@ static void do_show_fps(void)
 
 void render(void)
 {
+	if (atlas_y + atlas_h + (2*512*256 + 256*64*64) / ATLAS_W > ATLAS_H)
+		render_kill_cache();
+
 	render_begin();
 
 	if ((mem[0x3d20] & 0x0004) == 0) {	// video DAC disable
