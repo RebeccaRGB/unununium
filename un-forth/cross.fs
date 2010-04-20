@@ -68,6 +68,12 @@ ALSO TARGET context @ CONSTANT target-wordlist PREVIOUS
 \                 dup @ swap there over - swap t! REPEAT
 \                 there - t, leaves ! ;
 
+\ push r4 to [bp] ; r4 = N
+: *lit ( x -- )  d88d t,
+                 dup 0 40 within IF 9840 or t, EXIT THEN
+                 dup -3f 0 within IF negate 6840 or t, EXIT THEN
+                 990c t, t, ;
+
 VOCABULARY MACRO ALSO MACRO
 context @ CROSS CONSTANT macro-wordlist MACRO DEFINITIONS PREVIOUS
 
@@ -82,7 +88,7 @@ context @ CROSS CONSTANT macro-wordlist MACRO DEFINITIONS PREVIOUS
   BEGIN ?dup 0= WHILE drop refill 0= ABORT" refill failed" name REPEAT
   2dup macro-wordlist search-wordlist IF nip nip execute ELSE
   2dup target-wordlist search-wordlist IF nip nip execute f040 t, t, ELSE
-  evaluate ( xt-lit ta, ) t, THEN THEN AGAIN ;
+  evaluate *lit THEN THEN AGAIN ;
 : ;  9a90 t, treveal r> drop ;
 \ : lits  xt-lit ta, here name string, tl, ;
 \ : [char]  xt-lit ta, name drop c@ t, ;
@@ -116,11 +122,11 @@ context @ CROSS CONSTANT macro-wordlist MACRO DEFINITIONS PREVIOUS
 
 
 
-ONLY FORTH ALSO CROSS ALSO MACRO   cr .( order: ) get-order .s
+ONLY FORTH ALSO CROSS ALSO MACRO
 
 8000 tdp !
 
-: bla  1234 ;
+: bla  1234 -1 0 1 3e 3f 40 -40 -3f -2 -1 5432 ;
 : ook  5678 bla bla bla ;
 : dat  9abc ook bla ook ;
 
