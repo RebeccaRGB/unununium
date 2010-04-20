@@ -42,10 +42,6 @@ ALSO TARGET context @ CONSTANT target-wordlist PREVIOUS
 : t'  name also TARGET evaluate PREVIOUS ;
 
 \ here s" &&code_DOCOL" string, CONSTANT <docol>
-\ 0 VALUE xt-exit
-\ 0 VALUE xt-lit
-\ 0 VALUE xt-branch
-\ 0 VALUE xt-0branch
 \ 0 VALUE xt-do
 \ 0 VALUE xt-?do
 \ 0 VALUE xt-loop
@@ -54,15 +50,6 @@ ALSO TARGET context @ CONSTANT target-wordlist PREVIOUS
 \ 0 VALUE xt-val
 \ 0 VALUE xt-dfr
 
-\ : resolve-orig  there over tcell+ - swap t! ;
-\ : *ahead  xt-branch ta, there 0 t, ;
-\ : *if    xt-0branch ta, there 0 t, ;
-\ : *then  resolve-orig ;
-\ : resolve-dest  there tcell+ - t, ;
-\ : *begin  there ;
-\ : *again  xt-branch ta, resolve-dest ;
-\ : *until  xt-0branch ta, resolve-dest ;
-\
 \ VARIABLE leaves
 \ : resolve-loop  leaves @ BEGIN ?dup WHILE
 \                 dup @ swap there over - swap t! REPEAT
@@ -70,6 +57,26 @@ ALSO TARGET context @ CONSTANT target-wordlist PREVIOUS
 
 : call, ( x -- )  f040 t, t, ;
 : ret,            9a90 t, ;
+
+: <mark ( -- dest )       there ;
+: <jump ( dest insn -- )  there 1+ rot -
+                          dup 40 >= ABORT" backward jump offset too big"
+                          40 or or t, ;
+: >mark ( insn -- orig )  there swap t, ;
+: >jump ( orig -- )  there over - 1-
+                     dup 40 >= ABORT" forward jump offset too big"
+                     over t@ or swap t! ;
+
+: 0test,  2841 t, 968d t, ;                    \ r4 -= 1 ; pop r4,r4 from [bp]
+
+: *if    ( -- orig )  0test, 0e00 >mark ;      \ jb
+: *ahead ( -- orig )         ee00 >mark ;      \ jmp
+: *then  ( orig -- )              >jump ;
+
+: *begin ( -- dest )              <mark ;
+: *until ( dest -- )  0test, 0e00 <jump ;      \ jb
+: *again ( dest -- )         ee00 <jump ;      \ jmp
+
 
 : lit, ( x -- )  d88d t,                                  \ push r4,r4 to [bp]
                  dup 0 40 within IF 9840 or t, EXIT THEN          \ r4 = NN
@@ -96,15 +103,19 @@ context @ CROSS CONSTANT macro-wordlist MACRO DEFINITIONS PREVIOUS
 \ : lits  xt-lit ta, here name string, tl, ;
 \ : [char]  xt-lit ta, name drop c@ t, ;
 \ : docol  <docol> ts, ;
+
+: IF    ( -- orig )  *if ;
+: AHEAD ( -- orig )  *ahead ;
+: THEN  ( orig -- )  *then ;
+
+: BEGIN ( -- dest )  *begin ;
+: UNTIL ( dest -- )  *until ;
+: AGAIN ( dest -- )  *again ;
+
+: ELSE  ( orig1 -- orig2 )      *ahead swap *then ;
+: WHILE  ( dest -- orig dest )  *if swap ;
+: REPEAT ( orig dest -- )       *again *then ;
 \
-\ : ahead  *ahead ;
-\ : if     *if ;
-\ : then   *then ;
-\ : else   *ahead swap *then ;
-\
-\ : begin  *begin ;
-\ : again  *again ;
-\ : until  *until ;
 \ : while   *if swap ;
 \ : repeat  *again *then ;
 \
@@ -131,6 +142,11 @@ ONLY FORTH ALSO CROSS ALSO MACRO
 
 
 : cold  53 emit ;
+: dada  BEGIN 53 emit AGAIN ;
+: dadb  BEGIN 53 emit UNTIL ;
+: dadc  1 IF 79 emit THEN  0 IF 6e emit THEN ;
+: dadd  1 IF 79 emit ELSE 6e emit THEN ;
+: dade  BEGIN emit WHILE emit REPEAT ;
 : bla  1234 -1 0 1 3e 3f 40 -40 -3f -2 -1 5432 ;
 : ook  5678 bla bla bla ;
 : dat  9abc ook bla ook ;
