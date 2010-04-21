@@ -125,7 +125,9 @@ f77f # r1 :=   3d0b [] r1 st
 0 # r1 :=   3d04 [] r1 st  3d03 [] r1 st
 ffff # r1 :=   3d01 [] r1 st
 27ff # sp :=
+23ff # bp :=
 
+8000 goto
 c3 # r1 :=   3d30 [] r1 st
 3d31 [] r1 :=
 \ ff # r1 :=   3d34 [] r1 st  a8 # r1 :=   3d33 [] r1 st   \ baud rate 19200
@@ -136,7 +138,7 @@ ff # r1 :=   3d34 [] r1 st  f1 # r1 :=   3d33 [] r1 st   \ baud rate 115200
 noppie noppie
 3d0d dup [] r1 :=   4000 # r1 |=   [] r1 st
 noppie noppie
-c100 goto
+\ c100 goto
 
 
 \ dump
