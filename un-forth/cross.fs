@@ -1,5 +1,7 @@
 hex
 
+: +order ( wid -- )  >r get-order r> swap 1+ set-order ;
+
 : w@  dup >r c@ r> char+ c@ 8 lshift or ;
 : w!  2dup c! >r 8 rshift r> char+ c! ;
 
@@ -32,16 +34,15 @@ ONLY FORTH ALSO CROSS DEFINITIONS
 
 VARIABLE tlast
 VARIABLE tlatest
-VOCABULARY TARGET
-ALSO TARGET context @ CONSTANT target-wordlist PREVIOUS
+
+wordlist CONSTANT target-wordlist
 
 : theader  talign there tlatest !
-  there ALSO TARGET DEFINITIONS CONSTANT PREVIOUS DEFINITIONS ;
+  there target-wordlist +order DEFINITIONS CONSTANT PREVIOUS DEFINITIONS ;
 : treveal  tlatest @ tlast ! ;
 \ : immediate  tlast @ tcell+ dup c@ 1 or swap tc! ;
-: t'  name also TARGET evaluate PREVIOUS ;
+: t'  name target-wordlist +order evaluate PREVIOUS ;
 
-\ here s" &&code_DOCOL" string, CONSTANT <docol>
 \ 0 VALUE xt-do
 \ 0 VALUE xt-?do
 \ 0 VALUE xt-loop
@@ -91,12 +92,19 @@ ALSO TARGET context @ CONSTANT target-wordlist PREVIOUS
 : *again ( dest -- )         ee00 <jump ;      \ jmp
 
 
+VARIABLE ram  100 ram !
+
+
 VOCABULARY MACRO ALSO MACRO
-context @ CROSS CONSTANT macro-wordlist MACRO DEFINITIONS PREVIOUS
+context @ CROSS CONSTANT macro-wordlist PREVIOUS
+
+ALSO MACRO DEFINITIONS PREVIOUS
 
 : (  [char] ) parse 2drop ;
-: \  0        parse 2drop ;
+: \         0 parse 2drop ;
 \ : code      theader treveal here name string, ts, ;
+
+\ : CONSTANT
 \ : variable  theader treveal <docol> ts, xt-var ta, 0 t, ;
 \ : value     theader treveal <docol> ts, xt-val ta, t, ;
 \ : defer     theader treveal <docol> ts, xt-dfr ta, 0 ta, ;
@@ -156,7 +164,7 @@ context @ CROSS CONSTANT macro-wordlist MACRO DEFINITIONS PREVIOUS
 
 : +     08dd t, ;             \ r4 += [++bp]
 : and   b8dd t, ;             \ r4 &= [++bp]
-: or    a8dd t, ;             \ r4 &= [++bp]
+: or    a8dd t, ;             \ r4 |= [++bp]
 
 : 0=    2841 t, 3904 t, ;     \ r4 -= 1 ; r4 -= r4, carry
 
@@ -166,7 +174,24 @@ context @ CROSS CONSTANT macro-wordlist MACRO DEFINITIONS PREVIOUS
 ONLY FORTH ALSO CROSS ALSO MACRO
 
 
-: emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
+: init
+  55aa 3d24 !
+  3d23 @ fff9 and 4 or 3d23 !
+  3d20 @ 7fff and 3d20 !
+  4006 3d20 !
+  2 3d25 !
+  8 3d00 !
+  3d0a @ 7 or 3d0a !
+  3d09 7 and 17 or 3d09 !
+  3d08 7 and 17 or 3d08 !
+  3d07 7 and 17 or 3d07 !
+  88c0 3d0e !
+  88c0 3d0d !
+  f77f 3d0b !
+  0 3d04 !
+  0 3d03 !
+  ffff 3d01 !  ;
+
 : serial-init
   c3 3d30 !    3d31 @ drop
   \ ff 3d34 !  a8 3d33 !  \ baud rate 19200
@@ -177,22 +202,15 @@ ONLY FORTH ALSO CROSS ALSO MACRO
   3d0e @ 6000 or 3d0e !
   3d0d @ 4000 or 3d0d ! ;
 
+: emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
+
 
 : cold
+  init
   serial-init
   65 dup emit emit BEGIN AGAIN ;
 
 
-: ddd  dup dup dup ;
-: add  2 3 + ;
-: dada  BEGIN 53 emit AGAIN ;
-: dadb  BEGIN 53 emit UNTIL ;
-: dadc  1 IF 79 emit THEN  0 IF 6e emit THEN ;
-: dadd  1 IF 79 emit ELSE 6e emit THEN ;
-: dade  BEGIN emit WHILE emit REPEAT ;
-: bla  1234 -1 0 1 3e 3f 40 -40 -3f -2 -1 5432 ;
-: ook  5678 bla bla bla ;
-: dat  9abc ook bla ook ;
 
 t' cold 8001 t!
 
@@ -224,10 +242,7 @@ mem 20000 s" t.b" make-file
 \ \ \ code lshift   &&code_LSHIFT
 \ \ \ code rshift   &&code_RSHIFT
 \ \ \ code ashift   &&code_ASHIFT
-\ \ \ code or       &&code_OR
 \ \ \ code xor      &&code_XOR
-\ \ \ code @        &&code_X40
-\ \ \ code !        &&code_X21
 \ \ \ code c@       &&code_C_X40
 \ \ \ code c!       &&code_C_X21
 \ \ \ code w@       &&code_W_X40
@@ -238,7 +253,6 @@ mem 20000 s" t.b" make-file
 \ \ \ code u<       &&code_U_X3c
 \ \ \ code 0<       &&code_0_X3c
 \ \ \ code =        &&code_X3d
-\ \ \ code 0=       &&code_0_X3d
 \ \ \ code dodo     &&code_DODO
 \ \ \ code do?do    &&code_DO_X3f_DO
 \ \ \ code doloop   &&code_DOLOOP
@@ -249,15 +263,6 @@ mem 20000 s" t.b" make-file
 \ \ \ code execute  &&code_EXECUTE
 \ \ \ code move     &&code_MOVE
 \ \ \ code findit   &&code_FINDIT
-\ \ \
-\ \ \ t' lit      to xt-lit
-\ \ \ t' exit     to xt-exit
-\ \ \ t' branch   to xt-branch
-\ \ \ t' 0branch  to xt-0branch
-\ \ \ t' dodo     to xt-do
-\ \ \ t' do?do    to xt-?do
-\ \ \ t' doloop   to xt-loop
-\ \ \ t' do+loop  to xt-+loop
 \ \ \
 \ \ \
 \ \ \
@@ -282,6 +287,8 @@ mem 20000 s" t.b" make-file
 \ \ \ t' dfr to xt-dfr
 \ \ \
 \ \ \
+VARIABLE dp
+\ \ \ : here  dp @ ;
 \ \ \ 0 VALUE here
 \ \ \ VARIABLE forth-wordlist tcell negate tallot 3039 t,
 \ \ \ .( #define FWL () t' forth-wordlist .offset .( +2) char ) emit
@@ -539,7 +546,7 @@ mem 20000 s" t.b" make-file
 \ \ \   3drop true ;
 \ \ \
 \ \ \
-\ \ \ : allot  here + doto here ;
+\ \ \ : allot  dp +! ;
 \ \ \ : ,  here ! /cell allot ;
 \ \ \ : c,  here c! /char allot ;
 \ \ \ : align  BEGIN here /cell 1- and WHILE 0 c, REPEAT ;
