@@ -38,7 +38,7 @@ VARIABLE tlatest
 wordlist CONSTANT target-wordlist
 
 : theader  talign there tlatest !
-  there target-wordlist +order DEFINITIONS CONSTANT PREVIOUS DEFINITIONS ;
+  get-current target-wordlist set-current   there CONSTANT   set-current ;
 : treveal  tlatest @ tlast ! ;
 \ : immediate  tlast @ tcell+ dup c@ 1 or swap tc! ;
 : t'  name target-wordlist +order evaluate PREVIOUS ;
@@ -95,17 +95,17 @@ wordlist CONSTANT target-wordlist
 VARIABLE ram  100 ram !
 
 
-VOCABULARY MACRO ALSO MACRO
-context @ CROSS CONSTANT macro-wordlist PREVIOUS
-
-ALSO MACRO DEFINITIONS PREVIOUS
+wordlist CONSTANT macro-wordlist
+macro-wordlist set-current
 
 : (  [char] ) parse 2drop ;
 : \         0 parse 2drop ;
-\ : code      theader treveal here name string, ts, ;
 
-\ : CONSTANT
-\ : variable  theader treveal <docol> ts, xt-var ta, 0 t, ;
+: CODE      theader treveal ;
+: END-CODE  ret, ;
+
+: CONSTANT  theader treveal lit, ret, ;
+: VARIABLE  theader treveal ram @ lit, ret,  1 ram +! ;
 \ : value     theader treveal <docol> ts, xt-val ta, t, ;
 \ : defer     theader treveal <docol> ts, xt-dfr ta, 0 ta, ;
 : :
@@ -116,7 +116,7 @@ ALSO MACRO DEFINITIONS PREVIOUS
   evaluate lit, THEN THEN AGAIN ;
 : ;  ret, treveal r> drop ;
 \ : lits  xt-lit ta, here name string, tl, ;
-\ : [char]  xt-lit ta, name drop c@ t, ;
+: [char]  name drop c@ lit, ;
 \ : docol  <docol> ts, ;
 
 : IF    ( -- orig )  *if ;
@@ -171,60 +171,7 @@ ALSO MACRO DEFINITIONS PREVIOUS
 
 
 8000 tdp !   fe80 t, 0 t,
-ONLY FORTH ALSO CROSS ALSO MACRO
-
-
-: init
-  55aa 3d24 !
-  3d23 @ fff9 and 4 or 3d23 !
-  3d20 @ 7fff and 3d20 !
-  4006 3d20 !
-  2 3d25 !
-  8 3d00 !
-  3d0a @ 7 or 3d0a !
-  3d09 7 and 17 or 3d09 !
-  3d08 7 and 17 or 3d08 !
-  3d07 7 and 17 or 3d07 !
-  88c0 3d0e !
-  88c0 3d0d !
-  f77f 3d0b !
-  0 3d04 !
-  0 3d03 !
-  ffff 3d01 !  ;
-
-: serial-init
-  c3 3d30 !    3d31 @ drop
-  \ ff 3d34 !  a8 3d33 !  \ baud rate 19200
-  ff 3d34 !  f1 3d33 !  \ baud rate 115200
-  03 3d31 !
-
-  3d0f @ 6000 or 3d0f !
-  3d0e @ 6000 or 3d0e !
-  3d0d @ 4000 or 3d0d ! ;
-
-: emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
-
-
-: cold
-  init
-  serial-init
-  65 dup emit emit BEGIN AGAIN ;
-
-
-
-t' cold 8001 t!
-
-
-ONLY FORTH DEFINITIONS
-
-: make-file ( addr len name len -- )
-  w/o bin open-file ABORT" couldn't create file"
-  dup >r write-file ABORT" couldn't write file"
-      r> close-file ABORT" couldn't close file" ;
-
-mem 20000 s" t.b" make-file
-
-
+ONLY FORTH ALSO CROSS macro-wordlist +order
 
 
 \ \ \ code tib      &&code_TIB                  \ XXX: shouldn't be primitive
@@ -249,9 +196,7 @@ mem 20000 s" t.b" make-file
 \ \ \ code w!       &&code_W_X21
 \ \ \ code l@       &&code_L_X40
 \ \ \ code l!       &&code_L_X21
-\ \ \ code <        &&code_X3c
 \ \ \ code u<       &&code_U_X3c
-\ \ \ code 0<       &&code_0_X3c
 \ \ \ code =        &&code_X3d
 \ \ \ code dodo     &&code_DODO
 \ \ \ code do?do    &&code_DO_X3f_DO
@@ -285,11 +230,12 @@ mem 20000 s" t.b" make-file
 \ \ \ t' var to xt-var
 \ \ \ t' val to xt-val
 \ \ \ t' dfr to xt-dfr
-\ \ \
-\ \ \
+
+
 VARIABLE dp
-\ \ \ : here  dp @ ;
-\ \ \ 0 VALUE here
+: here  dp @ ;
+
+
 \ \ \ VARIABLE forth-wordlist tcell negate tallot 3039 t,
 \ \ \ .( #define FWL () t' forth-wordlist .offset .( +2) char ) emit
 \ \ \ 0 VALUE current         tcell negate tallot here s" (type_u)FWL" string, tl,
@@ -363,8 +309,11 @@ VARIABLE dp
 \ \ \ : >>a  ashift ;
 \ \ \ : invert true xor ;
 \ \ \ : not  invert ;
-\ \ \
-\ \ \
+
+
+CODE <  48dd t, ae02 t, 6841 t, ee01 t, 9840 t, END-CODE
+CODE >  48dd t, 2e02 t, 6841 t, ee01 t, 9840 t, END-CODE
+: 0<  0 < ;
 \ \ \ : >    swap < ;
 \ \ \ : u>   swap u< ;
 \ \ \ : <=   > 0= ;
@@ -378,8 +327,16 @@ VARIABLE dp
 \ \ \ : u>=  u< 0= ;
 \ \ \ : within  over - >r - r> u< ;
 \ \ \ : between  >r over <= swap r> <= and ;
-\ \ \
-\ \ \
+
+CODE (do)
+\ pop r2,r2 from sp		ret
+\ r3 = [++bp]			limit
+\ r4 -= r3			index-limit
+\ push r3,r4 to sp
+\ r4 = [++bp]
+\ pc = r2
+END-CODE
+
 \ \ \ : d2*   2* over 0< - >r 2* r> ;
 \ \ \ : ud2/  >r u2/ r@ LITS 8*CELLSIZE-1 lshift or r> u2/ ;
 \ \ \ : d2/   >r u2/ r@ LITS 8*CELLSIZE-1 lshift or r> 2/ ;
@@ -496,10 +453,10 @@ VARIABLE dp
 \ \ \ : decimal  LITS 10   base ! ;
 \ \ \ : hex      LITS 0x10 base ! ;
 \ \ \ : octal    LITS 010  base ! ;
-\ \ \
-\ \ \
-\ \ \ : pad  here 100 + ;
-\ \ \ : todigit  dup 9 > 27 and + [char] 0 + ;
+
+
+: pad  here 100 + ;
+: todigit  dup 9 > 27 and + [char] 0 + ;
 \ \ \ : mu/mod  dup >r u/mod r> swap >r um/mod r> ;
 \ \ \ : <#  pad dup ! ;
 \ \ \ : hold  pad dup @ 1- tuck swap ! c! ;
@@ -663,3 +620,81 @@ VARIABLE dp
 \ \ \ : literal  dotick lit compile, compile, ; IMMEDIATE
 \ \ \
 \ \ \ : compile  r> cell+ dup @ compile, >r ;
+
+
+
+3141 CONSTANT pip
+VARIABLE v0
+VARIABLE v1
+VARIABLE v2
+VARIABLE v3
+: urgh  v0 v1 v2 v3 ;
+: init
+  55aa 3d24 !
+  3d23 @ fff9 and 4 or 3d23 !
+  3d20 @ 7fff and 3d20 !
+  4006 3d20 !
+  2 3d25 !
+  8 3d00 !
+  3d0a @ 7 or 3d0a !
+  3d09 7 and 17 or 3d09 !
+  3d08 7 and 17 or 3d08 !
+  3d07 7 and 17 or 3d07 !
+  88c0 3d0e !
+  88c0 3d0d !
+  f77f 3d0b !
+  0 3d04 !
+  0 3d03 !
+  ffff 3d01 !  ;
+
+: serial-init
+  c3 3d30 !    3d31 @ drop
+  \ ff 3d34 !  a8 3d33 !  \ baud rate 19200
+  ff 3d34 !  f1 3d33 !  \ baud rate 115200
+  03 3d31 !
+
+  3d0f @ 6000 or 3d0f !
+  3d0e @ 6000 or 3d0e !
+  3d0d @ 4000 or 3d0d ! ;
+
+: emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
+
+
+: cold
+  init
+  serial-init
+  65 dup emit emit
+
+  20 emit
+  30 emit 3 4 < IF 79 ELSE 6e THEN emit
+  31 emit 4 3 < IF 79 ELSE 6e THEN emit
+  32 emit 3 3 < IF 79 ELSE 6e THEN emit
+  33 emit -1 0 < IF 79 ELSE 6e THEN emit
+  34 emit 0 -1 < IF 79 ELSE 6e THEN emit
+
+  20 emit
+  30 emit 3 4 > IF 79 ELSE 6e THEN emit
+  31 emit 4 3 > IF 79 ELSE 6e THEN emit
+  32 emit 3 3 > IF 79 ELSE 6e THEN emit
+  33 emit -1 0 > IF 79 ELSE 6e THEN emit
+  34 emit 0 -1 > IF 79 ELSE 6e THEN emit
+
+  3 todigit emit  1 todigit emit  4 todigit emit
+  9 todigit emit  a todigit emit  f todigit emit
+
+  BEGIN AGAIN ;
+
+
+
+t' cold 8001 t!
+
+
+
+ONLY FORTH DEFINITIONS
+
+: make-file ( addr len name len -- )
+  w/o bin open-file ABORT" couldn't create file"
+  dup >r write-file ABORT" couldn't write file"
+      r> close-file ABORT" couldn't close file" ;
+
+mem 20000 s" t.b" make-file
