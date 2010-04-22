@@ -106,9 +106,17 @@ static u16 gpio(u32 n, u16 what, u16 push, u16 pull, u16 special)
 	return what;
 }
 
+static void uart_send(u8 x)
+{
+	putchar(x);
+	fflush(stdout);
+}
+
 struct board board_V_X = {
 	.use_centered_coors = 1,
 
 	.init = init,
-	.gpio = gpio
+	.gpio = gpio,
+
+	.uart_send = uart_send
 };
