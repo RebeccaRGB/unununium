@@ -159,6 +159,7 @@ macro-wordlist set-current
 
 : >r    pushr, pop, ;
 : r>    push, popr, ;
+: r@    push, popr, pushr, ;
 
 : @     98c4 t, ;             \ r4 = [r4]
 : !     pop3, d6c4 t, pop, ;  \ [r4] = r3
@@ -178,13 +179,14 @@ macro-wordlist set-current
 8000 tdp !   fe80 t, 0 t,
 ONLY FORTH ALSO CROSS macro-wordlist +order
 
+\ temp
+: emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
 
 \ \ \ code tib      &&code_TIB                  \ XXX: shouldn't be primitive
 \ \ \ code pockets  &&code_POCKETS                  \ XXX: shouldn't be primitive
 \ \ \ code dotick   &&code_DOTICK
 \ \ \ code pick     &&code_PICK
 \ \ \ code swap     &&code_SWAP
-\ \ \ code r@       &&code_R_X40
 \ \ \ code depth    &&code_DEPTH
 \ \ \ code depth!   &&code_DEPTH_X21
 \ \ \ code rdepth   &&code_RDEPTH
@@ -370,9 +372,13 @@ END-CODE
 \ \ \ : *'  >r dup 0< >r d2* r> IF r@ m+ THEN r> ;
 \ \ \ : um*  0 -rot LITS 8*CELLSIZE 0 DO *' LOOP drop ;
 \ \ \ : m*  2dup xor >r >r abs r> abs um* r> 0< IF dnegate THEN ;
-: /'  >r dup 0< >r d2* r> over r@ u>= or IF >r 1 or r> r@ - THEN r> ;
+: ....  10 BEGIN dup WHILE >r dup 8000 and IF 31 ELSE 30 THEN emit 2* r> 1- REPEAT 2drop 20 emit ;
+\ : /'  7777 drop  >r dup 0< >r d2* r> over r@    0a emit over .... dup ....   u>= or IF >r 1 or r> r@ - THEN r> ;
+: /'  7777 drop  >r dup 0< >r d2* r> over r@ u>= or IF >r 1 or r> r@ - THEN r> ;
+
+
 \ \ \ : um/mod  LITS 8*CELLSIZE 0 DO /' LOOP drop swap ;
-: um/mod  20 BEGIN dup WHILE 1- >r /' r> REPEAT drop ;
+: um/mod  10 BEGIN dup WHILE >r /' r> 1- REPEAT drop drop swap ;
 \ \ \ : sm/rem
 \ \ \   over >r >r dabs r@ abs um/mod
 \ \ \   r> 0< IF negate THEN
@@ -433,14 +439,14 @@ END-CODE
 : bl       20 ;
 \ \ \ : bell     07 ;
 \ \ \ : bs       08 ;
-\ \ \ : carret   0d ;
-\ \ \ : linefeed 0a ;
+: carret   0d ;
+: linefeed 0a ;
 \ \ \
 \ \ \
 : emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
 \ \ \ : type    bounds ?DO i c@ emit LOOP ;
 : type  BEGIN dup WHILE over c@ emit 1- >r 1+ r> REPEAT 2drop ;
-\ \ \ : cr      carret emit linefeed emit ;
+: cr      carret emit linefeed emit ;
 : space   bl emit ;
 \ \ \ : spaces  BEGIN dup 0> WHILE space 1- REPEAT drop ;
 \ \ \
@@ -460,7 +466,7 @@ END-CODE
 \ \ \
 \ \ \
 \ \ \ : decimal  LITS 10   base ! ;
-\ \ \ : hex      LITS 0x10 base ! ;
+: hex      10 base ! ;
 \ \ \ : octal    LITS 010  base ! ;
 
 
@@ -472,7 +478,7 @@ END-CODE
 : sign  0< IF [char] - hold THEN ;
 : #  base @ mu/mod rot todigit hold ;
 : #s  BEGIN # 2dup or WHILE REPEAT ;
-: #>  2drop pad dup @ tuck - ;
+: #>  666 drop   2drop pad dup @ tuck - ;
 : (.)  <# dup >r abs 0 #s r> sign #> ;
 \ \ \ : u#  base @ u/mod swap todigit hold ;
 \ \ \ : u#s  BEGIN u# dup WHILE REPEAT ;
@@ -668,7 +674,8 @@ VARIABLE v3
 
 : emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
 
-
+: ....  10 BEGIN dup WHILE >r dup 8000 and IF 31 ELSE 30 THEN emit 2* r> 1- REPEAT 2drop space ;
+: ttt   50 emit here ....   0 0 <#  35 hold 36 hold #>   cr 52 emit here .... cr   21 emit pad .... pad @ .... cr    over .... dup .... cr   type ;
 : cold
   init
   serial-init
@@ -688,10 +695,54 @@ VARIABLE v3
   33 emit -1 0 > IF 79 ELSE 6e THEN emit
   34 emit 0 -1 > IF 79 ELSE 6e THEN emit
 
+  20 emit
+  30 emit 3 4 u>= IF 79 ELSE 6e THEN emit
+  31 emit 4 3 u>= IF 79 ELSE 6e THEN emit
+  32 emit 3 3 u>= IF 79 ELSE 6e THEN emit
+  33 emit -1 0 u>= IF 79 ELSE 6e THEN emit
+  34 emit 0 -1 u>= IF 79 ELSE 6e THEN emit
+
+  cr
   3 todigit emit  1 todigit emit  4 todigit emit
   9 todigit emit  a todigit emit  f todigit emit
 
-  1234 . 5678 .
+  hex
+  0400 dp !
+
+  cr base @ BEGIN dup WHILE 2a emit 1- REPEAT drop
+
+  1234 0 10
+     cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+  /' cr >r >r dup .... r> dup .... r> dup ....
+
+cr 2a emit 2a emit  5678    0 10 um/mod swap .... ....
+cr 2a emit 2a emit  5678 1234 10 um/mod swap .... ....
+
+  cr 1234 ....
+  cr 51 emit  9 2 tuck - todigit emit todigit emit
+  cr ttt
+cr base @ ....
+cr 65 0 5 mu/mod .... .... ....
+cr 2a emit 5678 1234 d2* .... ....
+cr 2a emit abcd 1234 d2* .... ....
+  cr 4 0 <# # #> type
+  cr 1234 . 5678 .
+
   BEGIN AGAIN ;
 
 
