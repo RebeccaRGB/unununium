@@ -153,6 +153,7 @@ macro-wordlist set-current
 
 : dup   push, ;
 : over  push, 9802 t, ;       \ r4 = [bp+2]
+: swap  pop3, push, 9903 t, ; \ r4 = r3
 : drop  pop, ;
 : nip   0a41 t, ;             \ bp += 1
 
@@ -162,7 +163,11 @@ macro-wordlist set-current
 : @     98c4 t, ;             \ r4 = [r4]
 : !     pop3, d6c4 t, pop, ;  \ [r4] = r3
 
+: negate  6904 t, ;           \ r4 =- r4
+
 : +     08dd t, ;             \ r4 += [++bp]
+: swap- 28dd t, ;             \ r4 -= [++bp]
+: -     28dd t, 6904 t, ;
 : and   b8dd t, ;             \ r4 &= [++bp]
 : or    a8dd t, ;             \ r4 |= [++bp]
 
@@ -184,14 +189,13 @@ ONLY FORTH ALSO CROSS macro-wordlist +order
 \ \ \ code depth!   &&code_DEPTH_X21
 \ \ \ code rdepth   &&code_RDEPTH
 \ \ \ code rdepth!  &&code_RDEPTH_X21
-\ \ \ code -        &&code_X2d
 \ \ \ code *        &&code_X2a
 \ \ \ code lshift   &&code_LSHIFT
 \ \ \ code rshift   &&code_RSHIFT
 \ \ \ code ashift   &&code_ASHIFT
 \ \ \ code xor      &&code_XOR
-\ \ \ code c@       &&code_C_X40
-\ \ \ code c!       &&code_C_X21
+: c@  @ ;
+: c!  ! ;
 \ \ \ code w@       &&code_W_X40
 \ \ \ code w!       &&code_W_X21
 \ \ \ code l@       &&code_L_X40
@@ -267,9 +271,9 @@ VARIABLE dp
 \ \ \ 0 VALUE source-id
 \ \ \ VARIABLE >in
 \ \ \ VARIABLE span
-\ \ \
-\ \ \ VARIABLE base
-\ \ \
+
+VARIABLE base
+
 \ \ \ VARIABLE latest
 \ \ \ VARIABLE whichpocket
 \ \ \ VARIABLE state
@@ -288,20 +292,20 @@ VARIABLE dp
 \ \ \
 \ \ \
 \ \ \ : ?dup   dup IF dup THEN ;
-\ \ \ : tuck   swap over ;
-\ \ \ : 2dup   over over ;
+: tuck   swap over ;
+: 2dup   over over ;
 \ \ \ : 3dup   2 pick 2 pick 2 pick ;
 \ \ \ : 2over  3 pick 3 pick ;
-\ \ \ : 2drop  drop drop ;
+: 2drop  drop drop ;
 \ \ \ : 3drop  drop drop drop ;
 \ \ \ : clear  0 depth! ;
-\ \ \ : rot    >r swap r> swap ;
+: rot    >r swap r> swap ;
 \ \ \ : -rot   swap >r swap r> ;
 \ \ \ : 2swap  >r -rot r> -rot ;
 \ \ \ : 2rot   >r >r 2swap r> r> 2swap ;
-\ \ \
-\ \ \
-\ \ \ : 2*   1 lshift ;
+
+
+: 2*   dup + ;
 \ \ \ : u2/  1 rshift ;
 \ \ \ : 2/   1 ashift ;
 \ \ \ : <<   lshift ;
@@ -311,8 +315,10 @@ VARIABLE dp
 \ \ \ : not  invert ;
 
 
-CODE <  48dd t, ae02 t, 6841 t, ee01 t, 9840 t, END-CODE
-CODE >  48dd t, 2e02 t, 6841 t, ee01 t, 9840 t, END-CODE
+CODE <   48dd t, ae02 t, 6841 t, ee01 t, 9840 t, END-CODE
+CODE >   48dd t, 2e02 t, 6841 t, ee01 t, 9840 t, END-CODE
+CODE u<  48dd t, 8e02 t, 6841 t, ee01 t, 9840 t, END-CODE
+
 : 0<  0 < ;
 \ \ \ : >    swap < ;
 \ \ \ : u>   swap u< ;
@@ -324,7 +330,7 @@ CODE >  48dd t, 2e02 t, 6841 t, ee01 t, 9840 t, END-CODE
 \ \ \ : 0>   0 > ;
 \ \ \ : 0>=  0 >= ;
 \ \ \ : u<=  u> 0= ;
-\ \ \ : u>=  u< 0= ;
+: u>=  u< 0= ;
 \ \ \ : within  over - >r - r> u< ;
 \ \ \ : between  >r over <= swap r> <= and ;
 
@@ -337,18 +343,18 @@ CODE (do)
 \ pc = r2
 END-CODE
 
-\ \ \ : d2*   2* over 0< - >r 2* r> ;
+: d2*   2* over 0< - >r 2* r> ;
 \ \ \ : ud2/  >r u2/ r@ LITS 8*CELLSIZE-1 lshift or r> u2/ ;
 \ \ \ : d2/   >r u2/ r@ LITS 8*CELLSIZE-1 lshift or r> 2/ ;
 \ \ \
 \ \ \
 \ \ \ : negate  0 swap - ;
-\ \ \ : abs  dup 0< IF negate THEN ;
+: abs  dup 0< IF negate THEN ;
 \ \ \ : max  2dup < IF swap THEN drop ;
 \ \ \ : min  2dup > IF swap THEN drop ;
 \ \ \ : u*  * ;
-\ \ \ : 1+  1 + ;
-\ \ \ : 1-  1 - ;
+: 1+  1 + ;
+: 1-  1 - ;
 \ \ \ : 2+  2 + ;
 \ \ \ : 2-  2 - ;
 \ \ \ : even  dup 1 and + ;
@@ -364,8 +370,9 @@ END-CODE
 \ \ \ : *'  >r dup 0< >r d2* r> IF r@ m+ THEN r> ;
 \ \ \ : um*  0 -rot LITS 8*CELLSIZE 0 DO *' LOOP drop ;
 \ \ \ : m*  2dup xor >r >r abs r> abs um* r> 0< IF dnegate THEN ;
-\ \ \ : /'  >r dup 0< >r d2* r> over r@ u>= or IF >r 1 or r> r@ - THEN r> ;
+: /'  >r dup 0< >r d2* r> over r@ u>= or IF >r 1 or r> r@ - THEN r> ;
 \ \ \ : um/mod  LITS 8*CELLSIZE 0 DO /' LOOP drop swap ;
+: um/mod  20 BEGIN dup WHILE 1- >r /' r> REPEAT drop ;
 \ \ \ : sm/rem
 \ \ \   over >r >r dabs r@ abs um/mod
 \ \ \   r> 0< IF negate THEN
@@ -376,7 +383,7 @@ END-CODE
 \ \ \   r> drop ;
 \ \ \
 \ \ \
-\ \ \ : u/mod  0 swap um/mod ;
+: u/mod  0 swap um/mod ;
 \ \ \ : /mod   >r s>d r> fm/mod ;
 \ \ \ : /      /mod nip ;
 \ \ \ : mod    /mod drop ;
@@ -423,16 +430,18 @@ END-CODE
 \ \ \ : terminal  tib doto ib  #tib @ #ib !  0 doto source-id ;
 \ \ \
 \ \ \
-\ \ \ : bl       20 ;
+: bl       20 ;
 \ \ \ : bell     07 ;
 \ \ \ : bs       08 ;
 \ \ \ : carret   0d ;
 \ \ \ : linefeed 0a ;
 \ \ \
 \ \ \
+: emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
 \ \ \ : type    bounds ?DO i c@ emit LOOP ;
+: type  BEGIN dup WHILE over c@ emit 1- >r 1+ r> REPEAT 2drop ;
 \ \ \ : cr      carret emit linefeed emit ;
-\ \ \ : space   bl emit ;
+: space   bl emit ;
 \ \ \ : spaces  BEGIN dup 0> WHILE space 1- REPEAT drop ;
 \ \ \
 \ \ \
@@ -457,19 +466,19 @@ END-CODE
 
 : pad  here 100 + ;
 : todigit  dup 9 > 27 and + [char] 0 + ;
-\ \ \ : mu/mod  dup >r u/mod r> swap >r um/mod r> ;
-\ \ \ : <#  pad dup ! ;
-\ \ \ : hold  pad dup @ 1- tuck swap ! c! ;
-\ \ \ : sign  0< IF [char] - hold THEN ;
-\ \ \ : #  base @ mu/mod rot todigit hold ;
-\ \ \ : #s  BEGIN # 2dup or WHILE REPEAT ;
-\ \ \ : #>  2drop pad dup @ tuck - ;
-\ \ \ : (.)  <# dup >r abs 0 #s r> sign #> ;
+: mu/mod  dup >r u/mod r> swap >r um/mod r> ;
+: <#  pad dup ! ;
+: hold  pad dup @ 1- tuck swap ! c! ;
+: sign  0< IF [char] - hold THEN ;
+: #  base @ mu/mod rot todigit hold ;
+: #s  BEGIN # 2dup or WHILE REPEAT ;
+: #>  2drop pad dup @ tuck - ;
+: (.)  <# dup >r abs 0 #s r> sign #> ;
 \ \ \ : u#  base @ u/mod swap todigit hold ;
 \ \ \ : u#s  BEGIN u# dup WHILE REPEAT ;
 \ \ \ : u#>  drop pad dup @ tuck - ;
 \ \ \ : (u.)  <# u#s u#> ;
-\ \ \ : .  (.) type space ;
+: .  (.) type space ;
 \ \ \ : s.  . ;
 \ \ \ : u.  (u.) type space ;
 \ \ \ : .r   >r (.)  r> over - spaces type ;
@@ -682,6 +691,7 @@ VARIABLE v3
   3 todigit emit  1 todigit emit  4 todigit emit
   9 todigit emit  a todigit emit  f todigit emit
 
+  1234 . 5678 .
   BEGIN AGAIN ;
 
 
