@@ -674,7 +674,6 @@ VARIABLE v3
 
 : emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
 
-: ....  10 BEGIN dup WHILE >r dup 8000 and IF 31 ELSE 30 THEN emit 2* r> 1- REPEAT 2drop space ;
 : ttt   50 emit here ....   0 0 <#  35 hold 36 hold #>   cr 52 emit here .... cr   21 emit pad .... pad @ .... cr    over .... dup .... cr   type ;
 : cold
   init
