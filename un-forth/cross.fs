@@ -681,6 +681,7 @@ VARIABLE v3
 : emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
 
 : ttt   50 emit here ....   0 0 <#  35 hold 36 hold #>   cr 52 emit here .... cr   21 emit pad .... pad @ .... cr    over .... dup .... cr   type ;
+: flop  2dup ! >r 1+ r> 1+ dup 3f and 24 - 0= IF 20 + THEN ;
 : cold
   init
   serial-init
@@ -759,6 +760,34 @@ VARIABLE v3
 \  cr ." KITTEHS"
   cr
 
+
+  3d20 @ fffb and 3d20 !  \ video dac on
+  0041 2812 !  000a 2813 !  2400 2814 !
+
+\  0000 2b00 !  294a 2b01 !  56b5 + 2b02 !  7fff 2b03 !
+   0421 00 * 2b00 !
+   0421 02 * 2b01 !
+   0421 04 * 2b02 !
+   0421 06 * 2b03 !
+   0421 08 * 2b04 !
+   0421 0a * 2b05 !
+   0421 0c * 2b06 !
+   0421 0e * 2b07 !
+   0421 11 * 2b08 !
+   0421 13 * 2b09 !
+   0421 15 * 2b0a !
+   0421 17 * 2b0b !
+   0421 19 * 2b0c !
+   0421 1b * 2b0d !
+   0421 1d * 2b0e !
+   0421 1f * 2b0f !
+
+0800 2400 ! 8000 2401 ! 0f00 2403 ! 0f01 2405 !
+
+0f02 2407 !
+
+  0780 2484 BEGIN over 0800 - WHILE flop REPEAT
+
   BEGIN AGAIN ;
 
 
@@ -767,7 +796,30 @@ t' cold 8001 t!
 
 
 
+ONLY FORTH ALSO CROSS
+
+f000 tdp !
+
+\ 0000 dup 2dup t, t, t, t,
+\ 5555 dup 2dup t, t, t, t,
+\ aaaa dup 2dup t, t, t, t,
+\ ffff dup 2dup t, t, t, t,
+
+\ 0055 dup 2dup t, t, t, t,
+\ 5500 dup 2dup t, t, t, t,
+\ aaff dup 2dup t, t, t, t,
+\ ffaa dup 2dup t, t, t, t,
+
+\ e4e4 dup 2dup t, t, t, t,
+\ e4e4 dup 2dup t, t, t, t,
+\ e4e4 dup 2dup t, t, t, t,
+\ e4e4 dup 2dup t, t, t, t,
+
+INCLUDE font.fs
+
+
 ONLY FORTH DEFINITIONS
+
 
 : make-file ( addr len name len -- )
   w/o bin open-file ABORT" couldn't create file"

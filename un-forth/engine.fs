@@ -110,8 +110,8 @@ ALSO ASM
 c000 org
 
 int-off
-27ff # sp :=
-23ff # bp :=
+23ff # sp :=
+21ff # bp :=
 8000 goto
 
 55aa # r1 :=   3d24 [] r1 st
