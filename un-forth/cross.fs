@@ -1,6 +1,25 @@
 hex
 
+\ HOST scope: FORTH (to FORTH)
+\ INTERPRETER scope: *INTERPRETER, FORTH (to *INTERPRETER)
+\ COMPILER scope: *COMPILER, *INTERPRETER, FORTH (to *COMPILER)
+\ TARGET scope, interpret state: *INTERPRETER (exec), number (stack), error
+\ TARGET scope, compile state: *COMPILER (exec), target (,), number (,), error
+
+wordlist CONSTANT target-wordlist  \ names on the target
+wordlist CONSTANT cross-wordlist   \ cross interpreter
+wordlist CONSTANT macro-wordlist   \ cross compiler
+
 : +order ( wid -- )  >r get-order r> swap 1+ set-order ;
+: +cross  cross-wordlist +order ;
+: +macro  macro-wordlist +order ;
+
+: HOST         ONLY FORTH               DEFINITIONS ;
+: INTERPRETER  ONLY FORTH +cross        DEFINITIONS ;
+: COMPILER     ONLY FORTH +cross +macro DEFINITIONS ;
+: TARGET       ONLY       +cross ;   \ XXX: what about new definitions?
+
+
 
 : w@  dup >r c@ r> char+ c@ 8 lshift or ;
 : w!  2dup c! >r 8 rshift r> char+ c! ;
@@ -8,7 +27,6 @@ hex
 10000 CONSTANT memsize
 CREATE mem memsize 2* allot   mem memsize 2* erase
 
-VOCABULARY CROSS ALSO CROSS DEFINITIONS
 
 VARIABLE tdp
 
@@ -24,24 +42,20 @@ VARIABLE tdp
 : t,   there tcell tallot t! ;
 : talign  ;
 
-\ : upc  dup [char] a [char] z 1+ within IF [char] a - [char] A + THEN ;
 : t,"  dup t, bounds ?DO i c@ t, LOOP ;
-\ : t,"upc  dup tc, bounds ?DO i c@ upc tc, LOOP ;
 
 INCLUDE engine.fs
 
-ONLY FORTH ALSO CROSS DEFINITIONS
+HOST
 
 VARIABLE tlast
 VARIABLE tlatest
 
-wordlist CONSTANT target-wordlist
-
 : theader  talign there tlatest !
   get-current target-wordlist set-current   there CONSTANT   set-current ;
 : treveal  tlatest @ tlast ! ;
-\ : immediate  tlast @ tcell+ dup c@ 1 or swap tc! ;
-: t'  name target-wordlist +order evaluate PREVIOUS ;
+: t'  name target-wordlist search-wordlist 0= ABORT" target word not found"
+      execute ;
 
 \ 0 VALUE xt-do
 \ 0 VALUE xt-?do
@@ -96,11 +110,19 @@ wordlist CONSTANT target-wordlist
 VARIABLE ram  100 ram !
 
 
-wordlist CONSTANT macro-wordlist
-macro-wordlist set-current
+INTERPRETER
 
 : (  [char] ) parse 2drop ;
 : \         0 parse 2drop ;
+
+COMPILER
+
+: (  [char] ) parse 2drop ;
+: \         0 parse 2drop ;
+
+HOST
+
+macro-wordlist set-current
 
 : CODE      theader treveal ;
 : END-CODE  ret, ;
@@ -181,7 +203,7 @@ macro-wordlist set-current
 
 
 8000 tdp !   fe80 t, 0 t,
-ONLY FORTH ALSO CROSS macro-wordlist +order
+ONLY FORTH macro-wordlist +order
 
 \ temp
 : emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
@@ -796,7 +818,7 @@ t' cold 8001 t!
 
 
 
-ONLY FORTH ALSO CROSS
+ONLY FORTH
 
 f000 tdp !
 
