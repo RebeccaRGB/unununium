@@ -16,7 +16,7 @@ wordlist CONSTANT macro-wordlist   \ cross compiler
 
 : HOST         ONLY FORTH               DEFINITIONS ;
 : INTERPRETER  ONLY FORTH +cross        DEFINITIONS ;
-: COMPILER     ONLY FORTH +cross +macro DEFINITIONS ;
+: COMPILER     ONLY FORTH +cross +macro DEFINITIONS ;  \ XXX
 : TARGET       ONLY       +cross ;   \ XXX: what about new definitions?
 
 
@@ -123,25 +123,17 @@ INTERPRETER
 : CONSTANT  theader treveal lit, ret, ;
 : VARIABLE  theader treveal ram @ lit, ret,  1 ram +! ;
 
-COMPILER
-
-: (  [char] ) parse 2drop ;
-: \         0 parse 2drop ;
-
-INTERPRETER
-
 : CODE      theader treveal ;
 : END-CODE  ret, ;
 
 COMPILER
-
-\ : lits  xt-lit ta, here name string, tl, ;
-: [char]  name drop c@ lit, ;
-
-\ COMPILER
 HOST macro-wordlist set-current
 
+: (  [char] ) parse 2drop ;
+: \         0 parse 2drop ;
+
 : s"  xt-(") call, [char] " parse t," ;
+: [char]  name drop c@ lit, ;
 
 : IF    ( -- orig )  *if ;
 : AHEAD ( -- orig )  *ahead ;
