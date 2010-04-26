@@ -112,34 +112,48 @@ VARIABLE ram  100 ram !
 
 INTERPRETER
 
+: HOST         HOST ;
+: INTERPRETER  INTERPRETER ;
+
+: ,  t, ;
+
 : (  [char] ) parse 2drop ;
 : \         0 parse 2drop ;
+
+: CONSTANT  theader treveal lit, ret, ;
+: VARIABLE  theader treveal ram @ lit, ret,  1 ram +! ;
 
 COMPILER
 
 : (  [char] ) parse 2drop ;
 : \         0 parse 2drop ;
 
-HOST
-
-macro-wordlist set-current
+INTERPRETER
 
 : CODE      theader treveal ;
 : END-CODE  ret, ;
 
-: CONSTANT  theader treveal lit, ret, ;
-: VARIABLE  theader treveal ram @ lit, ret,  1 ram +! ;
+HOST macro-wordlist set-current
+
 \ : value     theader treveal <docol> ts, xt-val ta, t, ;
 \ : defer     theader treveal <docol> ts, xt-dfr ta, 0 ta, ;
+
+INTERPRETER
+
 : :
   theader BEGIN name
   BEGIN ?dup 0= WHILE drop refill 0= ABORT" refill failed" name REPEAT
   2dup macro-wordlist search-wordlist IF nip nip execute ELSE
   2dup target-wordlist search-wordlist IF nip nip execute call, ELSE
   evaluate lit, THEN THEN AGAIN ;
+
+HOST macro-wordlist set-current
+
 : ;  ret, treveal r> drop ;
 \ : lits  xt-lit ta, here name string, tl, ;
 : [char]  name drop c@ lit, ;
+
+\ COMPILER
 
 : s"  xt-(") call, [char] " parse t," ;
 
@@ -154,7 +168,9 @@ macro-wordlist set-current
 : ELSE  ( orig1 -- orig2 )      *ahead swap *then ;
 : WHILE  ( dest -- orig dest )  *if swap ;
 : REPEAT ( orig dest -- )       *again *then ;
-\
+
+HOST macro-wordlist set-current
+
 \ : do  leaves @ there xt-do ta, 0 leaves ! ;
 \ : ?do  leaves @ xt-?do ta, there leaves ! there 0 t, ;
 \ : loop  xt-loop ta, resolve-loop ;
@@ -203,7 +219,8 @@ macro-wordlist set-current
 
 
 8000 tdp !   fe80 t, 0 t,
-ONLY FORTH macro-wordlist +order
+\ ONLY FORTH macro-wordlist +order
+TARGET
 
 \ temp
 : emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
@@ -340,9 +357,9 @@ VARIABLE base
 \ \ \ : not  invert ;
 
 
-CODE <   48dd t, ae02 t, 6841 t, ee01 t, 9840 t, END-CODE
-CODE >   48dd t, 2e02 t, 6841 t, ee01 t, 9840 t, END-CODE
-CODE u<  48dd t, 8e02 t, 6841 t, ee01 t, 9840 t, END-CODE
+CODE <   48dd , ae02 , 6841 , ee01 , 9840 , END-CODE
+CODE >   48dd , 2e02 , 6841 , ee01 , 9840 , END-CODE
+CODE u<  48dd , 8e02 , 6841 , ee01 , 9840 , END-CODE
 
 : 0<  0 < ;
 \ \ \ : >    swap < ;
@@ -387,8 +404,10 @@ END-CODE
 
 
 : (")  r> r@ 1+ r> @ 2dup + >r rot >r ;
-t' (") TO xt-(")
 
+INTERPRETER
+t' (") TO xt-(")
+TARGET
 
 \ \ \ : s>d dup 0< ;
 \ \ \ : dnegate  invert >r negate dup 0= r> swap - ;
@@ -814,11 +833,12 @@ VARIABLE v3
 
 
 
+INTERPRETER
 t' cold 8001 t!
+TARGET
 
 
-
-ONLY FORTH
+HOST
 
 f000 tdp !
 
