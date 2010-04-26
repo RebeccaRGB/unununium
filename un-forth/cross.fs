@@ -842,25 +842,12 @@ HOST
 
 f000 tdp !
 
-\ 0000 dup 2dup t, t, t, t,
-\ 5555 dup 2dup t, t, t, t,
-\ aaaa dup 2dup t, t, t, t,
-\ ffff dup 2dup t, t, t, t,
-
-\ 0055 dup 2dup t, t, t, t,
-\ 5500 dup 2dup t, t, t, t,
-\ aaff dup 2dup t, t, t, t,
-\ ffaa dup 2dup t, t, t, t,
-
-\ e4e4 dup 2dup t, t, t, t,
-\ e4e4 dup 2dup t, t, t, t,
-\ e4e4 dup 2dup t, t, t, t,
-\ e4e4 dup 2dup t, t, t, t,
+INTERPRETER
 
 INCLUDE font.fs
 
 
-ONLY FORTH DEFINITIONS
+HOST
 
 
 : make-file ( addr len name len -- )
