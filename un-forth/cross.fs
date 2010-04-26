@@ -133,27 +133,13 @@ INTERPRETER
 : CODE      theader treveal ;
 : END-CODE  ret, ;
 
-HOST macro-wordlist set-current
+COMPILER
 
-\ : value     theader treveal <docol> ts, xt-val ta, t, ;
-\ : defer     theader treveal <docol> ts, xt-dfr ta, 0 ta, ;
-
-INTERPRETER
-
-: :
-  theader BEGIN name
-  BEGIN ?dup 0= WHILE drop refill 0= ABORT" refill failed" name REPEAT
-  2dup macro-wordlist search-wordlist IF nip nip execute ELSE
-  2dup target-wordlist search-wordlist IF nip nip execute call, ELSE
-  evaluate lit, THEN THEN AGAIN ;
-
-HOST macro-wordlist set-current
-
-: ;  ret, treveal r> drop ;
 \ : lits  xt-lit ta, here name string, tl, ;
 : [char]  name drop c@ lit, ;
 
 \ COMPILER
+HOST macro-wordlist set-current
 
 : s"  xt-(") call, [char] " parse t," ;
 
@@ -217,9 +203,24 @@ HOST macro-wordlist set-current
 : 0=    2841 t, 3904 t, ;     \ r4 -= 1 ; r4 -= r4, carry
 
 
+HOST macro-wordlist set-current
+\ COMPILER
+
+: ;  ret, treveal r> drop ;
+
+INTERPRETER
+
+: :
+  theader BEGIN name
+  BEGIN ?dup 0= WHILE drop refill 0= ABORT" refill failed" name REPEAT
+  2dup macro-wordlist search-wordlist IF nip nip execute ELSE
+  2dup target-wordlist search-wordlist IF nip nip execute call, ELSE
+  evaluate lit, THEN THEN AGAIN ;
+
+HOST
 
 8000 tdp !   fe80 t, 0 t,
-\ ONLY FORTH macro-wordlist +order
+
 TARGET
 
 \ temp
@@ -856,3 +857,5 @@ HOST
       r> close-file ABORT" couldn't close file" ;
 
 mem 20000 s" t.b" make-file
+
+cr .( Done.) cr
