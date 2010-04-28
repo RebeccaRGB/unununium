@@ -14,10 +14,12 @@ wordlist CONSTANT macro-wordlist   \ cross compiler
 : +cross  cross-wordlist +order ;
 : +macro  macro-wordlist +order ;
 
-: HOST         ONLY FORTH               DEFINITIONS ;
-: INTERPRETER  ONLY FORTH +cross        DEFINITIONS ;
-: COMPILER     ONLY FORTH +cross +macro DEFINITIONS ;  \ XXX
-: TARGET       ONLY       +cross ;   \ XXX: what about new definitions?
+: HOST         ONLY FORTH        DEFINITIONS ;
+: INTERPRETER  ONLY FORTH +cross DEFINITIONS ;
+\ : COMPILER     ONLY FORTH +cross +macro DEFINITIONS ;  \ XXX
+: COMPILER     ONLY FORTH        macro-wordlist set-current ;
+: TARGET       ONLY       +cross    0 set-current ;
+  \ XXX: what about new definitions?  Should we try to catch those?
 
 
 
@@ -56,20 +58,6 @@ VARIABLE tlatest
 : treveal  tlatest @ tlast ! ;
 : t'  name target-wordlist search-wordlist 0= ABORT" target word not found"
       execute ;
-
-\ 0 VALUE xt-do
-\ 0 VALUE xt-?do
-\ 0 VALUE xt-loop
-\ 0 VALUE xt-+loop
-\ 0 VALUE xt-var
-\ 0 VALUE xt-val
-\ 0 VALUE xt-dfr
-0 VALUE xt-(")
-
-\ VARIABLE leaves
-\ : resolve-loop  leaves @ BEGIN ?dup WHILE
-\                 dup @ swap there over - swap t! REPEAT
-\                 there - t, leaves ! ;
 
 : call, ( x -- )  f040 t, t, ;
 : ret,            9a90 t, ;
@@ -125,6 +113,22 @@ INTERPRETER
 
 : CODE      theader treveal ;
 : END-CODE  ret, ;
+
+HOST
+
+\ 0 VALUE xt-do
+\ 0 VALUE xt-?do
+\ 0 VALUE xt-loop
+\ 0 VALUE xt-+loop
+\ 0 VALUE xt-var
+\ 0 VALUE xt-val
+\ 0 VALUE xt-dfr
+0 VALUE xt-(")
+
+\ VARIABLE leaves
+\ : resolve-loop  leaves @ BEGIN ?dup WHILE
+\                 dup @ swap there over - swap t! REPEAT
+\                 there - t, leaves ! ;
 
 COMPILER
 HOST macro-wordlist set-current
@@ -694,7 +698,7 @@ VARIABLE v3
   3d0a @ 7 or 3d0a !
   3d09 7 and 17 or 3d09 !
   3d08 7 and 17 or 3d08 !
-  3d07 7 and 17 or 3d07 !
+  3d07 f and ff or 3d07 !
   88c0 3d0e !
   88c0 3d0d !
   f77f 3d0b !
@@ -796,7 +800,12 @@ VARIABLE v3
 
 
   3d20 @ fffb and 3d20 !  \ video dac on
+
+  cr s" DAC on" type
+
   0041 2812 !  000a 2813 !  2400 2814 !
+
+  cr s" video page 0 on" type
 
 \  0000 2b00 !  294a 2b01 !  56b5 + 2b02 !  7fff 2b03 !
    0421 00 * 2b00 !
@@ -816,11 +825,17 @@ VARIABLE v3
    0421 1d * 2b0e !
    0421 1f * 2b0f !
 
+  cr s" palette set" type
+
 0800 2400 ! 8000 2401 ! 0f00 2403 ! 0f01 2405 !
 
 0f02 2407 !
 
   0780 2484 BEGIN over 0800 - WHILE flop REPEAT
+
+  cr s" tiles set" type
+
+  cr s" ...and hang" type
 
   BEGIN AGAIN ;
 
