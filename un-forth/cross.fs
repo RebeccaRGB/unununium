@@ -74,7 +74,9 @@ VARIABLE tlatest
 : pop,    968d t, ;         \ pop r4,r4 from [bp]
 : pop3,   948d t, ;         \ pop r3,r3 from [bp]
 : pushr,  d888 t, ;         \ push r4,r4 to [sp]
+: pushr3, d688 t, ;         \ push r3,r3 to [sp]
 : popr,   9688 t, ;         \ pop r4,r4 from [sp]
+: popr3,  9488 t, ;         \ pop r3,r3 from [sp]
 
 : lit, ( x -- )  push,
                  dup 0 40 within IF 9840 or t, EXIT THEN          \ r4 = NN
@@ -91,6 +93,9 @@ VARIABLE tlatest
 : *begin ( -- dest )              <mark ;
 : *until ( dest -- )  0test, 0e00 <jump ;      \ jb
 : *again ( dest -- )         ee00 <jump ;      \ jmp
+
+: *do    pop3, 070b t, 8000 t, 2903 t, pushr3, pushr, pop, <mark ;
+: *loop  popr3, 0641 t, pushr3, ce00 <jump 0042 t, ;
 
 
 VARIABLE ram  100 ram !
@@ -154,6 +159,9 @@ COMPILER
 : ELSE  ( orig1 -- orig2 )      *ahead swap *then ;
 : WHILE  ( dest -- orig dest )  *if swap ;
 : REPEAT ( orig dest -- )       *again *then ;
+
+: DO    *do ;
+: LOOP  *loop ;
 
 \ : do  leaves @ there xt-do ta, 0 leaves ! ;
 \ : ?do  leaves @ xt-?do ta, there leaves ! there 0 t, ;
@@ -731,6 +739,8 @@ VARIABLE v3
   0041 2812 !  000a 2813 !  2400 2814 !   \ init video page 0
 ;
 
+: bork  cr 50 0 DO 2a emit LOOP ;
+
 : cold
   init
   serial-init
@@ -742,6 +752,11 @@ VARIABLE v3
 \  cr ." OHAI"
   cr
 
+bork
+cr cr
+6 0 DO cr  0a 0 DO 2a emit LOOP LOOP
+cr cr
+8 2 DO cr  08 -2 DO 2a emit LOOP LOOP
 
   init-video
   init-video-palette
