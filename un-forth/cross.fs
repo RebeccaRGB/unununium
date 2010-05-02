@@ -14,13 +14,10 @@ wordlist CONSTANT macro-wordlist   \ cross compiler
 : +cross  cross-wordlist +order ;
 : +macro  macro-wordlist +order ;
 
-: HOST         ONLY FORTH        DEFINITIONS ;
-: INTERPRETER  ONLY FORTH +cross DEFINITIONS ;
-\ : COMPILER     ONLY FORTH +cross +macro DEFINITIONS ;  \ XXX
-: COMPILER     ONLY FORTH        macro-wordlist set-current ;
-: TARGET       ONLY       +cross    0 set-current ;
-  \ XXX: what about new definitions?  Should we try to catch those?
-
+: HOST         ONLY FORTH         DEFINITIONS ;
+: INTERPRETER  ONLY FORTH +cross  DEFINITIONS ;
+: COMPILER     ONLY FORTH         macro-wordlist set-current ;
+: TARGET       ONLY       +cross  0 set-current ;  \ to catch bad defs
 
 
 : w@  dup >r c@ r> char+ c@ 8 lshift or ;
@@ -47,6 +44,7 @@ VARIABLE tdp
 : t,"  dup t, bounds ?DO i c@ t, LOOP ;
 
 INCLUDE engine.fs
+
 
 HOST
 
@@ -102,6 +100,8 @@ INTERPRETER
 
 : HOST         HOST ;
 : INTERPRETER  INTERPRETER ;
+: COMPILER     COMPILER ;
+: TARGET       TARGET ;
 
 : ,  t, ;
 
@@ -123,7 +123,6 @@ HOST
 \ 0 VALUE xt-var
 \ 0 VALUE xt-val
 \ 0 VALUE xt-dfr
-0 VALUE xt-(")
 
 \ VARIABLE leaves
 \ : resolve-loop  leaves @ BEGIN ?dup WHILE
@@ -131,10 +130,15 @@ HOST
 \                 there - t, leaves ! ;
 
 COMPILER
-HOST macro-wordlist set-current
 
 : (  [char] ) parse 2drop ;
 : \         0 parse 2drop ;
+
+HOST
+
+0 VALUE xt-(")
+
+COMPILER
 
 : s"  xt-(") call, [char] " parse t," ;
 : [char]  name drop c@ lit, ;
@@ -150,8 +154,6 @@ HOST macro-wordlist set-current
 : ELSE  ( orig1 -- orig2 )      *ahead swap *then ;
 : WHILE  ( dest -- orig dest )  *if swap ;
 : REPEAT ( orig dest -- )       *again *then ;
-
-HOST macro-wordlist set-current
 
 \ : do  leaves @ there xt-do ta, 0 leaves ! ;
 \ : ?do  leaves @ xt-?do ta, there leaves ! there 0 t, ;
@@ -172,6 +174,8 @@ HOST macro-wordlist set-current
 \
 \ Primitives.
 \
+
+COMPILER
 
 : dup   push, ;
 : over  push, 9802 t, ;       \ r4 = [bp+2]
@@ -198,9 +202,6 @@ HOST macro-wordlist set-current
 
 : 0=    2841 t, 3904 t, ;     \ r4 -= 1 ; r4 -= r4, carry
 
-
-HOST macro-wordlist set-current
-\ COMPILER
 
 : ;  ret, treveal r> drop ;
 
@@ -339,7 +340,7 @@ VARIABLE base
 \ \ \ : 3drop  drop drop drop ;
 \ \ \ : clear  0 depth! ;
 : rot    >r swap r> swap ;
-\ \ \ : -rot   swap >r swap r> ;
+: -rot   swap >r swap r> ;
 \ \ \ : 2swap  >r -rot r> -rot ;
 \ \ \ : 2rot   >r >r 2swap r> r> 2swap ;
 
@@ -415,7 +416,6 @@ TARGET
 \ \ \ : *'  >r dup 0< >r d2* r> IF r@ m+ THEN r> ;
 \ \ \ : um*  0 -rot LITS 8*CELLSIZE 0 DO *' LOOP drop ;
 \ \ \ : m*  2dup xor >r >r abs r> abs um* r> 0< IF dnegate THEN ;
-: ....  10 BEGIN dup WHILE >r dup 8000 and IF 31 ELSE 30 THEN emit 2* r> 1- REPEAT 2drop 20 emit ;
 \ : /'  7777 drop  >r dup 0< >r d2* r> over r@    0a emit over .... dup ....   u>= or IF >r 1 or r> r@ - THEN r> ;
 : /'  7777 drop  >r dup 0< >r d2* r> over r@ u>= or IF >r 1 or r> r@ - THEN r> ;
 
@@ -433,6 +433,7 @@ TARGET
 \ \ \
 \ \ \
 : u/mod  0 swap um/mod ;
+: u/  u/mod nip ;
 \ \ \ : /mod   >r s>d r> fm/mod ;
 \ \ \ : /      /mod nip ;
 \ \ \ : mod    /mod drop ;
@@ -460,8 +461,9 @@ TARGET
 \ \ \ : 2@   dup cell+ @ swap @ ;
 \ \ \ : 2!   dup >r ! r> cell+ ! ;
 \ \ \ : fill  -rot bounds ?DO dup i c! LOOP drop ;
+: fill  -rot BEGIN dup WHILE >r 2dup ! 1+ r> 1- REPEAT drop 2drop ;
 \ \ \ : blank  20 fill ;
-\ \ \ : erase   0 fill ;
+: erase   0 fill ;
 \ \ \
 \ \ \
 \ \ \ : catch
@@ -718,114 +720,34 @@ VARIABLE v3
 
 : emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
 
-: ttt   50 emit here ....   0 0 <#  35 hold 36 hold #>   cr 52 emit here .... cr   21 emit pad .... pad @ .... cr    over .... dup .... cr   type ;
 : flop  2dup ! >r 1+ r> 1+ dup 3f and 24 - 0= IF 20 + THEN ;
+
+: init-video-palette
+  0 BEGIN dup 10 < WHILE
+  dup 1f * 7 + 0f u/ 0421 * over 2b00 + !
+  1+ REPEAT drop ;
+: init-video
+  3d20 @ fffb and 3d20 !                  \ video dac on
+  0041 2812 !  000a 2813 !  2400 2814 !   \ init video page 0
+;
+
 : cold
   init
   serial-init
   65 dup emit emit
 
-\  20 emit
-\  30 emit 3 4 < IF 79 ELSE 6e THEN emit
-\  31 emit 4 3 < IF 79 ELSE 6e THEN emit
-\  32 emit 3 3 < IF 79 ELSE 6e THEN emit
-\  33 emit -1 0 < IF 79 ELSE 6e THEN emit
-\  34 emit 0 -1 < IF 79 ELSE 6e THEN emit
-\
-\  20 emit
-\  30 emit 3 4 > IF 79 ELSE 6e THEN emit
-\  31 emit 4 3 > IF 79 ELSE 6e THEN emit
-\  32 emit 3 3 > IF 79 ELSE 6e THEN emit
-\  33 emit -1 0 > IF 79 ELSE 6e THEN emit
-\  34 emit 0 -1 > IF 79 ELSE 6e THEN emit
-\
-\  20 emit
-\  30 emit 3 4 u>= IF 79 ELSE 6e THEN emit
-\  31 emit 4 3 u>= IF 79 ELSE 6e THEN emit
-\  32 emit 3 3 u>= IF 79 ELSE 6e THEN emit
-\  33 emit -1 0 u>= IF 79 ELSE 6e THEN emit
-\  34 emit 0 -1 u>= IF 79 ELSE 6e THEN emit
-\
-\  cr
-\  3 todigit emit  1 todigit emit  4 todigit emit
-\  9 todigit emit  a todigit emit  f todigit emit
-\
-\  hex
-\  0400 dp !
-\
-\  cr base @ BEGIN dup WHILE 2a emit 1- REPEAT drop
-\
-\  1234 0 10
-\     cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\  /' cr >r >r dup .... r> dup .... r> dup ....
-\
-\  cr 2a emit 2a emit  5678    0 10 um/mod swap .... ....
-\  cr 2a emit 2a emit  5678 1234 10 um/mod swap .... ....
-\
-\  cr 1234 ....
-\  cr 51 emit  9 2 tuck - todigit emit todigit emit
-\  cr ttt
-\  cr base @ ....
-\  cr 65 0 5 mu/mod .... .... ....
-\  cr 2a emit 5678 1234 d2* .... ....
-\  cr 2a emit abcd 1234 d2* .... ....
-\  cr 4 0 <# # #> type
-\  cr 1234 . 5678 .
-\
-\  101 99 * .
-\  101 99 u* u.
-\  -1234 3 * .
+  hex
 
-  cr s" >>>OINK OINK OINK<<<" type
-  cr s" >>>AINK OINK OINK<<<" type
-  cr s" >>>UINK OINK OINK<<<" type
+  cr s" OHAI" type
 \  cr ." OHAI"
-\  cr ." KITTEHS"
   cr
 
 
-  3d20 @ fffb and 3d20 !  \ video dac on
+  init-video
+  init-video-palette
+  2400 400 erase
 
-  cr s" DAC on" type
-
-  0041 2812 !  000a 2813 !  2400 2814 !
-
-  cr s" video page 0 on" type
-
-\  0000 2b00 !  294a 2b01 !  56b5 + 2b02 !  7fff 2b03 !
-   0421 00 * 2b00 !
-   0421 02 * 2b01 !
-   0421 04 * 2b02 !
-   0421 06 * 2b03 !
-   0421 08 * 2b04 !
-   0421 0a * 2b05 !
-   0421 0c * 2b06 !
-   0421 0e * 2b07 !
-   0421 11 * 2b08 !
-   0421 13 * 2b09 !
-   0421 15 * 2b0a !
-   0421 17 * 2b0b !
-   0421 19 * 2b0c !
-   0421 1b * 2b0d !
-   0421 1d * 2b0e !
-   0421 1f * 2b0f !
-
-  cr s" palette set" type
+  2441 26 078a fill
 
 0800 2400 ! 8000 2401 ! 0f00 2403 ! 0f01 2405 !
 
