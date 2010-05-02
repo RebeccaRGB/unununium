@@ -358,8 +358,16 @@ static void step(void)
 			if ((reg[6] & 0x0180) == 0)
 				goto do_jump;
 			break;
-				// JVC: N == S
-				// JVS: N != S
+		case 12:	// JVC; (N == S)
+			if ((reg[6] & 0x0280) == 0
+			 || (reg[6] & 0x0280) == 0x0280)
+				goto do_jump;
+			break;
+		case 13:	// JVS; not (N == S)
+			if ((reg[6] & 0x0280) != 0
+			 && (reg[6] & 0x0280) != 0x0280)
+				goto do_jump;
+			break;
 		case 14:	// JMP
 			goto do_jump;
 		default:
