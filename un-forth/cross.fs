@@ -114,7 +114,17 @@ INTERPRETER
 : \         0 parse 2drop ;
 
 : CONSTANT  theader treveal lit, ret, ;
-: VARIABLE  theader treveal ram @ lit, ret,  1 ram +! ;
+\ : VARIABLE  theader treveal ram @ lit, ret,  1 ram +! ;
+: VARIABLE  ram @ CONSTANT  1 ram +! ;
+: DEFER  theader treveal 9f17 t, ram @ t, 1 ram +! ;
+
+COMPILER
+
+: [']  t' lit, ;
+: IS  t' dup t@ 9f17 <> ABORT" not a DEFER word"
+      d91c t, 1+ t@ t, pop, ;
+
+INTERPRETER
 
 : CODE      theader treveal ;
 : END-CODE  ret, ;
@@ -204,7 +214,7 @@ COMPILER
 : swap- 28dd t, ;             \ r4 -= [++bp]
 : -     28dd t, 6904 t, ;
 : *     pop3, f90b t, 9903 t, ;       \ mr = r4*r3, ss ; r4 = r3
-: u*    pop3, f80b t, 9903 t, ;       \ mr = r4*r3, us ; r4 = r3
+: u*    pop3, f80b t, 9903 t, ;       \ mr = r4*r3, us ; r4 = r3  \ XXX erm.
 : and   b8dd t, ;             \ r4 &= [++bp]
 : or    a8dd t, ;             \ r4 |= [++bp]
 
@@ -224,12 +234,16 @@ INTERPRETER
 
 HOST
 
-8000 tdp !   fe80 t, 0 t,
+8000 tdp !   fe80 t, 0 t,  \ goto cold
 
 TARGET
 
+DEFER boing
+
 \ temp
 : emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
+
+: oela  0a emit 0a emit 51 emit 52 emit 0a emit ;
 
 \ \ \ code tib      &&code_TIB                  \ XXX: shouldn't be primitive
 \ \ \ code pockets  &&code_POCKETS                  \ XXX: shouldn't be primitive
@@ -745,6 +759,12 @@ VARIABLE v3
   init
   serial-init
   65 dup emit emit
+
+1234 IS boing
+['] oela IS boing
+oela
+boing
+oela
 
   hex
 
