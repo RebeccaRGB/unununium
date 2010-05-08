@@ -238,12 +238,11 @@ HOST
 
 TARGET
 
-DEFER boing
+DEFER emit
+DEFER emit?
+DEFER key
+DEFER key?
 
-\ temp
-: emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
-
-: oela  0a emit 0a emit 51 emit 52 emit 0a emit ;
 
 \ \ \ code tib      &&code_TIB                  \ XXX: shouldn't be primitive
 \ \ \ code pockets  &&code_POCKETS                  \ XXX: shouldn't be primitive
@@ -312,7 +311,6 @@ VARIABLE dp
 \ \ \ 0 VALUE context         tcell negate tallot here s" (type_u)SO" string, tl,
 \ \ \
 \ \ \
-\ \ \ DEFER emit
 \ \ \ DEFER key
 \ \ \ DEFER key?
 \ \ \ DEFER accept
@@ -510,7 +508,6 @@ TARGET
 : linefeed 0a ;
 \ \ \
 \ \ \
-: emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
 \ \ \ : type    bounds ?DO i c@ emit LOOP ;
 : type  BEGIN dup WHILE over c@ emit 1- >r 1+ r> REPEAT 2drop ;
 : cr      carret emit linefeed emit ;
@@ -740,7 +737,8 @@ VARIABLE v3
   3d0e @ 6000 or 3d0e !
   3d0d @ 4000 or 3d0d ! ;
 
-: emit  BEGIN 3d31 @ 40 and 0= UNTIL 3d35 ! ;
+: serial-emit?  3d31 @ 40 and 0= ;
+: serial-emit   BEGIN serial-emit? UNTIL 3d35 ! ;
 
 : flop  2dup ! >r 1+ r> 1+ dup 3f and 24 - 0= IF 20 + THEN ;
 
@@ -757,14 +755,12 @@ VARIABLE v3
 
 : cold
   init
-  serial-init
-  65 dup emit emit
 
-1234 IS boing
-['] oela IS boing
-oela
-boing
-oela
+  serial-init
+  ['] serial-emit? IS emit?
+  ['] serial-emit  IS emit
+
+  65 dup emit emit
 
   hex
 
