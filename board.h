@@ -17,7 +17,7 @@ struct board {
 	u8 (*uart_recv)(void);
 };
 
-extern struct board board_VII, board_WAL, board_BAT, board_V_X, board_dummy;
+extern struct board board_VII, board_W60, board_WAL, board_BAT, board_V_X, board_dummy;
 extern struct board *board;
 
 void board_init(void);

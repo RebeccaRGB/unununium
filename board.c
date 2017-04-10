@@ -19,6 +19,9 @@ static struct board *board_detect(void)
 	if (mem[0x3ecb9] == 0x4311 && mem[0x3ecbb] == 0x4e43)	// VC2
 		return &board_VII;
 
+	if (mem[0x3ff1c] == 0x4311 && mem[0x3ff1e] == 0x4e43)	// Wireless 60
+		return &board_W60;
+
 	if (mem[0xb1c6] == 0x9311 && mem[0xb1c8] == 0x4501 &&
 	    mem[0xb1c9] == 0x5e44)
 		return &board_WAL;

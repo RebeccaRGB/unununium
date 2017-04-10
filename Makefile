@@ -21,7 +21,7 @@ un-disas: un-disas.o disas.o
 uuu-$(PLATFORM): uuu-%: uuu-%.o platform-%.o \
                  disas.o emu.o timer.o video.o render.o render-$(RENDER).o \
                  audio.o io.o i2c-bus.o i2c-eeprom.o board.o \
-                 board-VII.o board-WAL.o board-BAT.o board-V_X.o board-dummy.o
+                 board-VII.o board-W60.o board-WAL.o board-BAT.o board-V_X.o board-dummy.o
 
 # Is this compiler targetting MacOSX?
 is-osx = $(shell set -e; \
@@ -65,6 +65,6 @@ clean:
 	rm -f un-disas un-disas.o disas.o
 	rm -f emu.o timer.o video.o audio.o io.o
 	rm -f i2c-bus.o i2c-eeprom.o
-	rm -f board.o board-VII.o board-WAL.o board-BAT.o board-V_X.o board-dummy.o
+	rm -f board.o board-VII.o board-W60.o board-WAL.o board-BAT.o board-V_X.o board-dummy.o
 	rm -f render.o render-gl.o render-soft.o
 	rm -f uuu-sdl uuu-sdl.o platform-sdl.o dialog-cocoa.o
