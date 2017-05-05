@@ -2,6 +2,8 @@
 // Licensed under the terms of the GNU GPL, version 2
 // http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+#include <stdio.h>
+
 #include "types.h"
 #include "emu.h"
 #include "platform.h"
@@ -20,6 +22,8 @@ static struct board *board_detect(void)
 		return &board_VII;
 
 	if (mem[0x3ff1c] == 0x4311 && mem[0x3ff1e] == 0x4e43)	// Wireless 60
+		return &board_W60;
+	if (mem[0x7e5a8] == 0x4311 && mem[0x7e5aa] == 0x4e43)	// Zone 60
 		return &board_W60;
 
 	if (mem[0xb1c6] == 0x9311 && mem[0xb1c8] == 0x4501 &&
@@ -45,6 +49,12 @@ void board_init(void)
 		warn("couldn't detect board\n");
 		board = &board_dummy;
 	}
+	else if (board == &board_VII) printf("detected Vii\n");
+	else if (board == &board_W60) printf("detected Wireless60\n");
+	else if (board == &board_WAL) printf("detected Wall-E\n");
+	else if (board == &board_BAT) printf("detected Batman\n");
+	else if (board == &board_V_X) printf("detected V.Smile\n");
+	else printf("detected unknown board\n");
 
 	if (board->init)
 		board->init();

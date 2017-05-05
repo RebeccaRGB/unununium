@@ -18,7 +18,15 @@ static void switch_bank(u32 bank) {
 	current_bank = bank;
 	render_kill_cache();
 	read_rom(N_MEM * bank);
-	board->idle_pc = (bank ? 0 : 0x3ff1c);
+	// printf("bank: %d\n", bank);
+
+	board->idle_pc = 0;
+	if (bank) {
+		if (mem[0x3ff1c] == 0x4311 && mem[0x3ff1e] == 0x4e43)	// Wireless 60
+			board->idle_pc = 0x3ff1c;
+		if (mem[0x7e5a8] == 0x4311 && mem[0x7e5aa] == 0x4e43)	// Zone 60
+			board->idle_pc = 0x7e5a8;
+	}
 }
 
 static void init(void) {
