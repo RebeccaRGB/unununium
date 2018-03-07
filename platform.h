@@ -16,6 +16,10 @@ extern u8 button_A;
 extern u8 button_B;
 extern u8 button_C;
 extern u8 button_menu;
+extern u8 button_red;
+extern u8 button_yellow;
+extern u8 button_blue;
+extern u8 button_green;
 
 void platform_init(void);
 

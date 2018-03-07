@@ -163,6 +163,10 @@ u8 button_A;
 u8 button_B;
 u8 button_C;
 u8 button_menu;
+u8 button_red;
+u8 button_yellow;
+u8 button_blue;
+u8 button_green;
 
 static char handle_debug_key(int key)
 {
@@ -211,6 +215,18 @@ static void handle_controller_key(int key, int down)
 		break;
 	case 'l':
 		button_menu = down;
+		break;
+	case 'i':
+		button_red = down;
+		break;
+	case 'o':
+		button_yellow = down;
+		break;
+	case 'p':
+		button_blue = down;
+		break;
+	case '[':
+		button_green = down;
 		break;
 	}
 }
