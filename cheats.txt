@@ -1,0 +1,8 @@
+# Enable cheats with Z key
+# Up to 16 cheat codes can be applied
+# Format:
+#   xxxx:yy    - set memory address xxxx to yy unconditionally
+#   xxxx:yy:zz - set memory address xxxx to yy if the current value is zz
+
+# Infinite lives in Magic Jelly (Wireless 60)
+# 0026bd:0005

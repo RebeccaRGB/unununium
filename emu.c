@@ -36,6 +36,14 @@ static u8 trace_irq[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 static const u32 unsp_version = 11;	// version a.b as 10*a + b
 static u8 ever_ran_this[N_MEM];
 
+static int enable_cheats = 0;
+static int num_cheats = 0;
+static int cheat_addr[16];
+static u16 cheat_data[16];
+static int cheat_cond[16];
+static u16 cheat_check[16];
+static int ci;
+
 
 static int do_extint1, do_extint2;
 
@@ -890,6 +898,10 @@ static void do_controller(void)
 		case 'x':
 			dump(0, 0x4000);
 			break;
+
+		case 'z':
+			enable_cheats ^= 1;
+			break;
 		}
 	} while (key);
 }
@@ -935,11 +947,42 @@ static void run(void)
 		do_extint2 = 0;
 	}
 
+	if (enable_cheats) {
+		for (ci = 0; ci < num_cheats; ci++) {
+			if (!cheat_cond[ci] || mem[cheat_addr[ci]] == cheat_check[ci]) {
+				mem[cheat_addr[ci]] = cheat_data[ci];
+			}
+		}
+	}
+
 	if (pause_after_every_frame) {
 		printf("*** paused, press a key to continue\n");
 
 		while (update_controller() == 0)
 			;
+	}
+}
+
+static void cheats_init(void)
+{
+	void * cheats_file;
+	char buf[100];
+	int n;
+
+	cheats_file = fopen("cheats.txt", "r");
+	if (cheats_file) {
+		while (num_cheats < 16) {
+			if (fgets(buf, 100, cheats_file)) {
+				n = sscanf(buf, "%x:%x:%x", &cheat_addr[num_cheats], &cheat_data[num_cheats], &cheat_check[num_cheats]);
+				if (n >= 2) {
+					cheat_cond[num_cheats] = (n >= 3);
+					num_cheats++;
+				}
+			} else {
+				break;
+			}
+		}
+		fclose(cheats_file);
 	}
 }
 
@@ -951,6 +994,7 @@ void emu(void)
 	io_init();
 	video_init();
 	audio_init();
+	cheats_init();
 
 	memset(reg, 0, sizeof reg);
 	reg[7] = mem[0xfff7];	// reset vector
